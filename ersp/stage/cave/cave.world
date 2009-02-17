@@ -1,0 +1,85 @@
+# Stage World file
+
+# =========================================================================== #
+# Cave example
+#
+# ... a modified version of the Simple example world from the player project,
+#  that now uses a Scorpion robot.
+
+# Jonas Fonseca <fonseca@diku.dk>
+# Bue Petersen <buep@diku.dk>
+# Department of Computer Science University of Copenhagen
+# January 2007
+# =========================================================================== #
+
+# Usefull window configuration for the GUI Stage windows:
+window
+(
+  # Center of the window in world coordinates (meters)
+  center [-0.010 -0.040]
+  # Size: 500x500 pixels map + space for title-, toolbar and menu.
+  size [ 591.000 638.000 ]
+  # Ratio of world to pixel coordinates (window zoom)
+  scale 0.029
+)
+
+# --- World --- 
+
+# Name of the world as displayed in the Stage Windows title bar
+name "The Cave World"
+
+# The length of each simulation update cycle in milliseconds
+interval_real   100 #(milisecons)
+# The amount of real-world (wall-clock) time the simulator will attempt 
+#  to spend on each simulation cycle
+interval_sim    100 #(miliseconds)
+# The amount of real-world time between GUI updates
+gui_interval    20 #(miliseconds)
+# Specifies the resolution of the underlying bitmap model.
+# Larger values speed up raytracing at the expence of fidelity in collision
+#  detection and sensing
+resolution      0.02
+# Size of the world
+size [16 16] #(meters)
+
+
+# --- Model ---
+
+# Include a description of an position object named "scorpionrobot" based on
+#  the position model.
+# This models describes a Evolution Robotics Scorpion robot.
+include "../scorpion-stagemodel.inc"
+
+
+# Create an object of the "scorpionrobot" model.
+scorpionrobot
+(
+  name "scorpionrobot1"
+  # With respect to obstacles in the chosen cave map, its size and the world
+  #  size - using this position for the robot at start will enable it 
+  #  to drive nort, east and south with respect to map orientation (north is
+  #  up). Robot faces east.
+  pose [-2.000 -1.500 0.000]
+)
+
+# Include an object named "basicmap" based on the general model "model".
+# It's used to create a 2D map environment for the robot to drive in.
+# This includes the cave map also used in the official P/S examples.
+include "../basicmap-stagemodel.inc"
+
+
+# Now create the object (map)
+basicmap
+(
+  name "Basicmap"
+  
+  # The bitmap property off the general model is usefull when making
+  #  a map object like this. The bitmap will be used as background.
+  bitmap "cave.png"
+  
+  # This is the model size
+  # It will be placed in a world of the size configured in the world part
+  #  above in this configuration file.
+  # As we want our map to "be" the world - the are set the same size
+  size [16 16]
+)

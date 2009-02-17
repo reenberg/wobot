@@ -1,0 +1,19 @@
+Player Configuration Files
+==========================
+
+An overview of the various configuration files for running Player on the
+real robots. Configuration files for each driver is located in the
+appropriate driver/ subdirectory.
+
+scorpion.cfg
+------------
+This configuration file loads all the drivers implemented for the
+Scorpion robot.
+
+hdaps-scorpion.cfg
+------------------
+Loads the HDAPS driver in addition to the drivers loaded by scorpion.cfg
+
+cave.cfg
+--------
+Matches the Stage Configuration File and example with same name.

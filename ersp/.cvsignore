@@ -1,0 +1,10 @@
+*.la
+*.lo
+.deps
+.libs
+.player
+Makefile
+Makefile.in
+bumper
+square
+square-carlike

@@ -1,0 +1,12 @@
+Driver for using the IBM HDAPS for controlling robots
+=====================================================
+
+The HDAPS driver provides a "joystick" interface. There currently
+does not exist a JoystickProxy usable for client programs so the main
+goal of this driver is to expose the "joystick" interface so that virtual drivers
+can take robots may use it.
+
+This driver is still experimental. Due to problems to get the Linux
+HDAPS driver module to work it has not been tested. To test it use the
+player/hdaps-scorpion.cfg configuration file together with the playerjoy
+program, which maps "joystick" commands to "position2d" commands.

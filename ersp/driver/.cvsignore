@@ -1,0 +1,15 @@
+AUTHORS
+COPYING
+ChangeLog
+INSTALL
+NEWS
+aclocal.m4
+autom4te.cache
+config.h
+config.h.in
+config.log
+config.status
+configure
+lib
+libtool
+stamp-h1

@@ -1,0 +1,298 @@
+# Stage World file
+
+# =========================================================================== #
+# Generic example
+#
+# ... a generic Player/Stage example used to illustrate the configuration 
+#  files used in a complete Player/Stage example.
+# Enjoy a lot of comments in the files so you can re-use our configuration.
+# This example is based upon several of the "official" examples in the
+#  Player/Stage software package.
+
+# Jonas Fonseca <fonseca@diku.dk>
+# Bue Petersen <buep@diku.dk>
+# Department of Computer Science University of Copenhagen
+# January 2007
+# =========================================================================== #
+
+# Notice some parameters are set visual running the Stage simulation and then 
+#  using the Save function. 
+# This will save values to your world-file (IT IS OVERWRITTEN!)
+# See Stage documentation for Window and "Saving the World".
+
+
+# "Stage simulates a 'world' of 'models', defined in a 'world file'"
+# The Stage World file consists of two part: The world part and the model part.
+# Beside these two parts - it's usefull with a window configuration for 
+#  the GUI Stage windows:
+window
+(
+  # Parameters for the Stage Windows setup copied for another example
+  # This is a nice setup that fits the world and model configuration.
+  
+  # Center of the window in world coordinates (meters)
+  center [-0.010 -0.040]
+  # Size of the Window in pixels
+  size [ 591.000 638.000 ]
+  # Ratio of world to pixel coordinates (window zoom)
+  scale 0.028
+)
+
+
+
+# --- World --- 
+# The world part: Describes basic properties of the simulated world
+#  A world configuration is shown below with full comments and all 
+#  configuration parameters 
+#  The documentation is found in the Stage manual under World (we used):
+#  http://playerstage.sourceforge.net/doc/Stage-2.0.1/group__model__position.html
+
+# Name of the world as displayed in the Stage Windows title bar
+# Default to filename is not set.
+name            "Generic Stage example"
+
+# The length of each simulation update cycle in milliseconds
+interval_real   100
+
+# The amount of real-world (wall-clock) time the simulator will attempt 
+#  to spend on each simulation cycle
+interval_sim    100
+
+# The amount of real-world time between GUI updates
+gui_interval    20
+
+# Specifies the resolution of the underlying bitmap model. Larger values
+#  speed up raytracing at the expense of fidelity in collision detection
+#  and sensing.
+resolution      0.02
+
+# Size of the world in meters
+size [16 16]
+
+
+# --- Model ---
+# The model part: Defines the model(s), object(s) and robot(s), in the world
+#  by describing the basic properties of the named object(s).
+
+# You use a model (eg. like position or laser) to create a specific model you name as used in the Stage Configuration file.
+
+#  The documentation is found in the Stage manual under Model (we used):
+#  http://playerstage.sourceforge.net/doc/Stage-2.0.1/group__model.html
+
+# Use "define name model" (eg. "define mymodel position") if you want to 
+#  use the position model to create a model named "mymodel".
+
+
+# In the model part of this World file we create 2 objects. We use 2 models for
+#  for this. The general model named "model" and the model named "position".
+# A model consist of properties of one or several specific model properties
+#  (eg. position) and some general properties for all models according 
+#  to properties of the general model (named "Model").
+# So first we create a robot object that is based on the general models
+#  properties and the position models properties.
+# Second we create a 2D map enviroments object based on only the general model
+
+
+
+# Define an position object named "genericrobot" based on the position model.
+# We use it to create a object that is our robot
+# This is the first model defined, but below we define and create more models
+# below.
+define genericrobot position
+(
+  # - Properties of the "position" model -
+  # Use differential steering model
+  drive "diff"
+
+  # - Robots localization -
+  # If "gps" the position model reports its position with perfect accuracy. 
+  # If "odom", a simple odometry model is used and position data drifts from
+  #  the ground truth over time. The odometry model is parameterized by the
+  #  odom_error property. 
+  localization "gps"
+  
+  # See documentation for the position model for "localization_origin" 
+  #  parameters
+ #localization_origin [ <defaults to model's start pose> ]
+  
+  # Odometry error model parameters 
+  # See documentation for the position model for possible configuration
+  #  parameters
+  # Only used if localization is set to "odom"
+  odom_error [0.03 0.03 0.05]
+
+
+
+  # - Properties of general model ("model)" -
+  # Estimated mass in KG
+  mass 15.0 
+  # Specify the pose of the model in its parent's coordinate system
+  pose [0 0 0]
+  # Size of this object
+  size [0.44 0.33]
+  # The robots center of rotation is offset from its center of area
+  origin [-0.04 0.0 0]
+  # The initial velocity of the model
+  velocity [0 0 0]
+  
+  # Specify the body color of the object using a color name from the X11
+  #  database (rgb.txt)
+  color "red"
+
+  # The followin lines determine how the model appears in various sensors
+  
+  # If 1, this model can collide with other models that have this property set
+  obstacle_return 1
+  
+  # If 0, this model is not detected by laser sensors
+  # If 1, the model shows up in a laser sensor with normal (0) reflectance
+  # If 2, it shows up with high (1) reflectance
+  laser_return 1
+  
+  # If 1, this model can be detected by ranger sensors
+  ranger_return 1
+  
+  # If 1, this model can be detected in the blob_finder (dep. on its color)
+ #blobfinder_return 1
+  
+  # If non-zero, this model is detected by fiducialfinder sensor. The value is
+  #  used as the fiducial ID
+  fiducial_return 1
+  
+  # Models are only detected by fiducialfinders if the fiducial_key values of
+  #  model and fiducialfinder match. This allows you to have several 
+  #  independent types of fiducial in the same environment, each type only 
+  #  showing up in fiducialfinders that are "tuned" for it
+  fiducial_key 0
+  
+  # If 1, this model can be gripped by a gripper and can be pushed around by
+  # collisions with anything that has a non-zero obstacle_return
+  gripper_return 0
+
+  # - GUI properties of the general model ("model") -
+  # Draw a nose on the model so we can see which way it points
+  gui_nose 1
+  
+  # If 1, draw a scaling grid over the model 
+  gui_grid 0
+  
+  # If 1, draw a bouding box around the model, indicating its size
+ #gui_boundary 0
+  
+  # Define how the model can be moved be the mouse in the GUI window
+  gui_movemask 1
+  
+  
+  # - Unit square body shape properties of the general model ("model") -
+
+  # Specify the number of lines that make up the model's body
+ #line_count [int]
+
+  # Creates a line from (x1,y1) to (x2,y2). A set of line_count lines defines
+  #  the robot's body for the purposes of collision detection and rendering in
+  #  the GUI window.
+ #line[index] [x1:float y1:float x2:float y2:float]
+
+  # This polygon approximates the shape of the robot
+  polygons 1
+  polygon[0].points 8
+  polygon[0].point[0] [  0.23  0.05 ]
+  polygon[0].point[1] [  0.15  0.15 ]
+  polygon[0].point[2] [ -0.15  0.15 ]
+  polygon[0].point[3] [ -0.23  0.05 ]
+  polygon[0].point[4] [ -0.23 -0.05 ]
+  polygon[0].point[5] [ -0.15 -0.15 ]
+  polygon[0].point[6] [  0.15 -0.15 ]
+  polygon[0].point[7] [  0.23 -0.05 ]
+  
+  # Object bitmap - a drawin of the object
+  # It is a alternative way to set the model's line_count and lines. The file
+  #  must be a bitmap recognized by libgtkpixbuf (most popular formats are
+  #  supported). The file is opened and parsed into a set of lines. Unless the
+  #  bitmap_resolution option is used, the lines are scaled to fit inside the 
+  #  rectangle defined by the model's current size.
+ #bitmap ""
+)		 
+# Final - now create a model (robot) inheriting the "genericrobot" model
+#  properties defined above.
+# Some properties may be overwritten.
+genericrobot
+(
+  name "genericrobot1"
+  # Redefine color 
+  color "blue"
+  # Redefine starting position of the robot in the world
+  pose [1 1 0]
+)
+
+
+
+
+
+# Now we will define and create more objects in the world
+# Eg. a 2D map environment the robot to drive in.
+# From here on and below we will not repeat all configuration variables.
+# We concentrate on explaining our choices.
+# For full reference see the documentation or the genericrobot model defined
+#  above.
+
+
+# Define an object named "map" based on the general model "Model".
+# We use it to create a 2D map environment for the robot to drive in.
+define map model
+(
+  # - Properties of general model ("model)" -
+  # Chose black as color to mimic eg. wall.
+  color "black"
+
+  # If 1, this model can be gripped by a gripper and can be pushed around by
+  # collisions with anything that has a non-zero obstacle_return
+  # We clearly do not want this to apply to a map object
+  gripper_return 0
+  
+  
+  # - GUI properties of the general model ("model") -
+  # Draw a nose on the model so we can see which way it points
+  # This is not used as we use this object as a map
+  gui_nose 0
+
+  # If 1, draw a bouding box around the model, indicating its size
+  # Most maps will need a bounding box
+  #gui_boundary 1
+  boundary 1
+
+  # If 1, draw a scaling grid over the model 
+  # This is the grid you see en the Stage Window. The grid is snapped
+  # to the map model.
+  gui_grid 1
+  
+  
+  # Define how the model can be moved be the mouse in the GUI window
+  # You should not be able to move the "map".
+  gui_movemask 0
+  
+  # This is non-documentet property but it is used in some of the "official"
+  #  Stage examples when making map-objects.
+  gui_outline 0
+ 
+)
+# Final - now create the object map (robot) based on the defined
+#  map model above.
+map
+(
+  
+
+  name "Genericmap"
+  
+  # Object bitmap - a drawin of the object
+  # This bitmap property is usefull when making a map object like this
+  # The bitmap is a black square on white background. It could be a room.
+  # By first desclaring the bitmap here when the object is created we can
+  #  use the model description above for more generic map setting and first
+  #  choose the specific map when we create it.
+  bitmap "generic.png"
+  
+  # The same considerations goes to size
+  # Size should match the size of the world in the world part of this file
+  size [16 16]
+)

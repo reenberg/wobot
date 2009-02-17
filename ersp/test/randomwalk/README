@@ -1,0 +1,5 @@
+One Scorpion robot walking random around using only infrared sensors
+====================================================================
+
+This is a example based on the official P/S example named randomwalk.
+It is modified for the Scorpion robot and uses the front and side sensors to drive randomly round avoiding obstacles.
