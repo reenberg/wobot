@@ -2,6 +2,8 @@
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage[danish]{babel}
+\usepackage{colortbl}
+\usepackage{pdflscape}
 
 %\usepackage{textcomp} But why ?
 %\linespread{1.05}  But why?
@@ -198,6 +200,29 @@ Andre opgaver:
   vidt Player/Stage driveren til dem er funktionel nok til det er sjovt.
 \item Alternativt: skaf en anden robot (Roomba?)
 \end{itemize}
+
+\noindent
+\begin{landscape}
+\begin{center}
+
+  \definecolor{uofsgreen}{rgb}{.125,.5,.25}
+  \definecolor{natvidgreen}{rgb}{.196,.364,.239}
+  \definecolor{lightgrey}{rgb}{.6,.6,.6}
+  \definecolor{grey}{rgb}{.4,.4,.4}
+
+
+\begin{tabular}{l||ccccccccccccccccccc}
+& \multicolumn{19}{c}{Uge} \\
+Projekt & 6 & 7 & 8 & 9 & 10 & 11 & 12 & 13 & 14 & 15 & 16 & 17 & 18 &
+19 & 20 & 21 & 22 & 23 & 24\\ \hline \hline
+Synopsis & \multicolumn{3}{c}{\cellcolor{black}} & & & &
+&&&&&&&&&&&&\\  
+Haskell-bindings & & & \multicolumn{2}{c}{\cellcolor{red}} \\  
+Rapport & & & & \multicolumn{5}{c}{\cellcolor{lightgrey}} &  \multicolumn{8}{c}{\cellcolor{grey}}\\  
+Buffer-uger & \multicolumn{16}{c}{} & \multicolumn{3}{c}{\cellcolor{blue}} \\  
+\end{tabular}
+\end{center}
+\end{landscape}
 
 \end{document}
 
