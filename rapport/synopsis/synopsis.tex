@@ -1,0 +1,167 @@
+\documentclass[a4paper,oneside, final]{memoir}
+\usepackage[T1]{fontenc}
+\usepackage{textcomp}
+\usepackage[utf8]{inputenc}
+\usepackage[danish]{babel}
+%\usepackage[garamond]{mathdesign}
+\usepackage[sc]{mathpazo} % palatino font
+\linespread{1.05} 
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{graphicx}
+\usepackage{semantic}
+\usepackage{stmaryrd}
+
+
+\renewcommand{\ttdefault}{pcr} % bedre typewriter font
+%\renewcommand{\rmdefault}{ugm} % garamond
+\renewcommand{\clearforchapter}{}
+
+%\overfullrule=5pt
+%\setsecnumdepth{part}
+
+\title{Deklarativt programmeringssprog til robotstyring \\ \small{Bachelorprojekt synopsis}}
+
+\author{Martin Dybdal (dybber@dybber.dk), \\
+Jesper Reenberg (jesper.reenberg@gmail.com) \\ og
+Troels Henriksen (athas@sigkill.dk)}
+
+
+\pagestyle{plain}
+\setcounter{secnumdepth}{-1}
+\date{\today}
+
+\allowdisplaybreaks[4]
+
+\begin{document}
+\maketitle
+
+
+% http://image.diku.dk/mediawiki/images/9/9d/Playerstagereport.pdf
+
+\section{Problemformulering}
+% hvordan eller ikke hvordan?
+(Hvordan) kan man implementere et deklarativt programmeringssprog, som gør det
+muligt at programmere robotter, i en syntaks der ligger tæt op ad en
+specifikation?
+
+\section{Uddybning}
+\subsection{Motivation}
+Når man specificerer hvad robotter skal gøre, angiver man det ofte som
+sætninger der forklarer hvilke \textit{hændelser} de skal være opmærksomme på og
+hvordan de skal \textit{reagere} når disse hændelser indtræffer. En uformel
+specifikation af en strategi der følger væggene i et rektangulært
+rum, kunne være ``Kør lige
+ud ind til du er 20 cm fra en væg. Drej derefter 90 grader mod højre
+og start forfra med at køre lige ud''. Her er der en åbenlys hændelse
+der indtræffer ``20 cm fra en væg'' og en reaktion ``drej 90 grader
+mod højre og fortsæt''.
+
+De mest anvendte sprog og biblioteker til programmering af robotter
+lægger op til en programmeringsstil hvor man skal ``trække''
+informationer ud fra sensorer og lignende. Eksempelvis må man hele
+tiden sende forespørgsler til en afstandsmåler for at høre om robotten
+er ved at køre ind i noget. Dette er i modstrid med de normale
+specifikationer, hvor man som sagt taler om \textit{hændelser} og
+\textit{reaktioner}. Vi vil derfor lave hændelses-baseret sprog, hvor
+man kan lave en hændelse (``mindre end 20 cm til væg''), som
+aktiverer en reaktion (``drej 90 grader mod højre og fortsæt'') hver
+gang hændelsen indtræffer (en specifik afstandsmåler rapporterer en
+afstand der er mindre end 20 cm).
+
+Fordelen ved den deklarative tilgang burde derfor være klar: der er
+kortere vej fra specifikation til kørende kode.
+
+
+\subsection{Implementation}
+For at undgå at bruge en stor mængde tid på skrive en oversætter til
+vores sprog, vælger vi at implementere det som et
+EDSL (Embedded Domain-Specific Language) indbygget i
+Haskell. Sproget vil altså bestå af en række Haskell operatorer og
+funktioner, som gør deklarativ robotprogrammering mulig. Vi mener at
+Haskell har rigeligt med muligheder for at definere et EDSL der
+udtryksfuldt nok, uden at skulle f.eks. udvide det via template
+metaprogramming\footnote{Dette kunne gøres med Template Haskell
+  eller Quasiquotation-biblioteket.}.
+
+Vi vil også gerne undgå at skrive lav-niveau kode for at kommunikere
+med en helt specifik robot, da vi har en forventning om at det måske
+vil kræve en større mængde kode og fordi der findes biblioteker hvor
+andre allerede har drivere til en række robotter. Vi har derfor
+valgt at bygge vores sprog oven på Player/Stage-biblioteket, der er udviklet
+specielt til robotprogrammering. Det er meget anvendt
+\footnote{http://playerstage.sourceforge.net/wiki/PlayerUsers --
+  faktisk eksisterer denne URL ikke pt. men forhåbentligt står der en
+  masse brugere, når den en gang kommer op.} og har to store fordele: der
+findes både 2D og 3D simulatorer og der er drivere til en lang række
+robotter og sensorer. Bl.a. har to DIKU studerende udviklet drivere
+der gør det muligt at bruge Player/Stage til at programmere DIKU's
+Scorpion-robotter \footnote{``Player driver implementation for ERSP''
+  (http://image.diku.dk/mediawiki/images/9/9d/Playerstagereport.pdf)}.
+
+\section{Afgrænsninger}
+\begin{itemize}
+\item Vi vil ikke oversætte til et primitivt sprog, for at få det til
+  at køre på indlejrede platforme. Ideen er i stedet at programmet
+  kører på en almindelig PC, hvorfra styringssignaler sendes til og fra
+  robotten igennem et datakabel (f.eks. USB)
+% Jakob Grue mente at nedenstående krav ikke er nødvendigt: vi vil ikke
+% opleve problemer med at overholde alle fornuftige real--time krav.
+% Alternativt kan vi vel formulere noget om at programmeringssproget
+% ikke vil indeholde måder at angive real--time kravene.
+%
+%\item Vi forventer ikke at programmer skrevet i vores
+%  programmeringssprog skal overholde realtime--krav. Dette betyder at
+%  effektiviteten af implementationen ikke er en væsentlig del af opgaven.
+\item Vi har ikke tænkt os at skrive noget større program i vores
+  sprog. Vi har i stedet tænkt at vise udtryksmulighederne, via mindre
+  eksempelprogrammer. (At skrive et større program vil dog være en
+  mulig udvidelse af projektet, hvis vi får tid)
+\item Ideelt set vil vi gerne kunne afprøve vores sprog på en fysisk robot,
+men da vi ikke er sikker på muligheden for at få fat i en sådan, vil
+denne afprøvning ikke være en del af opgaven. Det bemærkes igen at
+Player/Stage indeholder udemærkede simulatorer, som vi kan bruge under
+afprøvningen.
+\end{itemize}
+
+\section{Konkrete arbejdsopgaver}
+
+\begin{itemize}
+\item Lave Haskell-bindings til Player/Stage (FFI til C-biblioteket libplayerc).
+\item Undersøge allerede eksisterende robotprogrammeringssprog og
+  almindelige arbejdsopgaver indenfor robotprogrammering.
+\item Definere syntaks og semantik for vores EDSL.
+\item Implementere det definerede EDSL vha. det vores Haskell-bindings
+  til Player/Stage.
+\end{itemize}
+
+\section{Mulige udvidelser af projektet (``nice to have'')}
+\begin{itemize}
+\item Udvidelse af sproget til at skrive programmer til flere robotter (flocking).
+\item Skriv et større eksempelprogram i vores programmeringssprog.
+\item Lav en formel semantik for sproget (ej okay, det gider vi nok ikke).
+\end{itemize}
+
+\section{Tidsplan}
+Lav det hele inden 20. maj.\\
+
+\noindent
+Opdeling (useriøs):
+\begin{enumerate}
+\item Bliv rigtig hurtig færdig med at lave et Haskell FFI til libplayerc.
+\item Lav en masse eksempler på hvordan sproget kan se ud.
+\item Kod det (rigtig hurtigt)
+\item Test det med eksempelprogrammer
+\item Sammenlign eksempelprogrammerne med tilsvarende skrevet direkte
+  til Player/Stage i C, C++ eller Python Robotics.
+\end{enumerate}
+
+\noindent
+Andre opgaver:
+\begin{itemize}
+\item Find ud af om vi kan få lov at låne Scorpion-robotterne og hvor
+  vidt Player/Stage driveren til dem er funktionel nok til det er sjovt.
+\item Alternativt: skaf en anden robot (Roomba?)
+\end{itemize}
+
+\end{document}
