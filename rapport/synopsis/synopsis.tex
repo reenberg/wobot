@@ -2,39 +2,21 @@
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage[danish]{babel}
+
+% Bruges til at farve celler, rækker mv. i tabeller
 \usepackage{colortbl}
+
+% Gør landscape-environmentet tilgængeligt
 \usepackage{pdflscape}
 
-%\usepackage{textcomp} But why ?
-%\linespread{1.05}  But why?
-%\renewcommand{\clearforchapter}{} But why?
-
-% St Mary Road symbols for theoretical computer science.
-%\usepackage{stmaryrd}
-
-% Help for writing programming language semantics.
-%\usepackage{semantic}
-
-% AMS mathematical facilities for LaTeX.
-%\usepackage{amsmath}
-
-% package that facilitates the kind of theorem setup typically needed in
-% American Mathematical Society publications.
-%\usepackage{amsthm}
-
-% Builds upon the graphics package, providing a key-value interface for optional
-% arguments to the \includegraphics command that go far beyone what the graphics
-% package offers
-%\usepackage{graphicx}
-
-% Insert "fixme" notes into draft documents.
+% Indsæt "fixme" noter i drafts.
 \usepackage{fixme}
 
 
 \renewcommand{\ttdefault}{pcr} % bedre typewriter font
-\usepackage[sc]{mathpazo} % palatino font
-%\renewcommand{\rmdefault}{ugm} % garamond
-%\usepackage[garamond]{mathdesign}
+%\usepackage[sc]{mathpazo} % palatino font
+\renewcommand{\rmdefault}{ugm} % garamond
+\usepackage[garamond]{mathdesign}
 
 
 %\overfullrule=5pt
@@ -50,7 +32,7 @@ Troels Henriksen (athas@sigkill.dk)}
 
 
 \pagestyle{plain}
-% Set heading numbering depth. Disable = -1.
+% Sæt overskriftsnummeringsdybde. Disable = -1.
 \setcounter{secnumdepth}{-1}
 
 
@@ -225,10 +207,3 @@ Buffer-uger & \multicolumn{16}{c}{} & \multicolumn{3}{c}{\cellcolor{blue}} \\
 \end{landscape}
 
 \end{document}
-
-
-
-%%% Local Variables: 
-%%% mode: latex
-%%% TeX-master: t
-%%% End: 
