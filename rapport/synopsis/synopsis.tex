@@ -45,7 +45,8 @@ Troels Henriksen (athas@sigkill.dk)}
 \section{Titel}
 "`Deklarativt programmeringssprog til robotstyring"'
 
-\fixme{Bør ordet reaktiv ikke være indeholdt i vores projekt titel?}
+\fixme{Bør ordet reaktiv ikke være indeholdt i vores projekt titel i stedet for
+  deklarativt?}
 
 
 \section{Problemformulering}
@@ -111,10 +112,12 @@ bruge Player/Stage til at programmere DIKU's Scorpion-robotter
 
 \section{Afgrænsninger}
 \begin{enumerate}
+
 \item Vi vil ikke oversætte til et primitivt sprog, for at få det til at køre på
   indlejrede platforme. Ideen er i stedet at programmet kører på en almindelig
   PC, hvorfra styringssignaler sendes til og fra robotten igennem et datakabel
   (f.eks. USB)
+
 % Jakob Grue mente at nedenstående krav ikke er nødvendigt: vi vil ikke
 % opleve problemer med at overholde alle fornuftige real--time krav.
 % Alternativt kan vi vel formulere noget om at programmeringssproget
@@ -127,61 +130,102 @@ bruge Player/Stage til at programmere DIKU's Scorpion-robotter
   i stedet tænkt at vise udtryksmulighederne, via mindre eksempelprogrammer. (At
   skrive et større program vil dog være en mulig udvidelse af projektet, hvis vi
   får tid)
+
 \item Ideelt set vil vi gerne kunne afprøve vores sprog på en fysisk robot, men
   da vi ikke er sikker på muligheden for at få fat i en sådan, vil denne
   afprøvning ikke være en del af opgaven. Det bemærkes igen at Player/Stage
   indeholder udemærkede simulatorer, som vi kan bruge under afprøvningen.
+
 \end{enumerate}
 
-\section{Projektbeskrivelse}
+\section{Arbejdsopgaver}
+
+\fixme{Revider tidsmålene så de passer ind med 3 mennesker. Definer også faste
+  datoer og visualiser hvordan de overlapper hinanden.}
+Projektet løber fra uge 6 til og med uge 24.
 
 \begin{enumerate}
-\item Lave Haskell-bindings til Player/Stage (FFI til C-biblioteket libplayerc).
-\item Undersøge allerede eksisterende robotprogrammeringssprog og
-  almindelige arbejdsopgaver indenfor robotprogrammering.
-\item Definere syntaks og semantik for vores EDSL.
-\item Implementere det definerede EDSL vha. det vores Haskell-bindings
-  til Player/Stage.
+
+\item Undersøge allerede eksisterende robotprogrammeringssprog og almindelige
+  arbejdsopgaver indenfor robotprogrammering.
+
+\item Forudgående undersøgelser (1 uge).
+  
+  \begin{itemize}
+    
+  \item Find ud af om vi kan få lov at låne Scorpion-robotterne og hvor
+    vidt Player/Stage driveren til dem er funktionel nok til det er sjovt.
+    
+  \item Alternativt: skaf en anden robot (Roomba?)
+    
+  \end{itemize}
+
+\item Lave Haskell-bindings til Player/Stage (FFI til C-biblioteket libplayerc)
+  (1 uge).
+  \label{item:opgaver:ffi-bindings}
+
+\item Definere syntaks og semantik for vores EDSL (3 uger).
+  \label{item:opgaver:definer-syntaks}
+
+\item Implementere det definerede EDSL vha. de i \ref{item:opgaver:ffi-bindings}
+  implementerede Haskell-bindings til Player/Stage og den i
+  \ref{item:opgaver:definer-syntaks} definerede syntaks og semantik (2 uger).
+
+\item Lav eksempler på hvordan sproget bruges i praksis. (2 uger)
+  \label{item:opgaver:lav-eksempler}
+
+  \begin{enumerate}
+  
+  \item Sammenlign eksempelprogrammerne med tilsvarende skrevet direkte til
+    Player/Stage i C, C++ eller Python Robotics.
+  
+  \end{enumerate}
+  
+  
+\item Brug de i \ref{item:opgaver:lav-eksempler} lavede eksempler til at teste
+  om implementationen opfylder den i \ref{item:opgaver:definer-syntaks}
+  definerede syntaks (1 uge).
+  
+\item Færdiggøre rapport.(2 uger)
+  
+\item Afpudsning af rapport. (3 dage)
+  
+\item Buffer og tid til at arbejde på mulige udvidelser af projektet. (uge 20-24)
 \end{enumerate}
 
 \section{Specifikke Læringsmål}
 
-Den studerende skal lære at:
+Projektet skal gøre de studerende i stand til at:
 
 \begin{enumerate}
+
+\item Forklare hvad FRP er, samt forklare fordele og ulemper ved at bruge FRP.
+
 \item Udvikle struktureret, fleksibelt og veldokumenteret programmel i Haskell
-\item 
+
+% \item Demonstrere hvordan et domæne specifikt sprog (DSL) til at skrive 
+% kontrol programmer til indlejret systemer i FRP stil, kan indlejres i et 
+% moderne funktionelt sprog som F# eller Haskell, dvs som et DSEL. 
+% Således at det er muligt at prototype og simulere kontrolprogrammerne i 
+% værtssproget, samt at generer kode der kan køre på en rigtig indlejeret 
+% plat form, som fx arduino.
+
+\item Foretage en systematisk evaluering af et sådant DSEL. \fixme{"et
+    sådant DSEL"', hvilket?}
+
 \end{enumerate}
 
 
 \section{Mulige udvidelser af projektet ("`nice to have"')}
 \begin{enumerate}
+
 \item Udvidelse af sproget til at skrive programmer til flere robotter (flocking).
+
 \item Skriv et større eksempelprogram i vores programmeringssprog.
-\item Lav en formel semantik for sproget (ej okay, det gider vi nok ikke).
+
+\item Lav en formel semantik for sproget
+
 \end{enumerate}
-
-\section{Tidsplan}
-Lav det hele inden 20. maj.\\
-
-\noindent
-Opdeling (useriøs):
-\begin{enumerate}
-\item Bliv rigtig hurtig færdig med at lave et Haskell FFI til libplayerc.
-\item Lav en masse eksempler på hvordan sproget kan se ud.
-\item Kod det (rigtig hurtigt)
-\item Test det med eksempelprogrammer
-\item Sammenlign eksempelprogrammerne med tilsvarende skrevet direkte
-  til Player/Stage i C, C++ eller Python Robotics.
-\end{enumerate}
-
-\noindent
-Andre opgaver:
-\begin{itemize}
-\item Find ud af om vi kan få lov at låne Scorpion-robotterne og hvor
-  vidt Player/Stage driveren til dem er funktionel nok til det er sjovt.
-\item Alternativt: skaf en anden robot (Roomba?)
-\end{itemize}
 
 \noindent
 \begin{landscape}
@@ -197,8 +241,7 @@ Andre opgaver:
 & \multicolumn{19}{c}{Uge} \\
 Projekt & 6 & 7 & 8 & 9 & 10 & 11 & 12 & 13 & 14 & 15 & 16 & 17 & 18 &
 19 & 20 & 21 & 22 & 23 & 24\\ \hline \hline
-Synopsis & \multicolumn{3}{c}{\cellcolor{black}} & & & &
-&&&&&&&&&&&&\\  
+Synopsis & \multicolumn{3}{c}{\cellcolor{black}} \\  
 Haskell-bindings & & & \multicolumn{2}{c}{\cellcolor{red}} \\  
 Rapport & & & & \multicolumn{5}{c}{\cellcolor{lightgrey}} &  \multicolumn{8}{c}{\cellcolor{grey}}\\  
 Buffer-uger & \multicolumn{16}{c}{} & \multicolumn{3}{c}{\cellcolor{blue}} \\  
