@@ -2,38 +2,21 @@
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage[danish]{babel}
+
+% Bruges til at farve celler, rækker mv. i tabeller
 \usepackage{colortbl}
+
+% Gør landscape-environmentet tilgængeligt
 \usepackage{pdflscape}
 
-% When using chapters, then dont put the chapter at a new page. 
-%\renewcommand{\clearforchapter}{}
-
-% St Mary Road symbols for theoretical computer science.
-%\usepackage{stmaryrd}
-
-% Help for writing programming language semantics.
-%\usepackage{semantic}
-
-% AMS mathematical facilities for LaTeX.
-%\usepackage{amsmath}
-
-% package that facilitates the kind of theorem setup typically needed in
-% American Mathematical Society publications.
-%\usepackage{amsthm}
-
-% Builds upon the graphics package, providing a key-value interface for optional
-% arguments to the \includegraphics command that go far beyone what the graphics
-% package offers
-%\usepackage{graphicx}
-
-% Insert "fixme" notes into draft documents.
+% Indsæt "fixme" noter i drafts.
 \usepackage{fixme}
 
 
 \renewcommand{\ttdefault}{pcr} % bedre typewriter font
-\usepackage[sc]{mathpazo} % palatino font
-%\renewcommand{\rmdefault}{ugm} % garamond
-%\usepackage[garamond]{mathdesign}
+%\usepackage[sc]{mathpazo} % palatino font
+\renewcommand{\rmdefault}{ugm} % garamond
+\usepackage[garamond]{mathdesign}
 
 
 %\overfullrule=5pt
@@ -49,7 +32,7 @@ Troels Henriksen (athas@sigkill.dk)}
 
 
 \pagestyle{plain}
-% Set heading numbering depth. Disable = -1.
+% Sæt overskriftsnummeringsdybde. Disable = -1.
 \setcounter{secnumdepth}{-1}
 
 
@@ -227,7 +210,8 @@ Projektet skal gøre de studerende i stand til at:
 % værtssproget, samt at generer kode der kan køre på en rigtig indlejeret 
 % plat form, som fx arduino.
 
-\item Foretage en systematisk evaluering af et sådan DSEL.
+\item Foretage en systematisk evaluering af et sådant DSEL. \fixme{"et
+    sådant DSEL"', hvilket?}
 
 \end{enumerate}
 
@@ -243,16 +227,6 @@ Projektet skal gøre de studerende i stand til at:
 
 \end{enumerate}
 
-<<<<<<< HEAD:rapport/synopsis/synopsis.tex
-=======
-\noindent
-Andre opgaver:
-\begin{itemize}
-\item Find ud af om vi kan få lov at låne Scorpion-robotterne og hvor
-  vidt Player/Stage driveren til dem er funktionel nok til det er sjovt.
-\item Alternativt: skaf en anden robot (Roomba?)
-\end{itemize}
-
 \noindent
 \begin{landscape}
 \begin{center}
@@ -267,8 +241,7 @@ Andre opgaver:
 & \multicolumn{19}{c}{Uge} \\
 Projekt & 6 & 7 & 8 & 9 & 10 & 11 & 12 & 13 & 14 & 15 & 16 & 17 & 18 &
 19 & 20 & 21 & 22 & 23 & 24\\ \hline \hline
-Synopsis & \multicolumn{3}{c}{\cellcolor{black}} & & & &
-&&&&&&&&&&&&\\  
+Synopsis & \multicolumn{3}{c}{\cellcolor{black}} \\  
 Haskell-bindings & & & \multicolumn{2}{c}{\cellcolor{red}} \\  
 Rapport & & & & \multicolumn{5}{c}{\cellcolor{lightgrey}} &  \multicolumn{8}{c}{\cellcolor{grey}}\\  
 Buffer-uger & \multicolumn{16}{c}{} & \multicolumn{3}{c}{\cellcolor{blue}} \\  
@@ -276,12 +249,4 @@ Buffer-uger & \multicolumn{16}{c}{} & \multicolumn{3}{c}{\cellcolor{blue}} \\
 \end{center}
 \end{landscape}
 
->>>>>>> d515fdc26d2c72441d7f096ddd7393568ffb4c01:rapport/synopsis/synopsis.tex
 \end{document}
-
-
-
-%%% Local Variables: 
-%%% mode: latex
-%%% TeX-master: t
-%%% End: 
