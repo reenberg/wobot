@@ -1,0 +1,18 @@
+Installer først GHC 6.10.1
+          ./configure (eller ./configure --prefix=$HOME hvis du vil have det placeret i $HOME)
+          make install
+
+Installer så cabal-install (jeg installerede version 0.6.0)
+        - brug ./bootstrap.sh scriptet, så bliver cabal's dependencies
+          automatisk installeret
+        - Tilføj $HOME/.cabal/bin til $PATH --- ELLER:
+        - Gør som der står i README filen, hvis du vil have executables placeret i
+          $HOME/bin
+          
+sudo apt-get install alex libedit-dev
+
+Installer happy: "cabal install happy"
+
+Gå ind i Flask-mappen og skriv "cabal install" alle dependencies til
+Flask samt Flask bliver så installeret. (den kigger i .cabal filen i
+mappen som beskriver hvilke dependencies der er m.m.)
