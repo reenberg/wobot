@@ -1,0 +1,6 @@
+rapport/*/*.log
+rapport/*/*.aux
+rapport/*/*.aux
+rapport/*/*.bbl
+rapport/*/*.blg
+rapport/*/*.pdf
