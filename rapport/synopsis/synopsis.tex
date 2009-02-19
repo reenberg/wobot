@@ -32,103 +32,93 @@ Troels Henriksen (athas@sigkill.dk)}
 \begin{document}
 \maketitle
 
-
-% http://image.diku.dk/mediawiki/images/9/9d/Playerstagereport.pdf
-
-\section{Titel}
-"`Deklarativt programmeringssprog til robotstyring"'
-
-\fixme{Bør ordet reaktiv ikke være indeholdt i vores projekt titel i stedet for
-  deklarativt?}
-
+\section{Projekttitel}
+"`Oversættelse af et reaktivt programmeringssprog til styring af
+indlejrede kontrolsystemer."'
 
 \section{Problemformulering}
-% hvordan eller ikke hvordan?
-(Hvordan) kan man implementere et deklarativt programmeringssprog, som gør det
-muligt at programmere robotter, i en syntaks der ligger tæt op ad en
-specifikation?
+Hvordan kan man oversætte et reaktivt DSL indlejret i Haskell, så det
+kan køre på indlejrede systemer med begrænsede beregningsresurser?
+\fixme{brugen af ordet "`indlejret"' på to forskellige måder er
+  irriterende, kan vi finde et andet ord?}
 
 \section{Uddybning}
 
-Følgene vil problemformuleringen bliver uddybet i et motivations- og
+I det følgende vil problemformuleringen blive uddybet i et motivations- og
 implementationsafsnit.
 
 \subsection{Motivation}
-Når man specificerer hvad robotter skal gøre, angiver man det ofte som sætninger
-der forklarer hvilke \textit{hændelser} de skal være opmærksomme på og hvordan
-de skal \textit{reagere} når disse hændelser indtræffer. En uformel
-specifikation af en strategi der følger væggene i et rektangulært rum, kunne
-være "`Kør lige ud ind til du er 20 cm fra en væg. Drej derefter 90 grader mod
-højre og start forfra med at køre lige ud"'. Her er der en åbenlys hændelse der
-indtræffer "`20 cm fra en væg"' og en reaktion "`drej 90 grader mod højre og
-fortsæt"'.
+Programmering af indlejrede systemer til brug i kontrolsystemer og
+robotter sker primært i en imperativ stil, hvor man via kommandoer
+aktivt skal lytte på sensorer for at få fat i målinger. I
+programmeringssproget Frob\cite{frob99} er det vist hvordan man i en reaktiv
+programmeringsstil kan udtrykke styringsprogrammer der kommer tættere
+på specifikationsteksten. Dette sker ved at man i stedet angiver en
+række \textit{hændelser} som systemet skal være opmærksomme på og
+systemets \textit{reaktioner} på disse hændelser. Fordelen ved dette
+er, udover fordelene som vi får ved at bruge et funktionelt
+programmeringssprog, at der er kortere vej fra specifikation til et
+fungerende produkt.
 
-De mest anvendte sprog og biblioteker til programmering af robotter lægger op
-til en programmeringsstil hvor man skal "`trække"' informationer ud fra sensorer
-og lignende. Eksempelvis må man hele tiden sende forespørgsler til en
-afstandsmåler for at høre om robotten er ved at køre ind i noget. Dette er i
-modstrid med de normale specifikationer, hvor man som sagt taler om
-\textit{hændelser} og \textit{reaktioner}. Vi vil derfor lave hændelses-baseret
-sprog, hvor man kan lave en hændelse ("`mindre end 20 cm til væg"'), som
-aktiverer en reaktion ("`drej 90 grader mod højre og fortsæt"') hver gang
-hændelsen indtræffer (en specifik afstandsmåler rapporterer en afstand der er
-mindre end 20 cm).
+På de fleste indlejrede systemer er det dog ikke muligt at køre Frob,
+da det kræver en hel Haskell runtime (i hvert fald i den
+Frob-implementation der er skrevet til \cite{frob99}) hvilket ikke er muligt med
+microcontrollernes begrænsede kapacitet.  F.eks. har de fleste
+Arduino-boards en 8-bit ATmel ATmega168 microprocessor, med 8 KB
+programmerbar hukommelse. Hvilket er langt fra nok til at rumme et
+almindeligt Haskell runtimesystem.
 
-Fordelen ved den deklarative tilgang burde derfor være klar: der er kortere vej
-fra specifikation til kørende kode.
+I et andet domæne, sensornetværk, er det med projektet Flask\cite{flask08} vist
+hvordan man kan oversætte et DSL indlejret i Haskell ned til kode der
+kan køre på sådanne enheder med begrænset hukommelses- og
+regnekapacitet.
+
+I vores projekt vil kombinere disse to ideer så vi kan få et reaktivt
+programmeringssprog i samme stil som Frob oversat så det kan køre på
+Arduino-boards.
 
 
 \subsection{Implementation}
-For at undgå at bruge en stor mængde tid på skrive en oversætter til vores
-sprog, vælger vi at implementere det som et EDSL (Embedded Domain-Specific
-Language) indbygget i Haskell. Sproget vil altså bestå af en række Haskell
-operatorer og funktioner, som gør deklarativ robotprogrammering mulig. Vi mener
-at Haskell har rigeligt med muligheder for at definere et EDSL der udtryksfuldt
-nok, uden at skulle f.eks. udvide det via template
-metaprogramming\footnote{Dette kunne gøres med Template Haskell eller
-  Quasiquotation-biblioteket.}.
+Da vi har valgt Arduino-boards som målplatform, vil vores målsprog
+som vi oversætter til, være "`Arduino Programming Language"', som er et
+simpelt imperativt sprog med C/Java lignende syntaks.
 
-Vi vil også gerne undgå at skrive lav-niveau kode for at kommunikere med en helt
-specifik robot, da vi har en forventning om at det måske vil kræve en større
-mængde kode og fordi der findes biblioteker hvor andre allerede har drivere til
-en række robotter. Vi har derfor valgt at bygge vores sprog oven på
-Player/Stage-biblioteket, der er udviklet specielt til robotprogrammering. Det
-er meget anvendt \footnote{http://playerstage.sourceforge.net/wiki/PlayerUsers
-  -- faktisk eksisterer denne URL ikke pt. men forhåbentligt står der en masse
-  brugere, når den en gang kommer op.} og har to store fordele: der findes både
-2D og 3D simulatorer og der er drivere til en lang række robotter og
-sensorer. Bl.a. har to DIKU studerende udviklet drivere der gør det muligt at
-bruge Player/Stage til at programmere DIKU's Scorpion-robotter
-\footnote{"`Player driver implementation for ERSP"'
-  (http://image.diku.dk/mediawiki/images/9/9d/Playerstagereport.pdf)}.
+Vi vil starte med at tilpasse Flask, så det oversætter vores EDSL til
+Arduino-sproget og lave tilpasninger, så det passer til domænet. Det
+er dog ikke sikkert dette er en god strategi, så hvis dette bliver for
+besværligt vil vi i stedet starte helt fra bunden med vores egen
+implementation.
+
+\section{Læringsmål}
+
+Projektet skal gøre de studerende i stand til at:
+
+\begin{enumerate}
+\item Forklare hvad FRP er, samt forklare fordele og ulemper ved at bruge FRP.
+
+\item Forstå hvordan Flask fungerer og vise forståelsen ved at
+  tilpasse Flask til kontrolstyringsdomænet og Arduino-platformen.
+
+\item Udvikle et større struktureret, fleksibelt og veldokumenteret system i Haskell.
+
+\item Foretage en systematisk evaluering af et sådant DSEL. \fixme{"et
+    sådant DSEL"', hvilket?}
+\end{enumerate}
 
 
 \section{Afgrænsninger}
 \begin{enumerate}
-
-\item Vi vil ikke oversætte til et primitivt sprog, for at få det til at køre på
-  indlejrede platforme. Ideen er i stedet at programmet kører på en almindelig
-  PC, hvorfra styringssignaler sendes til og fra robotten igennem et datakabel
-  (f.eks. USB)
-
-% Jakob Grue mente at nedenstående krav ikke er nødvendigt: vi vil ikke
-% opleve problemer med at overholde alle fornuftige real--time krav.
-% Alternativt kan vi vel formulere noget om at programmeringssproget
-% ikke vil indeholde måder at angive real--time kravene.
-%
-%\item Vi forventer ikke at programmer skrevet i vores
-%  programmeringssprog skal overholde realtime--krav. Dette betyder at
-%  effektiviteten af implementationen ikke er en væsentlig del af opgaven.
+\item Vi forventer ikke at programmer skrevet i vores
+  programmeringssprog skal overholde realtime--krav. Dette betyder at
+  effektiviteten af implementationen ikke er en væsentlig del af
+  opgaven og at vores EDSL ikke vil have primitiver til at angive
+  realtime-krav.
 \item Vi har ikke tænkt os at skrive noget større program i vores sprog. Vi har
   i stedet tænkt at vise udtryksmulighederne, via mindre eksempelprogrammer. (At
   skrive et større program vil dog være en mulig udvidelse af projektet, hvis vi
   får tid)
-
-\item Ideelt set vil vi gerne kunne afprøve vores sprog på en fysisk robot, men
-  da vi ikke er sikker på muligheden for at få fat i en sådan, vil denne
-  afprøvning ikke være en del af opgaven. Det bemærkes igen at Player/Stage
-  indeholder udemærkede simulatorer, som vi kan bruge under afprøvningen.
-
+\item Vi vil ikke lave nogen kvalitativ undersøgelse af hvor "`godt"'
+  og "`anvendeligt"' vores sprog er til domænet.
 \end{enumerate}
 
 \section{Arbejdsopgaver}
@@ -186,28 +176,6 @@ Projektet løber fra uge 6 til og med uge 24.
 \item Buffer og tid til at arbejde på mulige udvidelser af projektet. (uge 20-24)
 \end{enumerate}
 
-\section{Specifikke Læringsmål}
-
-Projektet skal gøre de studerende i stand til at:
-
-\begin{enumerate}
-
-\item Forklare hvad FRP er, samt forklare fordele og ulemper ved at bruge FRP.
-
-\item Udvikle struktureret, fleksibelt og veldokumenteret programmel i Haskell
-
-% \item Demonstrere hvordan et domæne specifikt sprog (DSL) til at skrive 
-% kontrol programmer til indlejret systemer i FRP stil, kan indlejres i et 
-% moderne funktionelt sprog som F# eller Haskell, dvs som et DSEL. 
-% Således at det er muligt at prototype og simulere kontrolprogrammerne i 
-% værtssproget, samt at generer kode der kan køre på en rigtig indlejeret 
-% plat form, som fx arduino.
-
-\item Foretage en systematisk evaluering af et sådant DSEL. \fixme{"et
-    sådant DSEL"', hvilket?}
-
-\end{enumerate}
-
 
 \section{Mulige udvidelser af projektet ("`nice to have"')}
 \begin{enumerate}
@@ -219,6 +187,10 @@ Projektet skal gøre de studerende i stand til at:
 \item Lav en formel semantik for sproget
 
 \end{enumerate}
+
+\bibliographystyle{plain}
+\bibliography{synopsis}
+
 
 % \begin{landscape}
 % \begin{center}
