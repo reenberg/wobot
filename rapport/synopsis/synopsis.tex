@@ -3,6 +3,11 @@
 \usepackage[utf8]{inputenc}
 \usepackage[danish]{babel}
 
+% bedre orddeling Gør at der som minimum skal blive to tegn på linien ved
+% orddeling og minimum flyttes to tegn ned på næste linie. Desværre er værdien
+% anvendt af babel »12«, hvilket kan give orddelingen »h-vor«.
+\renewcommand{\danishhyphenmins}{22} 
+
 \usepackage{colortbl}  % Bruges til at farve celler, rækker mv. i tabeller
 \usepackage{pdflscape} % Gør landscape-environmentet tilgængeligt
 \usepackage{fixme}     % Indsæt "fixme" noter i drafts.
@@ -17,7 +22,7 @@
 %\setsecnumdepth{part}
 \setcounter{secnumdepth}{-1} % Sæt overskriftsnummereringsdybde. Disable = -1.
 
-\newcommand{\EDSL}{Embeded Domain Specific Language (herefter forkortet
+\newcommand{\EDSL}{Embedded Domain Specific Language (herefter forkortet
   EDSL) \renewcommand{\EDSL}{ EDSL }}
 
 
@@ -100,31 +105,36 @@ også kan beskrive reaktioner.
 Projektet skal gøre de studerende i stand til at:
 
 \begin{enumerate}
+
 \item Forklare hvad FRP er, samt forklare fordele og ulemper ved at bruge FRP.
-
-\item Forstå hvordan Flask fungerer og vise forståelsen ved at
-  tilpasse Flask til kontrolstyringsdomænet og Arduino-platformen.
-
-\item Udvikle et større, struktureret, fleksibelt og veldokumenteret
-  system i Haskell.
-
+  
+q\item Forstå hvordan Flask fungerer og vise forståelsen ved at tilpasse Flask
+ q til kontrolstyringsdomænet og Arduino-platformen.
+  
+\item Udvikle et større, struktureret, fleksibelt og veldokumenteret system i
+  Haskell.
+  
 \item Foretage en systematisk evaluering af et sådant \EDSL.
+  
 \end{enumerate}
 
 
 \section{Afgrænsninger}
 \begin{enumerate}
-\item Vi forventer ikke at programmer skrevet i vores
-  programmeringssprog skal overholde realtime--krav. Dette betyder at
-  effektiviteten af implementationen ikke er en væsentlig del af
-  opgaven og at vores \EDSL ikke vil have primitiver til at angive
-  realtime-krav.
-\item Vi har ikke tænkt os at skrive noget større program i sproget. Vi har
-  i stedet tænkt os at vise udtryksmulighederne, via mindre eksempelprogrammer. (At
-  skrive et større program vil dog være en mulig udvidelse af projektet, hvis vi
-  får tid)
-\item Vi vil ikke lave nogen kvalitativ undersøgelse af hvor "`godt"'
-  og "`anvendeligt"' vores sprog er til domænet.
+
+\item Vi forventer ikke at programmer skrevet i vores programmeringssprog skal
+  overholde realtime--krav. Dette betyder at effektiviteten af implementationen
+  ikke er en væsentlig del af opgaven og at vores \EDSL ikke vil have primitiver
+  til at angive realtime-krav.
+
+\item Vi har ikke tænkt os at skrive noget større program i sproget. Vi har i
+  stedet tænkt os at vise udtryksmulighederne, via mindre
+  eksempelprogrammer. (At skrive et større program vil dog være en mulig
+  udvidelse af projektet, hvis vi får tid)
+
+\item Vi vil ikke lave nogen kvalitativ undersøgelse af hvor "`godt"' og
+  "`anvendeligt"' vores sprog er til domænet.
+
 \end{enumerate}
 
 \section{Arbejdsopgaver}
@@ -132,29 +142,36 @@ Projektet løber fra uge 6 til og med uge 24.
 
 \begin{enumerate}
 
-\item Undersøge allerede eksisterende robotprogrammeringssprog og almindelige
-  arbejdsopgaver indenfor robotprogrammering.
-
 \item Forudgående undersøgelser (1-2 uger).
   
   \begin{itemize}
+
   \item Find litteratur og læs om Flask og Arduino.
-  \item Lav små programmer i Arduino-programmeringssproget, for at
-    lære hvordan det bruges, så vi ved hvilken type kode der skal genereres.    
+
+  \item Lav små programmer i Arduino-programmeringssproget, for at lære hvordan
+    det bruges, så vi ved hvilken type kode der skal genereres.
+
+  \item Undersøge allerede eksisterende robotprogrammeringssprog og almindelige
+    arbejdsopgaver indenfor robotprogrammering.
+
   \end{itemize}
 
-\item Definition af vores EDSL (hvor meget skal/kan tages fra
-  Frob?)(3 uger).   \label{item:opgaver:definer-syntaks}
+\item Definition af vores EDSL (hvor meget skal/kan tages fra Frob?)(3
+  uger).  \label{item:opgaver:definer-syntaks}
   \begin{itemize}
-  \item Hvad skal sproget hedde?
+
   \item Definer syntaks og semantik
+
   \end{itemize}
 
 \item Tilpasning af Flask (7 uger).
   \begin{itemize}
+
   \item Lav parser til det EDSL vi har defineret.
+
   \item Ret kodegeneratoren, så der genereres kode Arduino-sproget i
     stedet for nesC.
+
   \end{itemize}
 
 
@@ -162,9 +179,12 @@ Projektet løber fra uge 6 til og med uge 24.
   \label{item:opgaver:lav-eksempler}
 
   \begin{itemize}
+
   \item Skriv selv programmer i Arduino-sproget eller find eksempler
+
   \item Sammenlign eksempelprogrammerne med tilsvarende skrevet direkte til
     Arduino-programmingssproget.  
+
   \end{itemize}
     
 \item Færdiggøre rapport (2 uger).
@@ -172,10 +192,12 @@ Projektet løber fra uge 6 til og med uge 24.
 \item Afpudsning af rapport (3 dage).
   
 \item Buffer og tid til at arbejde på mulige udvidelser af projektet (uge 20-24).
+
 \end{enumerate}
 
 
 \section{Mulige udvidelser af projektet ("`nice to have"')}
+
 \begin{enumerate}
 
 \item Lav en Arduino-simulator, f.eks. ved at lave en Arduino $\rightarrow$
