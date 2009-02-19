@@ -1,0 +1,48 @@
+Forventninger:
+--------------
+ - Vi laver dagsorden inden hvert møde, som sendes til ken
+   i rimelig tid i forvejen.
+ - Til møderne laves beslutningsreferat. Dette gør at Ken kan se at vi
+   har forstået korrekt hvad han har sagt.
+
+Fast møde:
+----------
+Vi holder et fast møde hver mandag kl 11 til 12.
+Hvis Ken skal nå at læse noget inden mødet skal det sendes i god tid.
+Er det noget der blot skal skimmes, så kan han nok nå at gøre det
+mandag morgen før mødet. Men er det større ting han skal sætte sig ind
+i, så skal det sendes til ham torsdag formiddag, da han ikke har tid
+til at kigge på det i weekenderne.
+
+Læringsmål
+__________
+ - Forståelse for hvordan Flask virker, vises ved at bruge det på Arduino.
+   I sensornetværk behandles strømme af data, vi vil også gerne lave
+   reaktioner på disse data. Mere fokus på FRP
+
+- Hvordan vi får et EDSL til at køre på indlejrede systemer
+  (Nice to have: at det samtidig kan køre på en alm. laptop)
+
+
+Konkret opgave:
+---------------
+Tilpas flask til domænet eller lav en ny implementering der bygger på
+samme ideer.
+
+
+Metode: 
+-------
+Almindelig naturvidenskabelig metode. Hypoteser der
+testes ved udførelse af eksperimenter.
+Eksperiment: Skriv program / framework
+Hypotese eksempel: "Flask påstås at være godt til sensornetværk, er det også godt til andet?"
+Bagefter: er det de rigtige eksperimenter vi har lavet?
+
+
+Afgrænsninger:
+---------------
+ - Vi vil ikke skrive noget konkret forudbestemt program i vores
+   sprog, vi vil i stedet dokumentere at det virker vha. mindre eksempelprogrammer.
+ - Realtime krav vil ikke være en del af sproget
+ - Vi vil ikke lave noget kvalitativ undersøgelse af hvor "godt" og
+   "anvendeligt" vores sprog er til domænet
