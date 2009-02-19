@@ -17,6 +17,9 @@
 %\setsecnumdepth{part}
 \setcounter{secnumdepth}{-1} % Sæt overskriftsnummereringsdybde. Disable = -1.
 
+\newcommand{\EDSL}{Embeded Domain Specific Language (herefter forkortet
+  EDSL) \renewcommand{\EDSL}{ EDSL }}
+
 
 \title{Synopsis}
 
@@ -37,61 +40,59 @@ Troels Henriksen (athas@sigkill.dk)}
 indlejrede kontrolsystemer."'
 
 \section{Problemformulering}
-Hvordan kan man oversætte et reaktivt DSL indlejret i Haskell, så det
-kan køre på indlejrede systemer med begrænsede beregningsresurser?
-\fixme{brugen af ordet "`indlejret"' på to forskellige måder er
-  irriterende, kan vi finde et andet ord?}
+Hvordan kan man oversætte et reaktivt \EDSL skrevet i Haskell, så det
+kan køre på indlejrede systemer med begrænsede beregningsressourcer?
 
 \section{Uddybning}
 
 I det følgende vil problemformuleringen blive uddybet i et motivations- og
 implementationsafsnit.
 
-\subsection{Motivation}
-Programmering af indlejrede systemer til brug i kontrolsystemer og
-robotter sker primært i en imperativ stil, hvor man via kommandoer
-aktivt skal lytte på sensorer for at få fat i målinger. I
-programmeringssproget Frob\cite{frob99} er det vist hvordan man i en reaktiv
-programmeringsstil kan udtrykke styringsprogrammer der kommer tættere
-på specifikationsteksten. Dette sker ved at man i stedet angiver en
-række \textit{hændelser} som systemet skal være opmærksomme på og
-systemets \textit{reaktioner} på disse hændelser. Fordelen ved dette
-er, udover fordelene som vi får ved at bruge et funktionelt
-programmeringssprog, at der er kortere vej fra specifikation til et
-fungerende produkt.
+\subsubsection{Motivation}
+Programmering af indlejrede systemer til brug i kontrolsystemer og robotter sker
+primært i en imperativ stil, hvor man via kommandoer aktivt skal lytte på
+sensorer for at få fat i målinger. I programmeringssproget Frob\cite{frob99} er
+det vist hvordan man i en reaktiv programmeringsstil kan udtrykke
+styringsprogrammer der kommer tættere på specifikationsteksten. Dette sker ved
+at man i stedet angiver en række \textit{hændelser} som systemet skal være
+opmærksom på og hvilke \textit{reaktioner} systemet skal tage ved
+disse. Fordelen ved dette, udover dem vi får ved at bruge et funktionelt
+programmeringssprog, er at der er kortere vej fra specifikation til en
+fungerende løsning.
 
-På de fleste indlejrede systemer er det dog ikke muligt at køre Frob,
-da det kræver en hel Haskell runtime (i hvert fald i den
-Frob-implementation der er skrevet til \cite{frob99}) hvilket ikke er muligt med
-microcontrollernes begrænsede kapacitet.  F.eks. har de fleste
-Arduino-boards en 8-bit ATmel ATmega168 microprocessor, med 8 KB
-programmerbar hukommelse. Hvilket er langt fra nok til at rumme et
-almindeligt Haskell runtimesystem.
+På de fleste indlejrede systemer er det dog ikke muligt at køre Frob, da det
+kræver en hel Haskell runtime (i hvert fald i den Frob-implementation der er
+skrevet til \cite{frob99}) hvilket ikke er muligt med microcontrollernes
+begrænsede kapacitet.  F.eks. har de fleste Arduino-boards \cite{arduino} en
+16MHz Atmel ATmega168 microprocessor, med 14 KB flash hukommelse (16KB - 2KB
+bootloader) og 512B EEPROM\footnote{Electrically Erasable Programmable Read-Only
+  Memory}. Hvilket er langt fra nok til at rumme et almindeligt Haskell
+runtimesystem.
 
 I et andet domæne, sensornetværk, er det med projektet Flask\cite{flask08} vist
-hvordan man kan oversætte et DSL indlejret i Haskell ned til kode der
+hvordan man kan oversætte, et \EDSL skrevet i Haskell, ned til kode der
 kan køre på sådanne enheder med begrænset hukommelses- og
 regnekapacitet. 
 
-I vores projekt vil kombinere disse to ideer så vi kan få et reaktivt
-programmeringssprog i samme stil som Frob oversat så det kan køre på
-Arduino-boards. Dette vil vi gøre ved at bruge ideerne fra Flask.  
+I vores projekt vil vi kombinere disse to ideer, så vi kan få et reaktivt
+programmeringssprog i samme stil som Frob oversat, til at kunne køre på
+Arduino-boards. Dette vil vi gøre ved at tage udgangspunkt i Flask.  
 
 
-\subsection{Implementation}
-Da vi har valgt Arduino-boards som målplatform, vil vores målsprog
-som vi oversætter til, være "`Arduino Programming Language"', som er et
-simpelt imperativt sprog med C/Java lignende syntaks.
+\subsubsection{Implementation}
+Da vi har valgt Arduino-boards som målplatform (vil vores målsprog
+som vi oversætter til) være "`Arduino Programming Language"', som er et
+simpelt imperativt sprog med C++/Java lignende syntaks.
 
-Vi vil starte med at tilpasse Flask, så det oversætter vores EDSL til
-Arduino-sproget og lave tilpasninger, så det passer til domænet. Det
-er dog ikke sikkert dette er en god strategi, så hvis dette bliver for
+Vi vil starte med at tilpasse Flask, så det oversætter vores \EDSL til
+Arduino-sproget, og lave tilpasninger så det passer til domænet. Det
+er dog ikke sikkert at dette er en god strategi, så hvis det bliver for
 besværligt vil vi i stedet starte helt fra bunden med vores egen
 implementation.
 
 I sensornetværk hvor Flask anvendes, sker der primært dataopsamling og
 databehandling. I kontrolsystemer er der også brug for reaktioner på
-det opfattede data. Udfordringen bliver altså at ændre Flask så man
+det opsamlede data. Udfordringen bliver altså at ændre Flask så man
 også kan beskrive reaktioner.
 
 \section{Læringsmål}
@@ -107,8 +108,7 @@ Projektet skal gøre de studerende i stand til at:
 \item Udvikle et større, struktureret, fleksibelt og veldokumenteret
   system i Haskell.
 
-\item Foretage en systematisk evaluering af et sådant DSEL. \fixme{"et
-    sådant DSEL"', hvilket?}
+\item Foretage en systematisk evaluering af et sådant \EDSL.
 \end{enumerate}
 
 
@@ -117,10 +117,10 @@ Projektet skal gøre de studerende i stand til at:
 \item Vi forventer ikke at programmer skrevet i vores
   programmeringssprog skal overholde realtime--krav. Dette betyder at
   effektiviteten af implementationen ikke er en væsentlig del af
-  opgaven og at vores EDSL ikke vil have primitiver til at angive
+  opgaven og at vores \EDSL ikke vil have primitiver til at angive
   realtime-krav.
-\item Vi har ikke tænkt os at skrive noget større program i vores sprog. Vi har
-  i stedet tænkt at vise udtryksmulighederne, via mindre eksempelprogrammer. (At
+\item Vi har ikke tænkt os at skrive noget større program i sproget. Vi har
+  i stedet tænkt os at vise udtryksmulighederne, via mindre eksempelprogrammer. (At
   skrive et større program vil dog være en mulig udvidelse af projektet, hvis vi
   får tid)
 \item Vi vil ikke lave nogen kvalitativ undersøgelse af hvor "`godt"'
@@ -158,7 +158,7 @@ Projektet løber fra uge 6 til og med uge 24.
   \end{itemize}
 
 
-\item Lav eksempler på hvordan sproget bruges i praksis. (3 uger)
+\item Lav eksempler på hvordan sproget bruges i praksis (3 uger).
   \label{item:opgaver:lav-eksempler}
 
   \begin{itemize}
@@ -167,11 +167,11 @@ Projektet løber fra uge 6 til og med uge 24.
     Arduino-programmingssproget.  
   \end{itemize}
     
-\item Færdiggøre rapport.(2 uger)
+\item Færdiggøre rapport (2 uger).
   
-\item Afpudsning af rapport. (3 dage)
+\item Afpudsning af rapport (3 dage).
   
-\item Buffer og tid til at arbejde på mulige udvidelser af projektet. (uge 20-24)
+\item Buffer og tid til at arbejde på mulige udvidelser af projektet (uge 20-24).
 \end{enumerate}
 
 
@@ -181,16 +181,14 @@ Projektet løber fra uge 6 til og med uge 24.
 \item Lav en Arduino-simulator, f.eks. ved at lave en Arduino $\rightarrow$
   Player/Stage oversætter.
 
-\item Udvidelse af sproget til at skrive programmer der kører på flere robotter (flocking).
+\item Udvidelse af sproget til at skrive programmer der kører på flere robotter
+  v.h.a. intern kommunikation med wifi/bluetooth/andet (flocking).
 
 \item Skriv et større eksempelprogram i vores programmeringssprog.
 
-\item Lav en formel semantik for sproget
+\item Lav en formel semantik for sproget.
 
 \end{enumerate}
-
-\bibliographystyle{plain}
-\bibliography{synopsis}
 
 
 % \begin{landscape}
@@ -262,6 +260,7 @@ Projektet løber fra uge 6 til og med uge 24.
 \end{center}
 \end{landscape}
 
-
+\bibliographystyle{plain}
+\bibliography{synopsis}
 
 \end{document}
