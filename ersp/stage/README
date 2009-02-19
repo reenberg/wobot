@@ -1,6 +1,0 @@
-Stage Configuration and world files
-
-Subdirectories contains sets of Stage Configuration and World files for specific examples.
-The examples are described in the README files in the subdirectories.
-
-The .inc files are Stage models that are included and used in several examples.
