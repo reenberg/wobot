@@ -14,6 +14,9 @@ mandag morgen før mødet. Men er det større ting han skal sætte sig ind
 i, så skal det sendes til ham torsdag formiddag, da han ikke har tid
 til at kigge på det i weekenderne.
 
+Ken vil forsøge at gøre hans kalender tilgængelig, så vi kan se
+hvornår han er på hvilket campus.
+
 Læringsmål
 __________
  - Forståelse for hvordan Flask virker, vises ved at bruge det på Arduino.
