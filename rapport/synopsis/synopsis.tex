@@ -23,9 +23,10 @@
 %\setsecnumdepth{part}
 \setcounter{secnumdepth}{-1} % Sæt overskriftsnummereringsdybde. Disable = -1.
 
-\newcommand{\EDSL}{Embedded Domain Specific Language (herefter forkortet
-  EDSL) \renewcommand{\EDSL}{ EDSL }}
-
+\newcommand{\EDSL}{EDSL (Embedded Domain Specific Language) \renewcommand{\EDSL}{ EDSL }}
+\hyphenation{da-ta-be-hand-ling}
+\hyphenation{pro-gram-me-rings-sprog-et}
+\hyphenation{brug-es}
 
 \title{Synopsis}
 
@@ -42,8 +43,8 @@ Troels Henriksen (athas@sigkill.dk)}
 \maketitle
 
 \section{Projekttitel}
-"`Oversættelse af et reaktivt programmeringssprog til styring af
-indlejrede kontrolsystemer."'
+"`Funktionel reaktiv programmering til styring af indlejrede
+kontrolsystemer."'
 
 \section{Problemformulering}
 Hvordan kan man oversætte et reaktivt \EDSL skrevet i Haskell, så det
@@ -55,16 +56,18 @@ I det følgende vil problemformuleringen blive uddybet i et motivations- og
 implementationsafsnit.
 
 \subsubsection{Motivation}
-Programmering af indlejrede systemer til brug i kontrolsystemer og robotter sker
-primært i en imperativ stil, hvor man via kommandoer aktivt skal lytte på
-sensorer for at få fat i målinger. I programmeringssproget Frob\cite{frob99} er
-det vist hvordan man i en reaktiv programmeringsstil kan udtrykke
-styringsprogrammer der kommer tættere på specifikationsteksten. Dette sker ved
-at man i stedet angiver en række \textit{hændelser} som systemet skal være
-opmærksom på og hvilke \textit{reaktioner} systemet skal tage ved
-disse. Fordelen ved dette, udover dem vi får ved at bruge et funktionelt
-programmeringssprog, er at der er kortere vej fra specifikation til en
-fungerende løsning.
+Programmering af indlejrede systemer til brug i kontrolsystemer og
+robotter sker primært i en imperativ stil, hvor man via kommandoer
+aktivt skal lytte på sensorer for at få fat i målinger. I
+programmeringssproget Frob\cite{frob99} er det vist hvordan man i en
+reaktiv programmeringsstil kan udtrykke styringsprogrammer der kommer
+tættere på systemets specifikationstekst. Dette sker blandt andet ved
+at man i stedet for at skulle "`trække"' sensor-informationerne ud,
+angiver en række \textit{hændelser} som systemet skal være opmærksom
+på og hvilke \textit{reaktioner} systemet skal udføre når de
+indtræffer. Fordelen ved dette, udover dem vi får ved at bruge et
+funktionelt programmeringssprog, er at der er kortere vej fra
+specifikation til en fungerende løsning.
 
 På de fleste indlejrede systemer er det dog ikke muligt at køre Frob, da det
 kræver en hel Haskell runtime (i hvert fald i den Frob-implementation der er
@@ -75,10 +78,10 @@ bootloader) og 512B EEPROM\footnote{Electrically Erasable Programmable Read-Only
   Memory}. Hvilket er langt fra nok til at rumme et almindeligt Haskell
 runtimesystem.
 
-I et andet domæne, sensornetværk, er det med projektet Flask\cite{flask08} vist
-hvordan man kan oversætte, et \EDSL skrevet i Haskell, ned til kode der
-kan køre på sådanne enheder med begrænset hukommelses- og
-regnekapacitet. 
+I et andet domæne, sensornetværk, er det med projektet
+Flask\cite{flask08} vist hvordan man ad flere trin (multi-stage) kan
+oversætte et \EDSL skrevet i Haskell, ned til kode der kan køre på
+sådanne enheder med begrænset hukommelses- og regnekapacitet.
 
 I vores projekt vil vi kombinere disse to ideer, så vi kan få et reaktivt
 programmeringssprog i samme stil som Frob oversat, til at kunne køre på
@@ -108,14 +111,13 @@ Projektet skal gøre de studerende i stand til at:
 \begin{enumerate}
 
 \item Forklare hvad FRP er, samt forklare fordele og ulemper ved at bruge FRP.
-  
-q\item Forstå hvordan Flask fungerer og vise forståelsen ved at tilpasse Flask
- q til kontrolstyringsdomænet og Arduino-platformen.
-  
-\item Udvikle et større, struktureret, fleksibelt og veldokumenteret system i
-  Haskell.
-  
-\item Foretage en systematisk evaluering af et sådant \EDSL.
+
+\item Forstå og forklare hvordan en multi-stage sprogarkiktektur som
+  den der bruges i Flask fungerer og vise forståelsen ved at tilpasse
+  Flask til kontrolstyringsdomænet og Arduino-platformen.
+    
+\item Foretage en systematisk evaluering af et multi-stage \EDSL til
+  reaktiv programmering.
   
 \end{enumerate}
 
@@ -138,18 +140,20 @@ q\item Forstå hvordan Flask fungerer og vise forståelsen ved at tilpasse Flask
 
 \end{enumerate}
 
+\newpage
 \section{Arbejdsopgaver}
-Projektet løber fra uge 6 til og med uge 24.
+Projektet løber fra uge 6 til og med uge 24. Se en grafisk tidsplan på
+næste side.
 
 \begin{enumerate}
 
-\item Forudgående undersøgelser (1-2 uger).
+\item Forudgående undersøgelser (1-2 uger). Herunder:
   
   \begin{itemize}
 
-  \item Find litteratur og læs om Flask og Arduino.
+  \item Finde litteratur og læse om Flask og Arduino.
 
-  \item Lav små programmer i Arduino-programmeringssproget, for at lære hvordan
+  \item Lave små programmer i Arduino-programmeringssproget, for at lære hvordan
     det bruges, så vi ved hvilken type kode der skal genereres.
 
   \item Undersøge allerede eksisterende robotprogrammeringssprog og almindelige
@@ -157,34 +161,35 @@ Projektet løber fra uge 6 til og med uge 24.
 
   \end{itemize}
 
-\item Definition af vores EDSL (hvor meget skal/kan tages fra Frob?)(3
+\item Definition af vores EDSL (3
   uger).  \label{item:opgaver:definer-syntaks}
   \begin{itemize}
-
-  \item Definer syntaks og semantik
-
+  \item Definition af syntaks og semantik
+  \item Hvor meget skal/kan tages fra Frob?
   \end{itemize}
 
-\item Tilpasning af Flask (7 uger).
+
+\item Tilpasning af Flask (7 uger). 
   \begin{itemize}
 
-  \item Lav parser til det EDSL vi har defineret.
+  \item Lave parser til det definerede EDSL.
 
-  \item Ret kodegeneratoren, så der genereres kode Arduino-sproget i
+  \item Ret kodegeneratoren, så der genereres kode i Arduino-sproget i
     stedet for nesC.
 
   \end{itemize}
 
 
-\item Lav eksempler på hvordan sproget bruges i praksis (3 uger).
+\item Lav eksempler på hvordan sproget bruges i praksis (3 uger). Herunder:
   \label{item:opgaver:lav-eksempler}
 
   \begin{itemize}
+  \item Skrive programmer i vores EDSL 
+    på nettet.
+  \item Skrive tilsvarende eksempelprogrammer direkte  i Arduino programmeringssproget.
 
-  \item Skriv selv programmer i Arduino-sproget eller find eksempler
-
-  \item Sammenlign eksempelprogrammerne med tilsvarende skrevet direkte til
-    Arduino-programmingssproget.  
+  \item Systematisk sammenlign af eksempelprogrammerne med de
+    tilsvarende der er skrevet direkte til Arduino-sproget.
 
   \end{itemize}
     
