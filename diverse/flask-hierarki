@@ -1,0 +1,38 @@
+Her er lidt forklaringer til Flask-distributionens hierarki
+
+dist/
+  Diverse installationsfiler mv. til Flask distributionen
+
+examples/
+  Eksempel programmer.
+
+flask/
+ * Flask:                 Wrapper modul der bare importerer de andre moduler i Flask.*
+ * Control.Monad.NesCGen: Kæmpe typeklasse for NesC kodegeneratorer
+ * Flask.Driver:          Definition af monaden FlaskM inkl. jeg ved ikke hvor
+                          mange instancer af forskellige typeklasser
+ * Flask.Generate
+ 
+
+massaman/
+ * DepAnal: afhængighedsanalyse
+
+language-nesc/
+  Indeholder moduler i Language.NesC.*
+  Hvilket inkluderer 
+      * Parser: NesC parser
+      * Quote:  NesC Quasiquoter
+      * Pretty: NesC prettyprinter
+      * Syntax: datatyper til NesC AST
+      
+runtime/
+  En masse NesC-kode
+
+syntax/
+  * Text.PrettyPrint.Mainland: et alternativt PrettyPrint-bibliotek 
+                               (Haskell har allerede Text.PrettyPrint)
+  * Control.Monad.Exception
+  * Control.Monad.ContextException
+  * Data.Loc:                  Positionering af syntaktiske elementer i kildefilen
+  * Data.Loc.Pretty:           Pretty print af ovenstående positioner 
+  * Data.IString:              En wrapper om String der sikkert kan noget smart
