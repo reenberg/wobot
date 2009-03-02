@@ -1,0 +1,58 @@
+name: flask
+version: 0.1
+license: BSD3
+copyright: (c) 2006-2008 Harvard University
+maintainer: mainland@eecs.harvard.edu
+stability: alpha
+homepage: http://www.eecs.harvard.edu/~mainland/flask
+package-url:
+description:
+category: Development tool
+author: Geoffrey Mainland <mainland@eecs.harvard.edu>
+exposed: True
+exposed-modules: Check.F Check.F.Bindings Check.F.Builtin
+                 Check.F.Check Check.F.Exceptions Check.F.Monad Check.Hs
+                 Check.Hs.Bindings Check.Hs.Builtin Check.Hs.Check Check.Hs.Classes
+                 Check.Hs.Exceptions Check.Hs.Monad Check.Hs.Types Compiler
+                 Compiler.Opt Control.Monad.ContextException Control.Monad.Exception
+                 Control.Monad.CGen Control.Monad.NesCGen Control.Monad.Ref
+                 Control.Monad.Trace Control.Monad.Unique Data.Digraph Data.IString
+                 Data.Loc Data.Loc.Pretty Data.Name DepAnal Eval.F Flask
+                 Flask.Driver Flask.Exceptions Flask.Generate Flask.LiftN
+                 Flask.Monad Flask.Reify Flask.Signals Language.F Language.F.Parser
+                 Language.F.Parser.Exceptions Language.F.Parser.Lexer
+                 Language.F.Parser.Monad Language.F.Parser.Parser
+                 Language.F.Parser.Tokens Language.F.Pretty Language.F.Smart
+                 Language.F.Syntax Language.Hs Language.Hs.Parser
+                 Language.Hs.Parser.Exceptions Language.Hs.Parser.Layout
+                 Language.Hs.Parser.Lexer Language.Hs.Parser.Parser
+                 Language.Hs.Parser.Monad Language.Hs.Parser.Tokens
+                 Language.Hs.Parser.Utils Language.Hs.Pretty Language.Hs.Quote
+                 Language.Hs.Smart Language.Hs.Syntax
+                 Language.NesC.Parser.Exceptions Language.NesC.Parser.Lexer
+                 Language.NesC.Parser.Monad Language.NesC.Parser.Parser
+                 Language.NesC.Parser.Tokens Language.NesC.Syntax
+                 Language.NesC.Pretty Language.NesC.Parser Language.NesC.Quote Match
+                 Match.Wadler Text.PrettyPrint.Mainland Transform.F.Simplify
+                 Transform.F.Simplify.Lower Transform.F.Simplify.Metrics
+                 Transform.F.Simplify.Monad Transform.F.Simplify.OccAnal
+                 Transform.F.ToC Transform.Hs.Desugar Transform.Hs.Rename Util
+hidden-modules:
+import-dirs: /home/dybber/.cabal/lib/flask-0.1/ghc-6.10.1
+library-dirs: /home/dybber/.cabal/lib/flask-0.1/ghc-6.10.1
+hs-libraries: HSflask-0.1
+extra-libraries:
+extra-ghci-libraries:
+include-dirs:
+includes:
+depends: array-0.2.0.0 base-4.0.0.0 bytestring-0.9.1.4
+         containers-0.2.0.0 directory-1.0.0.2 editline-0.2.1.0
+         filepath-1.1.0.1 haskell98-1.0.1.0 mtl-1.1.0.2 process-1.0.1.1
+         syb-0.1.0.0 template-haskell-2.3.0.0
+hugs-options:
+cc-options:
+ld-options:
+framework-dirs:
+frameworks:
+haddock-interfaces: /home/dybber/.cabal/share/doc/flask-0.1/html/flask.haddock
+haddock-html: /home/dybber/.cabal/share/doc/flask-0.1/html
