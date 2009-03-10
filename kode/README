@@ -1,0 +1,19 @@
+Flask requires at least GHC 6.10 and only works with TinyOS 1.x.
+
+INSTALLATION
+------------
+
+The flask library should be installed using cabal.
+
+EXAMPLES
+--------
+
+To build the examples, edit examples/common.mk and change the FLASK make
+variable to the path to the flask source distribution. Then configure and build
+flaskdb using cabal (you don't need to install it).
+
+temp-query is an example query built using the flaskdb compiler. Once flaskdb is
+built, it can be built like any other TinyOS program, with "make PLATFORM,"
+where PLATFORM can be micaz, mica2, telosb or pc.
+
+ewma is a simple EWMA filter using a synthetic data source.

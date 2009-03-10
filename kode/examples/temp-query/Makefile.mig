@@ -1,0 +1,25 @@
+PYTHON = LocalMsg.py ResultMsg.py
+JAVA = LocalMsg.class ResultMsg.class
+
+.PHONY : all
+all : $(PYTHON) $(JAVA)
+
+.PHONY : clean
+clean :
+	rm -f $(PYTHON) $(JAVA) *.java
+
+MIG_FLAGS += -target=telosb
+MIG_FLAGS += -I$(TOSDIR)/lib/CC2420Radio
+
+%.py : Query.h
+	mig python $(MIG_FLAGS) \
+		-python-classname=$(basename $@) \
+	  	$< $(basename $@) > $@ || rm -f $@
+
+%.java : Query.h
+	mig java $(MIG_FLAGS) \
+		-java-classname=$(PACKAGE).$(basename $@) \
+	  	$< $(basename $@) > $@ || rm -f $@
+
+%.class : %.java
+	javac -source 1.4 -target 1.4 $<
