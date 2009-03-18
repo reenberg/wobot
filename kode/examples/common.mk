@@ -1,4 +1,4 @@
-FLASK=$(HOME)/projects/flask/branches/flask-0.1
+FLASK=$(HOME)/code/gitrepos/wobot/kode/
 
 FLASK_RUNTIME=$(FLASK)/runtime
 FLASK_PRELUDE=$(FLASK_RUNTIME)/Prelude.hs
