@@ -43,6 +43,7 @@ Library
     Control.Monad.Unique
     Data.Digraph
     Data.IString
+    Data.String.Quote
     Data.Loc
     Data.Loc.Pretty
     Data.Name
