@@ -63,6 +63,7 @@ import Compiler
 import Control.Monad.CGen
 import Control.Monad.NesCGen
 import Data.Loc
+import Data.String.Quote
 import qualified Language.Hs.Syntax
 import qualified Language.Hs as H
 import Language.Hs.Quote
@@ -111,8 +112,6 @@ genStreams :: [FlaskM (SCode FlaskM)]
            -> FlaskM ()
 genStreams ss = do
     basename <- return (maybe "Flask" id) `ap` optVal output
-    setConfigName $ basename ++ "C"
-    setModuleName $ basename ++ "M"
     scodes <- sequence ss
     timer_connections   <- getsFlaskEnv f_timer_connections
     channel_connections <- getsFlaskEnv f_channel_connections
@@ -140,47 +139,22 @@ genStreams ss = do
     cstms_toc            <- getCInitStms
     flaskm               <- moduleName
     flaskm_usesprovides  <- getModuleUsesProvides
-    flaskc               <- configName
     flaskc_usesprovides  <- getConfigUsesProvides
     flaskc_components    <- getComponents
     flaskc_connections   <- getConnections
     filepath <- return (maybe "Flask" id) `ap` optVal output
-    putDoc (filepath ++ "M.nc") $ ppr [$ncfile|
-module $id:flaskm {
-    provides interface StdControl;
-    $usesprovidesl:flaskm_usesprovides
-} implementation {
-    $edecls:cdefs_toc
-
-    command typename result_t StdControl.init()
-    {
-        return SUCCESS;
-    }
-
-    command typename result_t StdControl.start()
-    {
-        $stms:cstms_toc
-        return SUCCESS;
-    }
-
-    command typename result_t StdControl.stop()
-    {
-        return SUCCESS;
-    }
+    putDoc (filepath ++ ".pde") $ string [$literal|int ledPin = 13;
+void setup()
+{
+  pinMode(ledPin, OUTPUT);
 }
-|] <> line
-    putDoc (filepath ++ "C.nc") $ ppr [$ncfile|
-configuration $id:flaskc {
-    provides interface StdControl;
-    $usesprovidesl:flaskc_usesprovides
-} implementation {
-    components $id:flaskm;
-    $componentsl:flaskc_components
-
-    StdControl = $id:flaskm.StdControl;
-    $connections:flaskc_connections
-}
-|] <> line
+void loop()
+{
+  digitalWrite(ledPin, HIGH);
+  delay(1000);
+  digitalWrite(ledPin, LOW);
+  delay(1000);
+}|]
   where
     genHs :: Set.Set SCodeID -> [SCode FlaskM] -> FlaskM ()
     genHs _       []      = return ()
