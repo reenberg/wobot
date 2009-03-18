@@ -1,15 +1,13 @@
 Name:		flask
-Version:	0.1
+Version:	0.1.1
 Cabal-Version:  >= 1.2
 License:	BSD3
 License-File:	LICENSE
 Copyright:	(c) 2006-2008 Harvard University
-Author:		Geoffrey Mainland <mainland@eecs.harvard.edu>
-Maintainer:	mainland@eecs.harvard.edu
+Author:		Troels Henriksen <athas@sigkill.dk>, Martin Dybdal <dybber@dybber.dk>
 Stability:	alpha
-Homepage:	http://www.eecs.harvard.edu/~mainland/flask
 Category:	Development tool
-Synopsis:	Flask meta-programming toolkit
+Synopsis:	Flask meta-programming toolkit, modified for arduino.
 
 Build-type:	Custom
 
