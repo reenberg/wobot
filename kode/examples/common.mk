@@ -1,10 +1,8 @@
-FLASK=$(HOME)/code/gitrepos/wobot/kode/
+# Flask is one dir up from this one.
+FLASK=./../..
 
 FLASK_RUNTIME=$(FLASK)/runtime
 FLASK_PRELUDE=$(FLASK_RUNTIME)/Prelude.hs
-
-FLASKDB=$(FLASK)/examples/flaskdb/dist/build/flaskdb/flaskdb
-FLASKDB_PRELUDE=$(FLASK)/examples/flaskdb/lib/Prelude.hs
 
 include $(MAKERULES)
 
