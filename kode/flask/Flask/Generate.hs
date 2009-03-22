@@ -147,6 +147,7 @@ genStreams ss = do
     pin <- getsFlaskEnv f_output_pin
     putDoc (filepath ++ ".pde") $ string ("int ledPin = " ++ show pin ++ ";\n" ++
                                                          [$literal|
+// This include is needed so we can call the _delay_us or _delay_ms function
 #include <util/delay.h>
 void delay(int time)
 {
