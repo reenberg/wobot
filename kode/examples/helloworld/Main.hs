@@ -16,6 +16,7 @@ main :: IO ()
 main =
     defaultMain $ do
     addCInclude "#include <Flask.h>"
+    modifyFlaskEnv $ \s -> s { f_output_pin = 14 }
     genStream s
   where
     s :: S ()

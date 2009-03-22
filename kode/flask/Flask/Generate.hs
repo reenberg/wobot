@@ -143,8 +143,9 @@ genStreams ss = do
     flaskc_components    <- getComponents
     flaskc_connections   <- getConnections
     filepath <- return (maybe "Flask" id) `ap` optVal output
-    putDoc (filepath ++ ".pde") $ string [$literal|int ledPin = 13;
-void setup()
+    pin <- getsFlaskEnv f_output_pin
+    putDoc (filepath ++ ".pde") $ string ("int ledPin = " ++ show pin ++ ";\n" ++
+                                                              [$literal|void setup()
 {
   pinMode(ledPin, OUTPUT);
 }
@@ -154,7 +155,7 @@ void loop()
   delay(1000);
   digitalWrite(ledPin, LOW);
   delay(1000);
-}|]
+}|])
   where
     genHs :: Set.Set SCodeID -> [SCode FlaskM] -> FlaskM ()
     genHs _       []      = return ()
