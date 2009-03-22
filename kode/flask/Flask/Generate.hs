@@ -139,23 +139,33 @@ genStreams ss = do
     cstms_toc            <- getCInitStms
     flaskm               <- moduleName
     flaskm_usesprovides  <- getModuleUsesProvides
+
     flaskc_usesprovides  <- getConfigUsesProvides
     flaskc_components    <- getComponents
     flaskc_connections   <- getConnections
     filepath <- return (maybe "Flask" id) `ap` optVal output
     pin <- getsFlaskEnv f_output_pin
     putDoc (filepath ++ ".pde") $ string ("int ledPin = " ++ show pin ++ ";\n" ++
-                                                              [$literal|void setup()
+                                                         [$literal|
+#include <util/delay.h>
+void delay(int time)
+{
+  _delay_us(time);
+}
+
+void setup()
 {
   pinMode(ledPin, OUTPUT);
 }
+
 void loop()
 {
   digitalWrite(ledPin, HIGH);
-  delay(1000);
+  delay(20);
   digitalWrite(ledPin, LOW);
-  delay(1000);
-}|])
+  delay(20);
+}
+|])
   where
     genHs :: Set.Set SCodeID -> [SCode FlaskM] -> FlaskM ()
     genHs _       []      = return ()
