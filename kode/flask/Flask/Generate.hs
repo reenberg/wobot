@@ -144,11 +144,11 @@ genStreams ss = do
     flaskc_components    <- getComponents
     flaskc_connections   <- getConnections
     filepath <- return (maybe "Flask" id) `ap` optVal output
-    pin <- getsFlaskEnv f_output_pin
-    putDoc (filepath ++ ".pde") $ string ("int ledPin = " ++ show pin ++ ";\n" ++
-                                                         [$literal|
-// This include is needed so we can call the _delay_us or _delay_ms function
+    pin <- getsFlaskEnv f_output_pin >>= return . toInteger
+    putDoc (filepath ++ ".pde") $ onePerLine [$cunit|
 #include <util/delay.h>
+int ledPin = $int:pin ;
+/* This include is needed so we can call the _delay_us or _delay_ms function */
 void delay(int time)
 {
   _delay_us(time);
@@ -166,7 +166,7 @@ void loop()
   digitalWrite(ledPin, LOW);
   delay(20);
 }
-|])
+|]
   where
     genHs :: Set.Set SCodeID -> [SCode FlaskM] -> FlaskM ()
     genHs _       []      = return ()
