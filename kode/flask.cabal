@@ -89,6 +89,15 @@ Library
     Language.NesC.Pretty
     Language.NesC.Parser
     Language.NesC.Quote
+    Language.C.Parser.Exceptions
+    Language.C.Parser.Lexer
+    Language.C.Parser.Monad
+    Language.C.Parser.Parser
+    Language.C.Parser.Tokens
+    Language.C.Syntax
+    Language.C.Pretty
+    Language.C.Parser
+    Language.C.Quote
     Match
     Match.Wadler
     Text.PrettyPrint.Mainland
