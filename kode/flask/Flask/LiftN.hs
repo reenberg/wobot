@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
@@ -58,8 +59,8 @@ import Data.Name
 import qualified Language.Hs.Syntax
 import qualified Language.Hs as H
 import Language.Hs.Quote
-import Language.NesC.Syntax
-import Language.NesC.Quote
+import Language.C.Syntax
+import Language.C.Quote
 import Text.PrettyPrint.Mainland
 import qualified Transform.Hs.Desugar as Desugar
 import qualified Transform.Hs.Rename as Rename
@@ -108,7 +109,7 @@ instance forall a . (Reify a) => LiftN H.Exp a where
         decl =  H.patD (H.varP v) (H.rhsD [H.sigE e ty])
 
 instance Reify a => LiftN Func a where
-    liftN f = N $ addCode ty (NNesCFun ty f) $ do
+    liftN f = N $ addCode ty (NCFun ty f) $ do
         cty  <- toC ty
         when (funTy f /= cty) $
              throwException $ CTypeError cty (funTy f)
@@ -166,7 +167,6 @@ liftNesCFun f ty = do
 
     idString :: Id -> String
     idString (Id s)              = s
-    idString (InterfaceId _ id)  = idString id
     idString _                   = error "internal error"
 
 nzip :: forall a b . (Reify a, Reify b) => N a -> N b -> N (a, b)

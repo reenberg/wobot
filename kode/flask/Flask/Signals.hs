@@ -61,8 +61,8 @@ import qualified Language.Hs.Syntax
 import qualified Language.Hs as H
 import Language.Hs.Quote
 import qualified Language.F as F
-import Language.NesC.Syntax
-import Language.NesC.Quote
+import Language.C.Syntax
+import Language.C.Quote
 import qualified Transform.F.ToC as ToC
 
 import Flask.Driver
@@ -434,10 +434,11 @@ adc name from =  S $ do
     genNesC :: SCode m -> SCode m -> FlaskM ()
     genNesC sfrom this = do
         e_out <- hcall v_out $ ToC.CLowered floatGTy [$cexp|data|]
-        usesProvides True [$ncusesprovides|uses interface ADC as $id:name;|]
+        --usesProvides True [$ncusesprovides|uses interface ADC as $id:name;|]
         i <- adcFlag
-        adcGetData i [$cexp|call $id:name.getData()|]
-        let c_i = toInteger i
+        return ()
+        --adcGetData i [$cexp|call $id:name.getData()|]
+        {-let c_i = toInteger i
         addCFundef [$cedecl|
 void $id:c_v_in()
 {
@@ -470,7 +471,7 @@ async event typename result_t $id:name.dataReady(typename uint16_t data)
     post $id:adc_task();
     return SUCCESS;
 }
-|]
+|]-}
       where
         v_in     = varIn this ""
         c_v_in   = show v_in
@@ -534,15 +535,16 @@ send chan act a = S $ do
     genNesC sa this = do
         tauf <- toF tau
         (params, ce_params) <- ToC.flattenParams tauf
-        (stm_params, _)     <- newScope False $ do
+        {-(stm_params, _)     <- newScope False $ do
             e <- ToC.concrete ce_params
-            addCStm [$cstm|call Flow.anycast($int:chan, &$exp:e, sizeof($exp:e));|]
-        addCFundef [$cedecl|
+            addCStm [$cstm|call Flow.anycast($int:chan, &$exp:e, sizeof($exp:e));|]-}
+        return ()
+        {-addCFundef [$cedecl|
 void $id:c_v_in($params:params)
 {
     $stm:stm_params
 }
-|]
+|]-}
       where
         v_in   = varIn this ""
         c_v_in = show v_in
@@ -605,21 +607,22 @@ sloop depth zero f a = S $ do
         addCInitStm [$cstm|$id:count = 0;|]
         addCDecldef [$cedecl|$ty:cty_a $id:pending[$int:cdepth];|]
 
-        tauf_state <- toF tau_state
-        tauf_f_in  <- toF tau_f_in
+        {-tauf_state <- toF tau_state
+        tauf_f_in  <- toF tau_f_in-}
         (params_stm, params) <- newScope False $ do
             (params, params_ce) <- ToC.flattenParams tauf_a
             e_params <- ToC.concrete params_ce
-            addCStm [$cstm|
+            {-addCStm [$cstm|
 atomic {
     if($id:count < $int:cdepth - 1) {
         $id:pending[$id:count++] = $exp:e_params;
         post $id:task();
     }
 }
-|]
+|]-}
             return params
-        addCFundef [$cedecl|
+        return ()
+        {-addCFundef [$cedecl|
 void $id:c_v_in($params:params)
 {
     $stm:params_stm;
@@ -634,7 +637,7 @@ task void $id:task()
 {
     $exp:e_out;
 }
-|]
+|]-}
       where
         v_in     = varIn this ""
         c_v_in   = show v_in
@@ -665,7 +668,8 @@ task void $id:task()
             addCStm [$cstm|$id:state = $exp:ce_state;|]
             addCStm [$cstm|$exp:ce_out;|]
             return params
-        addCFundef [$cedecl|
+        return ()
+        {-addCFundef [$cedecl|
 void $id:c_v_in($params:params)
 {
     $stm:params_stm;
@@ -673,7 +677,7 @@ void $id:c_v_in($params:params)
     if ($id:count > 0)
         post $id:task();
 }
-|]
+|]-}
       where
         v_in     = varIn this ""
         c_v_in   = show v_in

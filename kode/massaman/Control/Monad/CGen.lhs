@@ -46,13 +46,8 @@ import qualified Data.Set as Set
 
 import Data.Loc
 
-#if defined(NESC)
-import Language.NesC.Syntax
-import Language.NesC.Quote
-#else /* !defined(NESC) */
 import Language.C.Syntax
 import Language.C.Quote
-#endif /* !defined(NESC) */
 \end{code}
 %endif
 

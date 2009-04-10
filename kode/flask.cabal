@@ -15,7 +15,7 @@ Library
   Build-Depends:	base>=4, syb, haskell98, array, containers, bytestring,
                         mtl, template-haskell, filepath, editline, process,
                         directory
-  Cpp-Options:          -DNESC
+  Cpp-Options:          
   Hs-source-dirs:	flask language-nesc massaman syntax
   Exposed-modules:
     Check.F

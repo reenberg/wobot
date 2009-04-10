@@ -67,8 +67,8 @@ import Data.String.Quote
 import qualified Language.Hs.Syntax
 import qualified Language.Hs as H
 import Language.Hs.Quote
-import Language.NesC.Syntax
-import Language.NesC.Quote
+import Language.C.Syntax
+import Language.C.Quote
 import Text.PrettyPrint.Mainland
 import qualified Transform.F.ToC as ToC
 import qualified Transform.Hs.Desugar as Desugar
@@ -238,20 +238,21 @@ finalizeTimers = do
     finalizeTimer :: Int -> String -> m ()
     finalizeTimer period _ = do
         let c_period = toInteger period
-        addCInitStm [$cstm|call $id:timerCP.start(TIMER_REPEAT,
-                                                  $lint:c_period);|]
+        {-addCInitStm [$cstm|call $id:timerCP.start(TIMER_REPEAT,
+                                                  $lint:c_period);|]-}
         vs <- getsFlaskEnv $ \s ->
             Map.findWithDefault [] period (f_timer_connections s)
         stms <- forM vs $ \(_, v) -> do
                 e <- hcall v $ ToC.CLowered unitGTy [$cexp|NULL|]
                 return $ Exp (Just e) internalLoc
-        addCVardef [$cedecl|
+        return ()
+        {-addCVardef [$cedecl|
 event typename result_t $id:timerCP.fired()
 {
     $stms:stms;
     return SUCCESS;
 }
-|]
+|]-}
       where
         timerCP :: String
         timerCP = "Timer" ++ show period
@@ -264,13 +265,15 @@ finalizeADCs = do
             forM [0..adcs - 1] $ \i -> do
                 let c_i = toInteger i
                 e <- getsFlaskEnv $ \s -> f_adc_getdata s Map.! i
-                return [$cstm|
+                return ();
+                {-return [$cstm|
 if ((adc_pending & 1 << $int:c_i) != 0) {
     $exp:e;
     return;
 }
-|]
-        addCDecldef [$cedecl|typename uint16_t adc_val;|]
+|]-}
+        return ()
+        {-addCDecldef [$cedecl|typename uint16_t adc_val;|]
         addCDecldef [$cedecl|typename uint32_t adc_pending;|]
         addCInitStm [$cstm|adc_pending = 0;|]
         addCFundef [$cedecl|
@@ -280,35 +283,37 @@ task void adc_process_pending()
         $stms:adc_stms
     }
 }
-|]
+|]-}
 
 finalizeFlows ::  FlaskM ()
 finalizeFlows = do
     receiving <- getsFlaskEnv $ \s -> Map.toList (f_channel_receiving s)
-    forM receiving $ \(chan, activity) ->
+    {-forM receiving $ \(chan, activity) ->
         case activity of
           Active   -> addCInitStm [$cstm|call Flow.subscribe($int:chan, TRUE);|]
-          Passive  -> addCInitStm [$cstm|call Flow.subscribe($int:chan, FALSE);|]
+          Passive  -> addCInitStm [$cstm|call Flow.subscribe($int:chan, FALSE);|]-}
 
     sending <- getsFlaskEnv $ \s -> Map.toList (f_channel_sending s)
-    forM sending $ \(chan, activity) ->
+    {-forM sending $ \(chan, activity) ->
         case activity of
           Active   -> addCInitStm [$cstm|call Flow.publish($int:chan, TRUE);|]
-          Passive  -> addCInitStm [$cstm|call Flow.publish($int:chan, FALSE);|]
+          Passive  -> addCInitStm [$cstm|call Flow.publish($int:chan, FALSE);|]-}
 
     connections <- getsFlaskEnv $ \s -> Map.toList (f_channel_connections s)
-    handlers    <- forM connections $ \(chan, vs) -> finalizeChannel chan vs
-    let switch_stms = intersperse [$cstm|break;|] handlers
-    usesProvides True [$ncusesprovides|uses interface Flow;|]
-    addCVardef [$cedecl|
+    return ()
+    --handlers    <- forM connections $ \(chan, vs) -> finalizeChannel chan vs
+    --let switch_stms = intersperse [$cstm|break;|] handlers
+    --usesProvides True [$ncusesprovides|uses interface Flow;|]
+    {-addCVardef [$cedecl|
 event void Flow.receive(typename flowid_t flow_id, void *data, typename size_t size)
 {
     switch (flow_id) {
         $stms:switch_stms
     }
 }
-|]
+|]-}
   where
+    {-
     finalizeChannel :: Integer -> [(SCode FlaskM, H.Var)] -> FlaskM Stm
     finalizeChannel chan vs = do
         tau  <- getsFlaskEnv $ \s -> f_channel_types s Map.! chan
@@ -324,3 +329,4 @@ case $int:chan:
         $stms:stms;
     }
 |]
+-}

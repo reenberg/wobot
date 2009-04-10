@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -57,9 +58,9 @@ import Control.Monad.NesCGen
 import Control.Monad.Ref
 import Data.Loc
 import Data.Name
-import qualified Language.NesC.Syntax
-import Language.NesC.Syntax
-import Language.NesC.Quote
+import qualified Language.C.Syntax
+import Language.C.Syntax
+import Language.C.Quote
 import qualified Language.Hs.Syntax
 import qualified Language.Hs as H
 import Language.Hs.Quote
@@ -138,7 +139,7 @@ instance Show NCode where
 
 data NRep  =  NHsDecls H.Type [H.Decl]
            |  NHsExp H.Type H.Exp
-           |  NNesCFun H.Type Func
+           |  NCFun H.Type Func
   deriving (Eq, Ord, Show)
 
 type SCodeID = Int
@@ -294,11 +295,11 @@ class (MonadCompiler m,
     addTimer period = once $ do
         mname  <-  moduleName
         timerC <-  lookupComponent "TimerC" addTimerC
-        usesProvides False
-            [$ncusesprovides|uses interface Timer as $id:timerCP;|]
+        {-usesProvides False
+            [$ncusesprovides|uses interface Timer as $id:timerCP;|]-
         addConnection
             [$ncconnection|$id:mname.$id:timerCP
-                 -> $id:timerC.Timer[unique("Timer")]|]
+                 -> $id:timerC.Timer[unique("Timer")]|]-}
         modifyFlaskEnv $ \s ->
             s { f_timers = Map.insert period timerC (f_timers s) }
         return timerCP
@@ -307,9 +308,10 @@ class (MonadCompiler m,
         timerCP = "Timer" ++ show period
 
         addTimerC :: MonadFlask m => m ()
-        addTimerC = do
+        addTimerC = do return ()
+        {-do
             addComponents [$nccomponents|components TimerC;|]
-            addConnection [$ncconnection|StdControl = TimerC|]
+            addConnection [$ncconnection|StdControl = TimerC|]-}
 
         once :: MonadFlask m => m String -> m String
         once m = do
