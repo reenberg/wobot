@@ -44,7 +44,7 @@ module Text.PrettyPrint.Mainland (
     Doc,  -- Abstract
 
     -- * Combining documents
-    empty, isEmpty, line, srcloc, nest, group, onePerLine,
+    empty, isEmpty, line, srcloc, nest, group,
     (<>), (<+>),
     (</>), (<+/>), (<//>),
 
@@ -428,9 +428,6 @@ class Pretty a where
     ppr         = pprPrec 0
     pprPrec _   = ppr
     pprList xs  = brackets $ commasep $ map ppr xs
-
-onePerLine :: Pretty a => [a] -> Doc
-onePerLine = foldl (<>) empty . intersperse line . map ppr
 
 instance Pretty Int where
     ppr = text . show

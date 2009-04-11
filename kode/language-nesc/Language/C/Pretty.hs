@@ -40,6 +40,7 @@
 
 module Language.C.Pretty where
 
+import List (intersperse)
 import Char (isPrint, ord)
 import Numeric (showHex)
 
@@ -313,6 +314,8 @@ instance Pretty Definition where
     ppr (AntiEdecls v _)  = ppr "$edecls:"  <> ppr v
     ppr (AntiEdecl v _)   = ppr "$edecl:"   <> ppr v
     ppr (AntiFunc v _)    = ppr "$func:"    <> ppr v
+
+    pprList = foldl (<>) empty . intersperse line . map ppr
 
 instance Pretty Stm where
     ppr (Label ident stm sloc) =

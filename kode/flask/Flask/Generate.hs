@@ -145,7 +145,7 @@ genStreams ss = do
     flaskc_connections   <- getConnections
     filepath <- return (maybe "Flask" id) `ap` optVal output
     pin <- getsFlaskEnv f_output_pin >>= return . toInteger
-    putDoc (filepath ++ ".pde") $ onePerLine [$cunit|
+    putDoc (filepath ++ ".pde") $ ppr [$cunit|
 #include <util/delay.h>
 int ledPin = $int:pin ;
 /* This include is needed so we can call the _delay_us or _delay_ms function */
