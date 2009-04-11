@@ -78,13 +78,8 @@ import Data.Name
 import qualified Language.F as F
 import Text.PrettyPrint.Mainland
 
-#if defined(NESC)
-import Language.NesC.Syntax
-import Language.NesC.Quote
-#else /* !defined(NESC) */
 import Language.C.Syntax
 import Language.C.Quote
-#endif /* !defined(NESC) */
 \end{code}
 %endif
 
