@@ -16,7 +16,7 @@ Library
                         mtl, template-haskell, filepath, editline, process,
                         directory
   Cpp-Options:          
-  Hs-source-dirs:	flask language-nesc massaman syntax
+  Hs-source-dirs:	flask language massaman syntax
   Exposed-modules:
     Check.F
     Check.F.Bindings
@@ -80,15 +80,6 @@ Library
     Language.Hs.Quote
     Language.Hs.Smart
     Language.Hs.Syntax
-    Language.NesC.Parser.Exceptions
-    Language.NesC.Parser.Lexer
-    Language.NesC.Parser.Monad
-    Language.NesC.Parser.Parser
-    Language.NesC.Parser.Tokens
-    Language.NesC.Syntax
-    Language.NesC.Pretty
-    Language.NesC.Parser
-    Language.NesC.Quote
     Language.C.Parser.Exceptions
     Language.C.Parser.Lexer
     Language.C.Parser.Monad
