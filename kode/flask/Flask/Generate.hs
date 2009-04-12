@@ -258,25 +258,18 @@ void timer2_called (void)
     finalizeTimer :: Int -> String -> m (InitGroup, [Stm])
     finalizeTimer period _ = do
         let c_period = toInteger period
-        {-vs <- getsFlaskEnv $ \s ->
+        vs <- getsFlaskEnv $ \s ->
             Map.findWithDefault [] period (f_timer_connections s)
         stms <- forM vs $ \(_, v) -> do
                 e <- hcall v $ ToC.CLowered unitGTy [$cexp|NULL|]
-                return $ Exp (Just e) internalLoc-}
+                return $ Exp (Just e) internalLoc
         return ([$cdecl|static int $id:counterCP = 0;|], 
                 [[$cstm|$id:counterCP = $id:counterCP + 1;|],
                  [$cstm|if ( $id:counterCP >= (OVERFLOWS_PER_SECOND/1000* $int:c_period ))
                            {
                              $id:counterCP = 0;
-                             fireThatTimerNode();
+                             $stms:stms
                            }|]])
-        {-addCVardef [$cedecl|
-event typename result_t $id:timerCP.fired()
-{
-    $stms:stms;
-    return SUCCESS;
-}
-|]-}
       where
         timerCP :: String
         timerCP = "Timer" ++ show period
