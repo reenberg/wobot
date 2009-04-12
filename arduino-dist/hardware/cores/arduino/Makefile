@@ -35,23 +35,24 @@
 # $Id$
 
 TARGET = $(notdir $(CURDIR))
-INSTALL_DIR = ../../../arduino-dist
-PORT = /dev/ttyUSB0
-UPLOAD_RATE = 57600
+INSTALL_DIR = /Users/dmellis/Source/arduino/trunk/build/macosx/build/work
+PORT = /dev/tty.usb*
+UPLOAD_RATE = 19200
 AVRDUDE_PROGRAMMER = stk500v1
-MCU = atmega328p
+MCU = atmega168
 F_CPU = 16000000
 
 ############################################################################
 # Below here nothing should be changed...
 
 ARDUINO = $(INSTALL_DIR)/hardware/cores/arduino
-AVR_TOOLS_PATH = /usr/bin
+AVR_TOOLS_PATH = $(INSTALL_DIR)/hardware/tools/avr/bin
 SRC =  $(ARDUINO)/pins_arduino.c $(ARDUINO)/wiring.c \
 $(ARDUINO)/wiring_analog.c $(ARDUINO)/wiring_digital.c \
 $(ARDUINO)/wiring_pulse.c $(ARDUINO)/wiring_serial.c \
 $(ARDUINO)/wiring_shift.c $(ARDUINO)/WInterrupts.c
-CXXSRC = $(ARDUINO)/HardwareSerial.cpp $(ARDUINO)/WMath.cpp
+CXXSRC = $(ARDUINO)/HardwareSerial.cpp $(ARDUINO)/WMath.cpp \
+$(ARDUINO)/Print.cpp
 FORMAT = ihex
 
 
@@ -93,7 +94,7 @@ LDFLAGS = -lm
 # Programming support using avrdude. Settings and variables.
 AVRDUDE_PORT = $(PORT)
 AVRDUDE_WRITE_FLASH = -U flash:w:applet/$(TARGET).hex
-AVRDUDE_FLAGS = -v -D -C $(INSTALL_DIR)/hardware/tools/avrdude.conf \
+AVRDUDE_FLAGS = -V -F -C $(INSTALL_DIR)/hardware/tools/avr/etc/avrdude.conf \
 -p $(MCU) -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER) \
 -b $(UPLOAD_RATE)
 
