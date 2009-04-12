@@ -549,6 +549,36 @@ void $id:c_v_in($params:params)
         v_in   = varIn this ""
         c_v_in = show v_in
 
+sink :: forall a . (Reify a) => S a -> S ()
+sink a = S $ do
+    sa   <- unS a
+    addStream "ssink"
+              tau
+              (SBlackbox "ssink")
+              genHs
+              genC $ \this -> do
+    connect sa this tau (varIn this "")
+  where
+    tau :: H.Type
+    tau = reify (undefined :: a)
+
+    
+    genHs :: SCode m -> FlaskM ()
+    genHs this =
+        addCImport c_v_in [$ty|$ty:tau -> ()|] [$cexp|$id:c_v_in|]
+        where
+          v_in    = varIn this ""
+          c_v_in = show v_in
+
+    genC :: SCode m -> FlaskM ()
+    genC this = do
+        tauf <- toF tau
+        (params, ce_params) <- ToC.flattenParams tauf
+        addCFundef [$cedecl|void $id:c_v_in($params:params) { return; } |]
+        where
+          v_in    = varIn this ""
+          c_v_in = show v_in
+
 sloop :: forall a b c . (Reify a, Reify b, Reify c)
       => Int
       -> N c

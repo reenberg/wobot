@@ -18,7 +18,7 @@ main =
     genStream s
   where
     s :: S ()
-    s = clk >>> onezero >>> ewma 0.5 >>> send 1 Passive
+    s = clk >>> onezero >>> ewma 0.5 >>> sink
 
     onezero :: forall a . Reify a => S a -> S Float
     onezero =  sintegrate zero int
