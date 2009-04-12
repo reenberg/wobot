@@ -300,12 +300,6 @@ class (MonadCompiler m,
         timerCP :: String
         timerCP = "Timer" ++ show period
 
-        addTimerC :: MonadFlask m => m ()
-        addTimerC = do return ()
-        {-do
-            addComponents [$nccomponents|components TimerC;|]
-            addConnection [$ncconnection|StdControl = TimerC|]-}
-
         once :: MonadFlask m => m String -> m String
         once m = do
             maybe_timerc <- getsFlaskEnv $ \s -> Map.lookup period (f_timers s)
