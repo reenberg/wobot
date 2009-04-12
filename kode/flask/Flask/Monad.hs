@@ -151,7 +151,7 @@ data SCode m = SCode
     , s_type     :: H.Type           -- ^ Type of output
     , s_rep      :: SRep m           -- ^ Stream representation
     , s_gen_hs   :: SCode m -> m ()  -- ^ Red code generator
-    , s_gen_nesc :: SCode m -> m ()  -- ^ NesC code generator
+    , s_gen_c :: SCode m -> m ()  -- ^ C code generator
     }
 
 instance Eq (SCode m) where
@@ -256,10 +256,10 @@ class (MonadCompiler m,
                ->  H.Type             -- ^ Type of output
                ->  SRep m             -- ^ Stream representation
                ->  (SCode m -> m ())  -- ^ Red code generator
-               ->  (SCode m -> m ())  -- ^ NesC code generator
+               ->  (SCode m -> m ())  -- ^ C code generator
                ->  (SCode m -> m ())  -- ^ Stream constructor
                ->  m (SCode m)
-    addStream name ty srep gen_hs gen_nesc m = do
+    addStream name ty srep gen_hs gen_c m = do
         maybe_scode <- getsFlaskEnv $ \s -> Map.lookup srep (f_stream_hash s)
         case maybe_scode of
           Just scode -> return scode
@@ -273,7 +273,7 @@ class (MonadCompiler m,
                                 , s_type     = ty
                                 , s_rep      = srep
                                 , s_gen_hs   = gen_hs
-                                , s_gen_nesc = gen_nesc
+                                , s_gen_c = gen_c
                                 }
               modifyFlaskEnv $ \s -> s { f_stream_hash = Map.insert srep scode
                                                          (f_stream_hash s) }

@@ -15,7 +15,7 @@ import Flask
 main :: IO ()
 main =
     defaultMain $ do
-    addCInclude "#include <Flask.h>"
+    addCInclude "#include <util/delay.h>"
     modifyFlaskEnv $ \s -> s { f_output_pin = 14 }
     genStream s
   where
