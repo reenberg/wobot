@@ -37,7 +37,6 @@ Library
     Control.Monad.ContextException
     Control.Monad.Exception
     Control.Monad.CGen
-    Control.Monad.NesCGen
     Control.Monad.Ref
     Control.Monad.Trace
     Control.Monad.Unique

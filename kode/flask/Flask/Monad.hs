@@ -54,7 +54,7 @@ import qualified Data.Map as Map
 import qualified Check.F
 import qualified Check.Hs
 import Compiler
-import Control.Monad.NesCGen
+import Control.Monad.CGen
 import Control.Monad.Ref
 import Data.Loc
 import Data.Name
@@ -185,7 +185,7 @@ data FlowActivity = Passive | Active
   deriving (Eq, Ord, Show)
 
 class (MonadCompiler m,
-       MonadNesCGen m,
+       MonadCGen m,
        MonadRef IORef m,
        ToC.MonadToC IORef m) => MonadFlask m where
     getFlaskEnv   :: m (FlaskEnv m)
@@ -293,15 +293,15 @@ class (MonadCompiler m,
 
     addTimer :: Int -> m String
     addTimer period = once $ do
-        mname  <-  moduleName
-        timerC <-  lookupComponent "TimerC" addTimerC
+        --mname  <-  moduleName
+        --timerC <-  lookupComponent "TimerC" addTimerC
         {-usesProvides False
             [$ncusesprovides|uses interface Timer as $id:timerCP;|]-
         addConnection
             [$ncconnection|$id:mname.$id:timerCP
                  -> $id:timerC.Timer[unique("Timer")]|]-}
-        modifyFlaskEnv $ \s ->
-            s { f_timers = Map.insert period timerC (f_timers s) }
+        {-modifyFlaskEnv $ \s ->
+            s { f_timers = Map.insert period timerC (f_timers s) }-}
         return timerCP
       where
         timerCP :: String

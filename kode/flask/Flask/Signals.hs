@@ -54,7 +54,6 @@ import qualified Data.Map as Map
 
 import Compiler
 import Control.Monad.CGen
-import Control.Monad.NesCGen
 import Data.Loc
 import Data.Name
 import qualified Language.Hs.Syntax

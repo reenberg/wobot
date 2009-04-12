@@ -59,7 +59,6 @@ import qualified Check.Hs
 import Compiler
 import Control.Monad.Exception
 import qualified Control.Monad.CGen as CGen
-import qualified Control.Monad.NesCGen as NesCGen
 import Control.Monad.ContextException
 import Control.Monad.Ref
 import Control.Monad.Trace
@@ -80,7 +79,6 @@ data FlaskState = FlaskState
     ,  ftcenv      :: Check.F.TcEnv
     ,  simplenv    :: Simplify.SimplEnv
     ,  cgenenv     :: CGen.CGenEnv
-    ,  nescgenenv  :: NesCGen.NesCGenEnv
     ,  tocenv      :: ToC.ToCEnv FlaskM
     ,  flaskenv    :: FlaskEnv FlaskM
     }
@@ -96,7 +94,6 @@ emptyFlaskState opts = do
                        ,  ftcenv      = Check.F.emptyTcEnv
                        ,  simplenv    = Simplify.emptySimplEnv
                        ,  cgenenv     = CGen.emptyCGenEnv
-                       ,  nescgenenv  = NesCGen.emptyNesCGenEnv
                        ,  tocenv      = ToC.emptyToCEnv
                        ,  flaskenv    = emptyFlaskEnv
                        }
@@ -170,10 +167,6 @@ instance Simplify.MonadSimpl FlaskM where
 instance CGen.MonadCGen FlaskM where
     getCGenEnv      = gets cgenenv
     putCGenEnv env  = modify $ \s -> s { cgenenv = env }
-
-instance NesCGen.MonadNesCGen FlaskM where
-    getNesCGenEnv      = gets nescgenenv
-    putNesCGenEnv env  = modify $ \s -> s { nescgenenv = env }
 
 instance ToC.MonadToC IORef FlaskM where
     getToCEnv      = gets tocenv

@@ -61,7 +61,6 @@ import qualified Check.F
 import qualified Check.Hs
 import Compiler
 import Control.Monad.CGen
-import Control.Monad.NesCGen
 import Data.Loc
 import Data.String.Quote
 import qualified Language.Hs.Syntax
@@ -137,18 +136,17 @@ genStreams ss = do
     finalizeFlows
     cdefs_toc            <- getCDefs
     cstms_toc            <- getCInitStms
-    flaskm               <- moduleName
-    flaskm_usesprovides  <- getModuleUsesProvides
-
-    flaskc_usesprovides  <- getConfigUsesProvides
-    flaskc_components    <- getComponents
-    flaskc_connections   <- getConnections
+    --flaskm               <- moduleName
+    --flaskm_usesprovides  <- getModuleUsesProvides
+    --flaskc_usesprovides  <- getConfigUsesProvides
+    --flaskc_components    <- getComponents
+    --flaskc_connections   <- getConnections
     filepath <- return (maybe "Flask" id) `ap` optVal output
     pin <- getsFlaskEnv f_output_pin >>= return . toInteger
     putDoc (filepath ++ ".pde") $ ppr [$cunit|
+/* This include is needed so we can call the _delay_us or _delay_ms function */
 #include <util/delay.h>
 int ledPin = $int:pin ;
-/* This include is needed so we can call the _delay_us or _delay_ms function */
 void delay(int time)
 {
   _delay_us(time);
