@@ -130,7 +130,7 @@ genStreams ss = do
     fdecls  <- Check.Hs.checkTopDecls topdecls
     fdecls' <- optimizeF basename (Set.toList live) (f_fdecls env ++ fdecls)
     ToC.transDecls fdecls'
-    genNesC Set.empty scodes'
+    genC Set.empty scodes'
     finalizeTimers
     finalizeADCs
     finalizeFlows
@@ -144,8 +144,7 @@ genStreams ss = do
     filepath <- return (maybe "Flask" id) `ap` optVal output
     pin <- getsFlaskEnv f_output_pin >>= return . toInteger
     putDoc (filepath ++ ".pde") $ ppr [$cunit|
-/* This include is needed so we can call the _delay_us or _delay_ms function */
-#include <util/delay.h>
+$edecls:cdefs_toc
 int ledPin = $int:pin ;
 void delay(int time)
 {
@@ -155,6 +154,7 @@ void delay(int time)
 void setup()
 {
   pinMode(ledPin, OUTPUT);
+  $stms:cstms_toc
 }
 
 void loop()
@@ -199,14 +199,14 @@ void loop()
         x        = H.var "x"
         visited' = Set.insert (s_id scode) visited
 
-    genNesC :: Set.Set SCodeID -> [SCode FlaskM] -> FlaskM ()
-    genNesC _       []      = return ()
-    genNesC visited (scode : scodes)
-        | s_id scode `Set.member` visited = genNesC visited scodes
+    genC :: Set.Set SCodeID -> [SCode FlaskM] -> FlaskM ()
+    genC _       []      = return ()
+    genC visited (scode : scodes)
+        | s_id scode `Set.member` visited = genC visited scodes
         | otherwise = do
             connections <- getsFlaskEnv f_stream_connections
-            (s_gen_nesc scode) scode
-            genNesC visited' ([from |  (from, to, _) <- connections,
+            (s_gen_c scode) scode
+            genC visited' ([from |  (from, to, _) <- connections,
                                        s_id to == s_id scode] ++
                               [to |  (from, to, _) <- connections,
                                      s_id from == s_id scode] ++
