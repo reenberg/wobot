@@ -534,16 +534,17 @@ send chan act a = S $ do
     genC sa this = do
         tauf <- toF tau
         (params, ce_params) <- ToC.flattenParams tauf
-        {-(stm_params, _)     <- newScope False $ do
+        (stm_params, _)     <- newScope False $ do
             e <- ToC.concrete ce_params
-            addCStm [$cstm|call Flow.anycast($int:chan, &$exp:e, sizeof($exp:e));|]-}
+            --addCStm [$cstm|call Flow.anycast($int:chan, &$exp:e, sizeof($exp:e));|]
+            return ()
         return ()
-        {-addCFundef [$cedecl|
+        addCFundef [$cedecl|
 void $id:c_v_in($params:params)
-{
-    $stm:stm_params
-}
-|]-}
+         {
+           $stm:stm_params
+         }
+    |]
       where
         v_in   = varIn this ""
         c_v_in = show v_in

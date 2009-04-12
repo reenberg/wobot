@@ -87,6 +87,7 @@ defaultMain m = do
                     addCInclude "util/delay.h"
                     addCInclude "avr/interrupt.h"
                     addCInclude "avr/io.h"
+                    addCInclude "common/Flask.h"
                     fdecls <- forPrelude [] compileHs
                     modifyFlaskEnv $ \s ->
                         s { f_fdecls = f_fdecls s ++ fdecls }
@@ -133,7 +134,7 @@ genStreams ss = do
     fdecls  <- Check.Hs.checkTopDecls topdecls
     fdecls' <- optimizeF basename (Set.toList live) (f_fdecls env ++ fdecls)
     ToC.transDecls fdecls'
-    --genC Set.empty scodes'
+    genC Set.empty scodes'
     finalizeTimers
     finalizeADCs
     finalizeFlows
