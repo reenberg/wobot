@@ -34,6 +34,8 @@
 #
 # $Id$
 
+include ../common.mk
+
 TARGET = $(notdir $(CURDIR))
 INSTALL_DIR = ../../../arduino-core/
 PORT = /dev/tty.usb*
@@ -70,7 +72,7 @@ CDEFS = -DF_CPU=$(F_CPU)
 CXXDEFS = -DF_CPU=$(F_CPU)
 
 # Place -I options here
-CINCS = -I$(ARDUINO)
+CINCS = -I$(ARDUINO) -I$(FLASK_RUNTIME)
 CXXINCS = -I$(ARDUINO)
 
 # Compiler flag to set the C Standard level.
