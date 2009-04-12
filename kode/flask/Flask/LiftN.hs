@@ -71,7 +71,7 @@ import Flask.Monad
 import Flask.Reify
 
 -- |A value of type @N a@ represents node-level code of type @a@. The @LiftN@
--- type class allows us to lift either NesC or "Red" code to node-level code.
+-- type class allows us to lift either C or "Red" code to node-level code.
 
 newtype N a =  N { unN :: FlaskM NCode }
 
@@ -113,7 +113,7 @@ instance Reify a => LiftN Func a where
         cty  <- toC ty
         when (funTy f /= cty) $
              throwException $ CTypeError cty (funTy f)
-        liftNesCFun f ty
+        liftCFun f ty
       where
         ty :: H.Type
         ty = reify (undefined :: a)
@@ -145,11 +145,11 @@ liftDecls decls v@(H.Var n) ty = do
 
 liftDecls _ _ _ = fail "Cannot lift"
 
-liftNesCFun :: MonadFlask m
+liftCFun :: MonadFlask m
             => Func
             -> H.Type
             -> m H.Var
-liftNesCFun f ty = do
+liftCFun f ty = do
     addCImport fid ty [$cexp|$id:fid|]
     addDecls [$decls|$var:v :: $ty:ty|]
     addCFundef $ FuncDef f internalLoc

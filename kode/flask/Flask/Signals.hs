@@ -195,7 +195,7 @@ szip a b = S $ do
                tau_out
                (SMerge sa sb)
                (genHs sa sb)
-               (genNesC sa sb) $ \this -> do
+               (genC sa sb) $ \this -> do
     liveVar (s_vout this)
     connect sa this tau_a (varIn this "a")
     connect sb this tau_b (varIn this "b")
@@ -217,8 +217,8 @@ szip a b = S $ do
         v_in_b    = varIn this "b"
         c_v_in_b  = show v_in_b
 
-    genNesC :: SCode m -> SCode m -> SCode m -> FlaskM ()
-    genNesC sa sb this = do
+    genC :: SCode m -> SCode m -> SCode m -> FlaskM ()
+    genC sa sb this = do
         tauf_a  <- toF tau_a
         tauf_b  <- toF tau_b
         tauf_to <- toF tau_to
@@ -290,7 +290,7 @@ sintegrate zero f a = S $ do
               tau_b
               (SIntegrate nzero nf sa)
               genHs
-              (genNesC nzero nf) $ \this -> do
+              (genC nzero nf) $ \this -> do
     liveVar (n_var nzero)
     liveVar (n_var nf)
     liveVar (s_vout this)
@@ -310,8 +310,8 @@ sintegrate zero f a = S $ do
         v_in     = varIn this ""
         c_v_in   = show v_in
 
-    genNesC :: NCode -> NCode -> SCode m -> FlaskM ()
-    genNesC nzero nf this = do
+    genC :: NCode -> NCode -> SCode m -> FlaskM ()
+    genC nzero nf this = do
         cty_state <- toC tau_state
         ce_zero   <- toC v_zero
         addCDecldef [$cedecl|$ty:cty_state $id:state;|]
@@ -357,7 +357,7 @@ sjust maybe_a = S $ do
               tau_a
               (SJust smaybe_a)
               genHs
-              genNesC $ \this -> do
+              genC $ \this -> do
     liveVar (s_vout this)
     connect smaybe_a this tau_maybe_a (varIn this "")
   where
@@ -372,8 +372,8 @@ sjust maybe_a = S $ do
         v_in   = varIn this ""
         c_v_in = show v_in
 
-    genNesC :: SCode m -> FlaskM ()
-    genNesC this = do
+    genC :: SCode m -> FlaskM ()
+    genC this = do
         tauf_maybe_a        <- toF tau_maybe_a
         tauf_a              <- toF tau_a
         (params, params_ce) <- ToC.flattenParams tauf_maybe_a
@@ -419,7 +419,7 @@ adc name from =  S $ do
                floatTy
                (SADC name)
                (genHs sfrom)
-               (genNesC sfrom) $ \this -> do
+               (genC sfrom) $ \this -> do
     liveVar (s_vout this)
     connect sfrom this unitTy (varIn this "")
   where
@@ -430,8 +430,8 @@ adc name from =  S $ do
         v_in     = varIn this ""
         c_v_in   = show v_in
 
-    genNesC :: SCode m -> SCode m -> FlaskM ()
-    genNesC sfrom this = do
+    genC :: SCode m -> SCode m -> FlaskM ()
+    genC sfrom this = do
         e_out <- hcall v_out $ ToC.CLowered floatGTy [$cexp|data|]
         --usesProvides True [$ncusesprovides|uses interface ADC as $id:name;|]
         i <- adcFlag
@@ -517,7 +517,7 @@ send chan act a = S $ do
               tau
               (SSend chan act sa)
               genHs
-              (genNesC sa) $ \this -> do
+              (genC sa) $ \this -> do
     connect sa this tau (varIn this "")
   where
     tau :: H.Type
@@ -530,8 +530,8 @@ send chan act a = S $ do
         v_in   = varIn this ""
         c_v_in = show v_in
 
-    genNesC :: SCode m -> SCode m -> FlaskM ()
-    genNesC sa this = do
+    genC :: SCode m -> SCode m -> FlaskM ()
+    genC sa this = do
         tauf <- toF tau
         (params, ce_params) <- ToC.flattenParams tauf
         {-(stm_params, _)     <- newScope False $ do
@@ -561,7 +561,7 @@ sloop depth zero f a = S $ do
                         tau_f_in
                         (SBlackbox $ "sloop_enter " ++ show (n_id nzero, s_id sa))
                         genEnterHs
-                        (genEnterNesC nzero sa) $
+                        (genEnterC nzero sa) $
              \this -> do
              liveVar (n_var nzero)
              liveVar (s_vout this)
@@ -571,7 +571,7 @@ sloop depth zero f a = S $ do
                        tau_b
                        (SBlackbox $ "sloop_exit " ++ show (s_id sf))
                        genExitHs
-                       (genExitNesC sf enter) $
+                       (genExitC sf enter) $
             \this -> do
             liveVar (s_vout this)
             connect sf this tau_f_out (varIn this "")
@@ -594,8 +594,8 @@ sloop depth zero f a = S $ do
         v_in     = varIn this ""
         c_v_in   = show v_in
 
-    genEnterNesC :: NCode -> SCode m -> SCode m -> FlaskM ()
-    genEnterNesC nzero sa this = do
+    genEnterC :: NCode -> SCode m -> SCode m -> FlaskM ()
+    genEnterC nzero sa this = do
         tauf_a     <- toF tau_a
         cty_a      <- toC tau_a
         cty_state  <- toC tau_state
@@ -654,8 +654,8 @@ task void $id:task()
         v_in     = varIn this ""
         c_v_in   = show v_in
 
-    genExitNesC :: SCode m -> SCode m -> SCode m -> FlaskM ()
-    genExitNesC f enter this = do
+    genExitC :: SCode m -> SCode m -> SCode m -> FlaskM ()
+    genExitC f enter this = do
         tauf_b     <- toF tau_b
         tauf_f_out <- toF tau_f_out
         (params_stm, params) <- newScope False $ do
