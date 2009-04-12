@@ -193,7 +193,7 @@ szip a b = S $ do
     sb <- unS b
     addStream  "szip"
                tau_out
-               (SMerge sa sb)
+               (SZip sa sb)
                (genHs sa sb)
                (genC sa sb) $ \this -> do
     liveVar (s_vout this)
