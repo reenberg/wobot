@@ -11,6 +11,7 @@ void timer2_called(void);
 
 // Aruino runs at 16 Mhz, so we have 1000 Overflows per second...  
 // 1/ ((16000000 / 64) / 256) = 1 / 1000
+#define OVERFLOWS_PER_SECOND 1000
 ISR(TIMER2_OVF_vect) {  
   RESET_TIMER2;  
   timer2_called();

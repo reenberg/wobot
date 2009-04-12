@@ -233,7 +233,16 @@ finalizeTimers :: forall m . MonadFlask m
                => m ()
 finalizeTimers = do
     timers <- getsFlaskEnv $ \s -> Map.toList (f_timers s)
-    when (timers /= []) $ (addCInclude "common/TimerSupport.h")
+    when (timers /= []) $ do (addCInclude "common/TimerSupport.h")
+                             mapM_ addCInitStm [[$cstm|TCCR2 |= (1<<CS22);|],
+                                                [$cstm|TCCR2 &= ~((1<<CS21) | (1<<CS20));|],
+                                                -- Use normal mode
+                                                [$cstm|TCCR2 &= ~((1<<WGM21) | (1<<WGM20));|],
+                                                -- Use internal clock - external clock not used in Arduino  
+                                                [$cstm|ASSR |= (0<<AS2);|],
+                                                --Timer2 Overflow Interrupt Enable,
+                                                [$cstm|TIMSK |= (1<<TOIE2) | (0<<OCIE2);|],
+                                                [$cstm|RESET_TIMER2;|]]
     counterCode <- forM timers $ \(period, timerC) ->
         finalizeTimer period timerC
     let (counterDefs, counterStms) = unzip counterCode
@@ -254,8 +263,13 @@ void timer2_called (void)
         stms <- forM vs $ \(_, v) -> do
                 e <- hcall v $ ToC.CLowered unitGTy [$cexp|NULL|]
                 return $ Exp (Just e) internalLoc-}
-        return ([$cdecl|static int $id:counterCP = 0;|], [[$cstm|$id:counterCP = $id:counterCP + 1;|],
-                                                          [$cstm|if ( $id:counterCP >= $int:threshold ) fireThatTimerNode();|]])
+        return ([$cdecl|static int $id:counterCP = 0;|], 
+                [[$cstm|$id:counterCP = $id:counterCP + 1;|],
+                 [$cstm|if ( $id:counterCP >= (OVERFLOWS_PER_SECOND/1000* $int:c_period ))
+                           {
+                             $id:counterCP = 0;
+                             fireThatTimerNode();
+                           }|]])
         {-addCVardef [$cedecl|
 event typename result_t $id:timerCP.fired()
 {
@@ -269,8 +283,6 @@ event typename result_t $id:timerCP.fired()
 
         counterCP :: String
         counterCP = timerCP ++ "Counter"
-
-        threshold = 42
 
 finalizeADCs :: MonadFlask m => m ()
 finalizeADCs = do
