@@ -3,7 +3,6 @@
 
 import Prelude hiding (exp)
 
-import Control.Monad.CGen
 import Data.Loc
 import Data.Name
 import Text.PrettyPrint.Mainland
@@ -15,7 +14,6 @@ import Flask
 main :: IO ()
 main =
     defaultMain $ do
-    addCInclude "#include <util/delay.h>"
     modifyFlaskEnv $ \s -> s { f_output_pin = 14 }
     genStream s
   where

@@ -186,8 +186,12 @@ class Monad m => MonadCGen m where
 addCInclude :: MonadCGen m
             => String
             -> m ()
+addCInclude def@('"' : _) =
+    addCDecldef $ EscDef ("#include " ++ def) internalLoc
+addCInclude def@('<' : _) =
+    addCDecldef $ EscDef ("#include " ++ def) internalLoc
 addCInclude def =
-    addCDecldef $ EscDef def internalLoc
+    addCDecldef $ EscDef ("#include <" ++ def ++ ">") internalLoc
 \end{code}
 
 \begin{code}

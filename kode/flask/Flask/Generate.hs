@@ -51,7 +51,7 @@ import Prelude hiding (exp)
 import Control.Monad.State
 import Control.Monad.Trans
 import Data.IORef
-import Data.List (intersperse)
+import Data.List (intersperse, concat)
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import System.Environment (getArgs)
@@ -84,10 +84,13 @@ defaultMain m = do
     writeIORef Language.Hs.Quote.quasiOpts defaultOpts
     env        <- emptyFlaskState opts
     result     <- (flip evalFlaskM) env $ do
-                  fdecls <- forPrelude [] compileHs
-                  modifyFlaskEnv $ \s ->
-                      s { f_fdecls = f_fdecls s ++ fdecls }
-                  m
+                    addCInclude "util/delay.h"
+                    addCInclude "avr/interrupt.h"
+                    addCInclude "avr/io.h"
+                    fdecls <- forPrelude [] compileHs
+                    modifyFlaskEnv $ \s ->
+                        s { f_fdecls = f_fdecls s ++ fdecls }
+                    m
     case result of
       Left err  -> fail $ show err
       Right a   -> return a
@@ -130,7 +133,7 @@ genStreams ss = do
     fdecls  <- Check.Hs.checkTopDecls topdecls
     fdecls' <- optimizeF basename (Set.toList live) (f_fdecls env ++ fdecls)
     ToC.transDecls fdecls'
-    genC Set.empty scodes'
+    --genC Set.empty scodes'
     finalizeTimers
     finalizeADCs
     finalizeFlows
@@ -230,20 +233,29 @@ finalizeTimers :: forall m . MonadFlask m
                => m ()
 finalizeTimers = do
     timers <- getsFlaskEnv $ \s -> Map.toList (f_timers s)
-    forM_ timers $ \(period, timerC) ->
+    when (timers /= []) $ (addCInclude "common/TimerSupport.h")
+    counterCode <- forM timers $ \(period, timerC) ->
         finalizeTimer period timerC
+    let (counterDefs, counterStms) = unzip counterCode
+    let stms = concat counterStms
+    addCFundef [$cedecl|
+void timer2_called (void)
+{
+  $decls:counterDefs
+  $stms:stms
+}
+|]
   where
-    finalizeTimer :: Int -> String -> m ()
+    finalizeTimer :: Int -> String -> m (InitGroup, [Stm])
     finalizeTimer period _ = do
         let c_period = toInteger period
-        {-addCInitStm [$cstm|call $id:timerCP.start(TIMER_REPEAT,
-                                                  $lint:c_period);|]-}
-        vs <- getsFlaskEnv $ \s ->
+        {-vs <- getsFlaskEnv $ \s ->
             Map.findWithDefault [] period (f_timer_connections s)
         stms <- forM vs $ \(_, v) -> do
                 e <- hcall v $ ToC.CLowered unitGTy [$cexp|NULL|]
-                return $ Exp (Just e) internalLoc
-        return ()
+                return $ Exp (Just e) internalLoc-}
+        return ([$cdecl|static int $id:counterCP = 0;|], [[$cstm|$id:counterCP = $id:counterCP + 1;|],
+                                                          [$cstm|if ( $id:counterCP >= $int:threshold ) fireThatTimerNode();|]])
         {-addCVardef [$cedecl|
 event typename result_t $id:timerCP.fired()
 {
@@ -254,6 +266,11 @@ event typename result_t $id:timerCP.fired()
       where
         timerCP :: String
         timerCP = "Timer" ++ show period
+
+        counterCP :: String
+        counterCP = timerCP ++ "Counter"
+
+        threshold = 42
 
 finalizeADCs :: MonadFlask m => m ()
 finalizeADCs = do

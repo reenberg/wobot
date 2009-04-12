@@ -293,15 +293,8 @@ class (MonadCompiler m,
 
     addTimer :: Int -> m String
     addTimer period = once $ do
-        --mname  <-  moduleName
-        --timerC <-  lookupComponent "TimerC" addTimerC
-        {-usesProvides False
-            [$ncusesprovides|uses interface Timer as $id:timerCP;|]-
-        addConnection
-            [$ncconnection|$id:mname.$id:timerCP
-                 -> $id:timerC.Timer[unique("Timer")]|]-}
-        {-modifyFlaskEnv $ \s ->
-            s { f_timers = Map.insert period timerC (f_timers s) }-}
+        modifyFlaskEnv $ \s ->
+            s { f_timers = Map.insert period timerCP (f_timers s) }
         return timerCP
       where
         timerCP :: String
