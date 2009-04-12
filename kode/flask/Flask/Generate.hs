@@ -234,16 +234,8 @@ finalizeTimers :: forall m . MonadFlask m
                => m ()
 finalizeTimers = do
     timers <- getsFlaskEnv $ \s -> Map.toList (f_timers s)
-    when (timers /= []) $ do (addCInclude "common/TimerSupport.h")
-                             mapM_ addCInitStm [[$cstm|TCCR2 |= (1<<CS22);|],
-                                                [$cstm|TCCR2 &= ~((1<<CS21) | (1<<CS20));|],
-                                                -- Use normal mode
-                                                [$cstm|TCCR2 &= ~((1<<WGM21) | (1<<WGM20));|],
-                                                -- Use internal clock - external clock not used in Arduino  
-                                                [$cstm|ASSR |= (0<<AS2);|],
-                                                --Timer2 Overflow Interrupt Enable,
-                                                [$cstm|TIMSK |= (1<<TOIE2) | (0<<OCIE2);|],
-                                                [$cstm|RESET_TIMER2;|]]
+    when (timers /= []) $ do addCInclude "common/TimerSupport.h"
+                             addCInitStm [$cstm|timerLoadValue = SetupTimer2(OVERFLOWS_PER_SECOND);|]
     counterCode <- forM timers $ \(period, timerC) ->
         finalizeTimer period timerC
     let (counterDefs, counterStms) = unzip counterCode
