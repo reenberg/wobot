@@ -51,7 +51,7 @@ import Prelude hiding (exp)
 import Control.Monad.State
 import Control.Monad.Trans
 import Data.IORef
-import Data.List (intersperse)
+import Data.List (intersperse, concat)
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import System.Environment (getArgs)
@@ -61,14 +61,13 @@ import qualified Check.F
 import qualified Check.Hs
 import Compiler
 import Control.Monad.CGen
-import Control.Monad.NesCGen
 import Data.Loc
 import Data.String.Quote
 import qualified Language.Hs.Syntax
 import qualified Language.Hs as H
 import Language.Hs.Quote
-import Language.NesC.Syntax
-import Language.NesC.Quote
+import Language.C.Syntax
+import Language.C.Quote
 import Text.PrettyPrint.Mainland
 import qualified Transform.F.ToC as ToC
 import qualified Transform.Hs.Desugar as Desugar
@@ -85,10 +84,14 @@ defaultMain m = do
     writeIORef Language.Hs.Quote.quasiOpts defaultOpts
     env        <- emptyFlaskState opts
     result     <- (flip evalFlaskM) env $ do
-                  fdecls <- forPrelude [] compileHs
-                  modifyFlaskEnv $ \s ->
-                      s { f_fdecls = f_fdecls s ++ fdecls }
-                  m
+                    addCInclude "util/delay.h"
+                    addCInclude "avr/interrupt.h"
+                    addCInclude "avr/io.h"
+                    addCInclude "common/Flask.h"
+                    fdecls <- forPrelude [] compileHs
+                    modifyFlaskEnv $ \s ->
+                        s { f_fdecls = f_fdecls s ++ fdecls }
+                    m
     case result of
       Left err  -> fail $ show err
       Right a   -> return a
@@ -131,24 +134,22 @@ genStreams ss = do
     fdecls  <- Check.Hs.checkTopDecls topdecls
     fdecls' <- optimizeF basename (Set.toList live) (f_fdecls env ++ fdecls)
     ToC.transDecls fdecls'
-    genNesC Set.empty scodes'
+    genC Set.empty scodes'
     finalizeTimers
     finalizeADCs
     finalizeFlows
     cdefs_toc            <- getCDefs
     cstms_toc            <- getCInitStms
-    flaskm               <- moduleName
-    flaskm_usesprovides  <- getModuleUsesProvides
-
-    flaskc_usesprovides  <- getConfigUsesProvides
-    flaskc_components    <- getComponents
-    flaskc_connections   <- getConnections
+    --flaskm               <- moduleName
+    --flaskm_usesprovides  <- getModuleUsesProvides
+    --flaskc_usesprovides  <- getConfigUsesProvides
+    --flaskc_components    <- getComponents
+    --flaskc_connections   <- getConnections
     filepath <- return (maybe "Flask" id) `ap` optVal output
-    pin <- getsFlaskEnv f_output_pin
-    putDoc (filepath ++ ".pde") $ string ("int ledPin = " ++ show pin ++ ";\n" ++
-                                                         [$literal|
-// This include is needed so we can call the _delay_us or _delay_ms function
-#include <util/delay.h>
+    pin <- getsFlaskEnv f_output_pin >>= return . toInteger
+    putDoc (filepath ++ ".pde") $ ppr [$cunit|
+$edecls:cdefs_toc
+int ledPin = $int:pin ;
 void delay(int time)
 {
   _delay_us(time);
@@ -157,6 +158,7 @@ void delay(int time)
 void setup()
 {
   pinMode(ledPin, OUTPUT);
+  $stms:cstms_toc
 }
 
 void loop()
@@ -166,7 +168,7 @@ void loop()
   digitalWrite(ledPin, LOW);
   delay(20);
 }
-|])
+|]
   where
     genHs :: Set.Set SCodeID -> [SCode FlaskM] -> FlaskM ()
     genHs _       []      = return ()
@@ -201,14 +203,14 @@ void loop()
         x        = H.var "x"
         visited' = Set.insert (s_id scode) visited
 
-    genNesC :: Set.Set SCodeID -> [SCode FlaskM] -> FlaskM ()
-    genNesC _       []      = return ()
-    genNesC visited (scode : scodes)
-        | s_id scode `Set.member` visited = genNesC visited scodes
+    genC :: Set.Set SCodeID -> [SCode FlaskM] -> FlaskM ()
+    genC _       []      = return ()
+    genC visited (scode : scodes)
+        | s_id scode `Set.member` visited = genC visited scodes
         | otherwise = do
             connections <- getsFlaskEnv f_stream_connections
-            (s_gen_nesc scode) scode
-            genNesC visited' ([from |  (from, to, _) <- connections,
+            (s_gen_c scode) scode
+            genC visited' ([from |  (from, to, _) <- connections,
                                        s_id to == s_id scode] ++
                               [to |  (from, to, _) <- connections,
                                      s_id from == s_id scode] ++
@@ -232,29 +234,41 @@ finalizeTimers :: forall m . MonadFlask m
                => m ()
 finalizeTimers = do
     timers <- getsFlaskEnv $ \s -> Map.toList (f_timers s)
-    forM_ timers $ \(period, timerC) ->
+    when (timers /= []) $ do addCInclude "common/timersupport.h"
+                             addCInitStm [$cstm|timerLoadValue = SetupTimer2(OVERFLOWS_PER_SECOND);|]
+    counterCode <- forM timers $ \(period, timerC) ->
         finalizeTimer period timerC
+    let (counterDefs, counterStms) = unzip counterCode
+    let stms = concat counterStms
+    addCFundef [$cedecl|
+void timer2_called (void)
+{
+  $decls:counterDefs
+  $stms:stms
+}
+|]
   where
-    finalizeTimer :: Int -> String -> m ()
+    finalizeTimer :: Int -> String -> m (InitGroup, [Stm])
     finalizeTimer period _ = do
         let c_period = toInteger period
-        addCInitStm [$cstm|call $id:timerCP.start(TIMER_REPEAT,
-                                                  $lint:c_period);|]
         vs <- getsFlaskEnv $ \s ->
             Map.findWithDefault [] period (f_timer_connections s)
         stms <- forM vs $ \(_, v) -> do
                 e <- hcall v $ ToC.CLowered unitGTy [$cexp|NULL|]
                 return $ Exp (Just e) internalLoc
-        addCVardef [$cedecl|
-event typename result_t $id:timerCP.fired()
-{
-    $stms:stms;
-    return SUCCESS;
-}
-|]
+        return ([$cdecl|static int $id:counterCP = 0;|], 
+                [[$cstm|$id:counterCP = $id:counterCP + 1;|],
+                 [$cstm|if ( $id:counterCP >= (OVERFLOWS_PER_SECOND/1000* $int:c_period ))
+                           {
+                             $id:counterCP = 0;
+                             $stms:stms
+                           }|]])
       where
         timerCP :: String
         timerCP = "Timer" ++ show period
+
+        counterCP :: String
+        counterCP = timerCP ++ "Counter"
 
 finalizeADCs :: MonadFlask m => m ()
 finalizeADCs = do
@@ -264,13 +278,15 @@ finalizeADCs = do
             forM [0..adcs - 1] $ \i -> do
                 let c_i = toInteger i
                 e <- getsFlaskEnv $ \s -> f_adc_getdata s Map.! i
-                return [$cstm|
+                return ();
+                {-return [$cstm|
 if ((adc_pending & 1 << $int:c_i) != 0) {
     $exp:e;
     return;
 }
-|]
-        addCDecldef [$cedecl|typename uint16_t adc_val;|]
+|]-}
+        return ()
+        {-addCDecldef [$cedecl|typename uint16_t adc_val;|]
         addCDecldef [$cedecl|typename uint32_t adc_pending;|]
         addCInitStm [$cstm|adc_pending = 0;|]
         addCFundef [$cedecl|
@@ -280,35 +296,37 @@ task void adc_process_pending()
         $stms:adc_stms
     }
 }
-|]
+|]-}
 
 finalizeFlows ::  FlaskM ()
 finalizeFlows = do
     receiving <- getsFlaskEnv $ \s -> Map.toList (f_channel_receiving s)
-    forM receiving $ \(chan, activity) ->
+    {-forM receiving $ \(chan, activity) ->
         case activity of
           Active   -> addCInitStm [$cstm|call Flow.subscribe($int:chan, TRUE);|]
-          Passive  -> addCInitStm [$cstm|call Flow.subscribe($int:chan, FALSE);|]
+          Passive  -> addCInitStm [$cstm|call Flow.subscribe($int:chan, FALSE);|]-}
 
     sending <- getsFlaskEnv $ \s -> Map.toList (f_channel_sending s)
-    forM sending $ \(chan, activity) ->
+    {-forM sending $ \(chan, activity) ->
         case activity of
           Active   -> addCInitStm [$cstm|call Flow.publish($int:chan, TRUE);|]
-          Passive  -> addCInitStm [$cstm|call Flow.publish($int:chan, FALSE);|]
+          Passive  -> addCInitStm [$cstm|call Flow.publish($int:chan, FALSE);|]-}
 
     connections <- getsFlaskEnv $ \s -> Map.toList (f_channel_connections s)
-    handlers    <- forM connections $ \(chan, vs) -> finalizeChannel chan vs
-    let switch_stms = intersperse [$cstm|break;|] handlers
-    usesProvides True [$ncusesprovides|uses interface Flow;|]
-    addCVardef [$cedecl|
+    return ()
+    --handlers    <- forM connections $ \(chan, vs) -> finalizeChannel chan vs
+    --let switch_stms = intersperse [$cstm|break;|] handlers
+    --usesProvides True [$ncusesprovides|uses interface Flow;|]
+    {-addCVardef [$cedecl|
 event void Flow.receive(typename flowid_t flow_id, void *data, typename size_t size)
 {
     switch (flow_id) {
         $stms:switch_stms
     }
 }
-|]
+|]-}
   where
+    {-
     finalizeChannel :: Integer -> [(SCode FlaskM, H.Var)] -> FlaskM Stm
     finalizeChannel chan vs = do
         tau  <- getsFlaskEnv $ \s -> f_channel_types s Map.! chan
@@ -324,3 +342,4 @@ case $int:chan:
         $stms:stms;
     }
 |]
+-}

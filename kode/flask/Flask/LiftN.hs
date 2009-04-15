@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
@@ -58,8 +59,8 @@ import Data.Name
 import qualified Language.Hs.Syntax
 import qualified Language.Hs as H
 import Language.Hs.Quote
-import Language.NesC.Syntax
-import Language.NesC.Quote
+import Language.C.Syntax
+import Language.C.Quote
 import Text.PrettyPrint.Mainland
 import qualified Transform.Hs.Desugar as Desugar
 import qualified Transform.Hs.Rename as Rename
@@ -70,7 +71,7 @@ import Flask.Monad
 import Flask.Reify
 
 -- |A value of type @N a@ represents node-level code of type @a@. The @LiftN@
--- type class allows us to lift either NesC or "Red" code to node-level code.
+-- type class allows us to lift either C or "Red" code to node-level code.
 
 newtype N a =  N { unN :: FlaskM NCode }
 
@@ -108,11 +109,11 @@ instance forall a . (Reify a) => LiftN H.Exp a where
         decl =  H.patD (H.varP v) (H.rhsD [H.sigE e ty])
 
 instance Reify a => LiftN Func a where
-    liftN f = N $ addCode ty (NNesCFun ty f) $ do
+    liftN f = N $ addCode ty (NCFun ty f) $ do
         cty  <- toC ty
         when (funTy f /= cty) $
              throwException $ CTypeError cty (funTy f)
-        liftNesCFun f ty
+        liftCFun f ty
       where
         ty :: H.Type
         ty = reify (undefined :: a)
@@ -144,11 +145,11 @@ liftDecls decls v@(H.Var n) ty = do
 
 liftDecls _ _ _ = fail "Cannot lift"
 
-liftNesCFun :: MonadFlask m
+liftCFun :: MonadFlask m
             => Func
             -> H.Type
             -> m H.Var
-liftNesCFun f ty = do
+liftCFun f ty = do
     addCImport fid ty [$cexp|$id:fid|]
     addDecls [$decls|$var:v :: $ty:ty|]
     addCFundef $ FuncDef f internalLoc
@@ -166,7 +167,6 @@ liftNesCFun f ty = do
 
     idString :: Id -> String
     idString (Id s)              = s
-    idString (InterfaceId _ id)  = idString id
     idString _                   = error "internal error"
 
 nzip :: forall a b . (Reify a, Reify b) => N a -> N b -> N (a, b)

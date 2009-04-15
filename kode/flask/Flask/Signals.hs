@@ -54,15 +54,14 @@ import qualified Data.Map as Map
 
 import Compiler
 import Control.Monad.CGen
-import Control.Monad.NesCGen
 import Data.Loc
 import Data.Name
 import qualified Language.Hs.Syntax
 import qualified Language.Hs as H
 import Language.Hs.Quote
 import qualified Language.F as F
-import Language.NesC.Syntax
-import Language.NesC.Quote
+import Language.C.Syntax
+import Language.C.Quote
 import qualified Transform.F.ToC as ToC
 
 import Flask.Driver
@@ -194,9 +193,9 @@ szip a b = S $ do
     sb <- unS b
     addStream  "szip"
                tau_out
-               (SMerge sa sb)
+               (SZip sa sb)
                (genHs sa sb)
-               (genNesC sa sb) $ \this -> do
+               (genC sa sb) $ \this -> do
     liveVar (s_vout this)
     connect sa this tau_a (varIn this "a")
     connect sb this tau_b (varIn this "b")
@@ -218,8 +217,8 @@ szip a b = S $ do
         v_in_b    = varIn this "b"
         c_v_in_b  = show v_in_b
 
-    genNesC :: SCode m -> SCode m -> SCode m -> FlaskM ()
-    genNesC sa sb this = do
+    genC :: SCode m -> SCode m -> SCode m -> FlaskM ()
+    genC sa sb this = do
         tauf_a  <- toF tau_a
         tauf_b  <- toF tau_b
         tauf_to <- toF tau_to
@@ -291,7 +290,7 @@ sintegrate zero f a = S $ do
               tau_b
               (SIntegrate nzero nf sa)
               genHs
-              (genNesC nzero nf) $ \this -> do
+              (genC nzero nf) $ \this -> do
     liveVar (n_var nzero)
     liveVar (n_var nf)
     liveVar (s_vout this)
@@ -311,8 +310,8 @@ sintegrate zero f a = S $ do
         v_in     = varIn this ""
         c_v_in   = show v_in
 
-    genNesC :: NCode -> NCode -> SCode m -> FlaskM ()
-    genNesC nzero nf this = do
+    genC :: NCode -> NCode -> SCode m -> FlaskM ()
+    genC nzero nf this = do
         cty_state <- toC tau_state
         ce_zero   <- toC v_zero
         addCDecldef [$cedecl|$ty:cty_state $id:state;|]
@@ -358,7 +357,7 @@ sjust maybe_a = S $ do
               tau_a
               (SJust smaybe_a)
               genHs
-              genNesC $ \this -> do
+              genC $ \this -> do
     liveVar (s_vout this)
     connect smaybe_a this tau_maybe_a (varIn this "")
   where
@@ -373,8 +372,8 @@ sjust maybe_a = S $ do
         v_in   = varIn this ""
         c_v_in = show v_in
 
-    genNesC :: SCode m -> FlaskM ()
-    genNesC this = do
+    genC :: SCode m -> FlaskM ()
+    genC this = do
         tauf_maybe_a        <- toF tau_maybe_a
         tauf_a              <- toF tau_a
         (params, params_ce) <- ToC.flattenParams tauf_maybe_a
@@ -420,7 +419,7 @@ adc name from =  S $ do
                floatTy
                (SADC name)
                (genHs sfrom)
-               (genNesC sfrom) $ \this -> do
+               (genC sfrom) $ \this -> do
     liveVar (s_vout this)
     connect sfrom this unitTy (varIn this "")
   where
@@ -431,13 +430,14 @@ adc name from =  S $ do
         v_in     = varIn this ""
         c_v_in   = show v_in
 
-    genNesC :: SCode m -> SCode m -> FlaskM ()
-    genNesC sfrom this = do
+    genC :: SCode m -> SCode m -> FlaskM ()
+    genC sfrom this = do
         e_out <- hcall v_out $ ToC.CLowered floatGTy [$cexp|data|]
-        usesProvides True [$ncusesprovides|uses interface ADC as $id:name;|]
+        --usesProvides True [$ncusesprovides|uses interface ADC as $id:name;|]
         i <- adcFlag
-        adcGetData i [$cexp|call $id:name.getData()|]
-        let c_i = toInteger i
+        return ()
+        --adcGetData i [$cexp|call $id:name.getData()|]
+        {-let c_i = toInteger i
         addCFundef [$cedecl|
 void $id:c_v_in()
 {
@@ -470,7 +470,7 @@ async event typename result_t $id:name.dataReady(typename uint16_t data)
     post $id:adc_task();
     return SUCCESS;
 }
-|]
+|]-}
       where
         v_in     = varIn this ""
         c_v_in   = show v_in
@@ -517,7 +517,7 @@ send chan act a = S $ do
               tau
               (SSend chan act sa)
               genHs
-              (genNesC sa) $ \this -> do
+              (genC sa) $ \this -> do
     connect sa this tau (varIn this "")
   where
     tau :: H.Type
@@ -530,22 +530,54 @@ send chan act a = S $ do
         v_in   = varIn this ""
         c_v_in = show v_in
 
-    genNesC :: SCode m -> SCode m -> FlaskM ()
-    genNesC sa this = do
+    genC :: SCode m -> SCode m -> FlaskM ()
+    genC sa this = do
         tauf <- toF tau
         (params, ce_params) <- ToC.flattenParams tauf
         (stm_params, _)     <- newScope False $ do
             e <- ToC.concrete ce_params
-            addCStm [$cstm|call Flow.anycast($int:chan, &$exp:e, sizeof($exp:e));|]
+            --addCStm [$cstm|call Flow.anycast($int:chan, &$exp:e, sizeof($exp:e));|]
+            return ()
+        return ()
         addCFundef [$cedecl|
 void $id:c_v_in($params:params)
-{
-    $stm:stm_params
-}
-|]
+         {
+           $stm:stm_params
+         }
+    |]
       where
         v_in   = varIn this ""
         c_v_in = show v_in
+
+sink :: forall a . (Reify a) => S a -> S ()
+sink a = S $ do
+    sa   <- unS a
+    addStream "ssink"
+              tau
+              (SBlackbox "ssink")
+              genHs
+              genC $ \this -> do
+    connect sa this tau (varIn this "")
+  where
+    tau :: H.Type
+    tau = reify (undefined :: a)
+
+    
+    genHs :: SCode m -> FlaskM ()
+    genHs this =
+        addCImport c_v_in [$ty|$ty:tau -> ()|] [$cexp|$id:c_v_in|]
+        where
+          v_in    = varIn this ""
+          c_v_in = show v_in
+
+    genC :: SCode m -> FlaskM ()
+    genC this = do
+        tauf <- toF tau
+        (params, ce_params) <- ToC.flattenParams tauf
+        addCFundef [$cedecl|void $id:c_v_in($params:params) { return; } |]
+        where
+          v_in    = varIn this ""
+          c_v_in = show v_in
 
 sloop :: forall a b c . (Reify a, Reify b, Reify c)
       => Int
@@ -560,7 +592,7 @@ sloop depth zero f a = S $ do
                         tau_f_in
                         (SBlackbox $ "sloop_enter " ++ show (n_id nzero, s_id sa))
                         genEnterHs
-                        (genEnterNesC nzero sa) $
+                        (genEnterC nzero sa) $
              \this -> do
              liveVar (n_var nzero)
              liveVar (s_vout this)
@@ -570,7 +602,7 @@ sloop depth zero f a = S $ do
                        tau_b
                        (SBlackbox $ "sloop_exit " ++ show (s_id sf))
                        genExitHs
-                       (genExitNesC sf enter) $
+                       (genExitC sf enter) $
             \this -> do
             liveVar (s_vout this)
             connect sf this tau_f_out (varIn this "")
@@ -593,8 +625,8 @@ sloop depth zero f a = S $ do
         v_in     = varIn this ""
         c_v_in   = show v_in
 
-    genEnterNesC :: NCode -> SCode m -> SCode m -> FlaskM ()
-    genEnterNesC nzero sa this = do
+    genEnterC :: NCode -> SCode m -> SCode m -> FlaskM ()
+    genEnterC nzero sa this = do
         tauf_a     <- toF tau_a
         cty_a      <- toC tau_a
         cty_state  <- toC tau_state
@@ -605,21 +637,22 @@ sloop depth zero f a = S $ do
         addCInitStm [$cstm|$id:count = 0;|]
         addCDecldef [$cedecl|$ty:cty_a $id:pending[$int:cdepth];|]
 
-        tauf_state <- toF tau_state
-        tauf_f_in  <- toF tau_f_in
+        {-tauf_state <- toF tau_state
+        tauf_f_in  <- toF tau_f_in-}
         (params_stm, params) <- newScope False $ do
             (params, params_ce) <- ToC.flattenParams tauf_a
             e_params <- ToC.concrete params_ce
-            addCStm [$cstm|
+            {-addCStm [$cstm|
 atomic {
     if($id:count < $int:cdepth - 1) {
         $id:pending[$id:count++] = $exp:e_params;
         post $id:task();
     }
 }
-|]
+|]-}
             return params
-        addCFundef [$cedecl|
+        return ()
+        {-addCFundef [$cedecl|
 void $id:c_v_in($params:params)
 {
     $stm:params_stm;
@@ -634,7 +667,7 @@ task void $id:task()
 {
     $exp:e_out;
 }
-|]
+|]-}
       where
         v_in     = varIn this ""
         c_v_in   = show v_in
@@ -652,8 +685,8 @@ task void $id:task()
         v_in     = varIn this ""
         c_v_in   = show v_in
 
-    genExitNesC :: SCode m -> SCode m -> SCode m -> FlaskM ()
-    genExitNesC f enter this = do
+    genExitC :: SCode m -> SCode m -> SCode m -> FlaskM ()
+    genExitC f enter this = do
         tauf_b     <- toF tau_b
         tauf_f_out <- toF tau_f_out
         (params_stm, params) <- newScope False $ do
@@ -665,7 +698,8 @@ task void $id:task()
             addCStm [$cstm|$id:state = $exp:ce_state;|]
             addCStm [$cstm|$exp:ce_out;|]
             return params
-        addCFundef [$cedecl|
+        return ()
+        {-addCFundef [$cedecl|
 void $id:c_v_in($params:params)
 {
     $stm:params_stm;
@@ -673,7 +707,7 @@ void $id:c_v_in($params:params)
     if ($id:count > 0)
         post $id:task();
 }
-|]
+|]-}
       where
         v_in     = varIn this ""
         c_v_in   = show v_in

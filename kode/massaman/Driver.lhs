@@ -96,13 +96,8 @@ import qualified Transform.F.ToC as ToC
 import qualified Transform.Hs.Desugar as Desugar
 import qualified Transform.Hs.Rename as Rename
 
-#if defined(NESC)
-import Language.NesC.Syntax
-import Language.NesC.Quote
-#else /* !defined(NESC) */
 import Language.C.Syntax
 import Language.C.Quote
-#endif /* !defined(NESC) */
 \end{code}
 %endif
 

@@ -42,8 +42,8 @@ module Flask.Exceptions where
 import Control.Exception
 import Data.Typeable
 
-import Language.NesC.Syntax as C
-import Language.NesC.Pretty ()
+import Language.C.Syntax as C
+import Language.C.Pretty ()
 import Text.PrettyPrint.Mainland
 
 data SomeFlaskException  =   forall a . (Pretty a, Exception a)

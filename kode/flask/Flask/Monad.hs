@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -53,13 +54,13 @@ import qualified Data.Map as Map
 import qualified Check.F
 import qualified Check.Hs
 import Compiler
-import Control.Monad.NesCGen
+import Control.Monad.CGen
 import Control.Monad.Ref
 import Data.Loc
 import Data.Name
-import qualified Language.NesC.Syntax
-import Language.NesC.Syntax
-import Language.NesC.Quote
+import qualified Language.C.Syntax
+import Language.C.Syntax
+import Language.C.Quote
 import qualified Language.Hs.Syntax
 import qualified Language.Hs as H
 import Language.Hs.Quote
@@ -138,7 +139,7 @@ instance Show NCode where
 
 data NRep  =  NHsDecls H.Type [H.Decl]
            |  NHsExp H.Type H.Exp
-           |  NNesCFun H.Type Func
+           |  NCFun H.Type Func
   deriving (Eq, Ord, Show)
 
 type SCodeID = Int
@@ -150,7 +151,7 @@ data SCode m = SCode
     , s_type     :: H.Type           -- ^ Type of output
     , s_rep      :: SRep m           -- ^ Stream representation
     , s_gen_hs   :: SCode m -> m ()  -- ^ Red code generator
-    , s_gen_nesc :: SCode m -> m ()  -- ^ NesC code generator
+    , s_gen_c :: SCode m -> m ()  -- ^ C code generator
     }
 
 instance Eq (SCode m) where
@@ -184,7 +185,7 @@ data FlowActivity = Passive | Active
   deriving (Eq, Ord, Show)
 
 class (MonadCompiler m,
-       MonadNesCGen m,
+       MonadCGen m,
        MonadRef IORef m,
        ToC.MonadToC IORef m) => MonadFlask m where
     getFlaskEnv   :: m (FlaskEnv m)
@@ -255,10 +256,10 @@ class (MonadCompiler m,
                ->  H.Type             -- ^ Type of output
                ->  SRep m             -- ^ Stream representation
                ->  (SCode m -> m ())  -- ^ Red code generator
-               ->  (SCode m -> m ())  -- ^ NesC code generator
+               ->  (SCode m -> m ())  -- ^ C code generator
                ->  (SCode m -> m ())  -- ^ Stream constructor
                ->  m (SCode m)
-    addStream name ty srep gen_hs gen_nesc m = do
+    addStream name ty srep gen_hs gen_c m = do
         maybe_scode <- getsFlaskEnv $ \s -> Map.lookup srep (f_stream_hash s)
         case maybe_scode of
           Just scode -> return scode
@@ -272,7 +273,7 @@ class (MonadCompiler m,
                                 , s_type     = ty
                                 , s_rep      = srep
                                 , s_gen_hs   = gen_hs
-                                , s_gen_nesc = gen_nesc
+                                , s_gen_c = gen_c
                                 }
               modifyFlaskEnv $ \s -> s { f_stream_hash = Map.insert srep scode
                                                          (f_stream_hash s) }
@@ -292,24 +293,12 @@ class (MonadCompiler m,
 
     addTimer :: Int -> m String
     addTimer period = once $ do
-        mname  <-  moduleName
-        timerC <-  lookupComponent "TimerC" addTimerC
-        usesProvides False
-            [$ncusesprovides|uses interface Timer as $id:timerCP;|]
-        addConnection
-            [$ncconnection|$id:mname.$id:timerCP
-                 -> $id:timerC.Timer[unique("Timer")]|]
         modifyFlaskEnv $ \s ->
-            s { f_timers = Map.insert period timerC (f_timers s) }
+            s { f_timers = Map.insert period timerCP (f_timers s) }
         return timerCP
       where
         timerCP :: String
         timerCP = "Timer" ++ show period
-
-        addTimerC :: MonadFlask m => m ()
-        addTimerC = do
-            addComponents [$nccomponents|components TimerC;|]
-            addConnection [$ncconnection|StdControl = TimerC|]
 
         once :: MonadFlask m => m String -> m String
         once m = do

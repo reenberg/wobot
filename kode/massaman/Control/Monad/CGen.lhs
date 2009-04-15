@@ -46,13 +46,8 @@ import qualified Data.Set as Set
 
 import Data.Loc
 
-#if defined(NESC)
-import Language.NesC.Syntax
-import Language.NesC.Quote
-#else /* !defined(NESC) */
 import Language.C.Syntax
 import Language.C.Quote
-#endif /* !defined(NESC) */
 \end{code}
 %endif
 
@@ -191,8 +186,12 @@ class Monad m => MonadCGen m where
 addCInclude :: MonadCGen m
             => String
             -> m ()
+addCInclude def@('"' : _) =
+    addCDecldef $ EscDef ("#include " ++ def) internalLoc
+addCInclude def@('<' : _) =
+    addCDecldef $ EscDef ("#include " ++ def) internalLoc
 addCInclude def =
-    addCDecldef $ EscDef def internalLoc
+    addCDecldef $ EscDef ("#include <" ++ def ++ ">") internalLoc
 \end{code}
 
 \begin{code}

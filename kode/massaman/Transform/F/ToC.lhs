@@ -78,13 +78,8 @@ import Data.Name
 import qualified Language.F as F
 import Text.PrettyPrint.Mainland
 
-#if defined(NESC)
-import Language.NesC.Syntax
-import Language.NesC.Quote
-#else /* !defined(NESC) */
 import Language.C.Syntax
 import Language.C.Quote
-#endif /* !defined(NESC) */
 \end{code}
 %endif
 
@@ -346,11 +341,6 @@ data CExp  =  CExp F.Type Exp
            |  CPtr F.Type CExp
            |  CData F.Type CExp CExp
            |  CUnboxedData F.Type [CExp]
-#if defined(NESC)
-           |  CCall F.Type Id
-           |  CSignal F.Type Id
-           |  CPost F.Type Id
-#endif /* defined(NESC) */
 
 instance Pretty CExp where
     ppr (CExp _ e)                 = text "CExp" <+> ppr e
@@ -358,11 +348,6 @@ instance Pretty CExp where
     ppr (CPtr _ ce)                = text "CPtr" <+> ppr ce
     ppr (CData _ ce_tag ce_union)  = text "CData" <+> ppr ce_tag <+> ppr ce_union
     ppr (CUnboxedData _ ces)       = text "CUnboxedData" <+> ppr ces
-#if defined(NESC)
-    ppr (CCall _ id)               = text "CCall" <+> ppr id
-    ppr (CSignal _ id)             = text "CSignal" <+> ppr id
-    ppr (CPost _ id)               = text "CSignal" <+> ppr id
-#endif /* defined(NESC) */
 \end{code}
 
 \begin{code}
@@ -372,11 +357,6 @@ cexpTy  (CLowered ty _)      = ty
 cexpTy  (CPtr ty _)          = ty
 cexpTy  (CData ty _ _)       = ty
 cexpTy  (CUnboxedData ty _)  = ty
-#if defined(NESC)
-cexpTy  (CCall ty _)         = ty
-cexpTy  (CSignal ty _)       = ty
-cexpTy  (CPost ty _)         = ty
-#endif /* defined(NESC) */
 
 appCExp :: MonadToC r m => CExp -> CExp -> m CExp
 appCExp ce1 ce2 =
@@ -386,20 +366,6 @@ appCExp ce1 ce2 =
                         _ -> fail $ "appCExp: non-function type: " ++ show ce1 ++ ": " ++ show (cexpTy ce1)
         args <- flattenArgs ce2
         case ce1 of
-#if defined(NESC)
-          CCall _ (Id id) ->
-              return $ CExp to_ty [$cexp|call $id:id($args:args)|]
-          CCall _ (InterfaceId (Id int) (Id id)) ->
-              return $ CExp to_ty [$cexp|call $id:int.$id:id($args:args)|]
-          CSignal _ (Id id) ->
-              return $ CExp to_ty [$cexp|signal $id:id($args:args)|]
-          CSignal _ (InterfaceId (Id int) (Id id)) ->
-              return $ CExp to_ty [$cexp|signal $id:int.$id:id($args:args)|]
-          CPost _ (Id id) ->
-              return $ CExp to_ty [$cexp|post $id:id($args:args)|]
-          CPost _ (InterfaceId (Id int) (Id id)) ->
-              return $ CExp to_ty [$cexp|post $id:int.$id:id($args:args)|]
-#endif /* defined(NESC) */
           _ ->
               do  e1 <- concrete ce1
                   return $ CExp to_ty [$cexp|$exp:e1($args:args)|]
@@ -452,17 +418,6 @@ concrete (CUnboxedData tau ces) =
                _     ->  do  mapM_ concrete ces
                              return [$cexp|VOID|]
 
-#if defined(NESC)
-concrete (CCall _ (Id id))                           = return [$cexp|$id:id|]
-concrete (CCall _ (InterfaceId (Id int) (Id id)))    = return [$cexp|$id:int.$id:id|]
-concrete (CSignal _ (Id id))                         = return [$cexp|$id:id|]
-concrete (CSignal _ (InterfaceId (Id int) (Id id)))  = return [$cexp|$id:int.$id:id|]
-concrete (CPost _ (Id id))                           = return [$cexp|$id:id|]
-concrete (CPost _ (InterfaceId (Id int) (Id id)))    = return [$cexp|$id:int.$id:id|]
-
-concrete _ = error "internal error: bad call/signal/post"
-#endif /* defined(NESC) */
-
 lower :: MonadToC r m => CExp -> m CExp
 lower (CExp ty e)
     | ty == F.Tc.unitTy  = return $ CLowered ty e
@@ -479,11 +434,6 @@ lower (CData ty ce_tag ce_union)  =  return (CData ty) `ap`
 lower (CUnboxedData ty ces)       =  return (CUnboxedData ty) `ap`
                                      mapM lower ces
 
-#if defined(NESC)
-lower e@(CCall _ _)    =  return e
-lower e@(CSignal _ _)  =  return e
-lower e@(CPost _ _)    =  return e
-#endif /* defined(NESC) */
 \end{code}
 
 \begin{code}

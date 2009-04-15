@@ -85,6 +85,8 @@ import Data.Loc (Loc,
                  toLoc,
                  (<-->))
 
+import Data.List (intersperse)
+
 infixr 5 </>, <+/>, <//>
 infixr 6 <>, <+>
 

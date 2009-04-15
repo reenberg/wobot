@@ -1,0 +1,8 @@
+#!/bin/sh
+ stty -F /dev/ttyUSB0 cs8 9600 ignbrk -brkint -icrnl -imaxbel -opost -onlcr -isig -icanon -iexten -echo -echoe -echok -echoctl -echoke noflsh -ixon -crtscts
+
+# This script configures the Linux TTY, so that we directly can read and
+# write to /dev/ttyUSB0 
+#
+# Replace /dev/ttyUSB0 with the device you are using.
+# And eventually change the baud from 9600 to whatever you are using.
