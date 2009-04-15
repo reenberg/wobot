@@ -234,7 +234,7 @@ finalizeTimers :: forall m . MonadFlask m
                => m ()
 finalizeTimers = do
     timers <- getsFlaskEnv $ \s -> Map.toList (f_timers s)
-    when (timers /= []) $ do addCInclude "common/TimerSupport.h"
+    when (timers /= []) $ do addCInclude "common/timersupport.h"
                              addCInitStm [$cstm|timerLoadValue = SetupTimer2(OVERFLOWS_PER_SECOND);|]
     counterCode <- forM timers $ \(period, timerC) ->
         finalizeTimer period timerC
