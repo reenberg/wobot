@@ -7,53 +7,53 @@
 # Detailed instructions for using the makefile:
 #
 #  1. Copy this file into the folder with your sketch. There should be a
-#     file with the same name as the folder and with the extension .pde
-#     (e.g. foo.pde in the foo/ folder).
+#     file with the extension .pde (e.g. foo.pde)
 #
-#  2. Modify the line containg "INSTALL_DIR" to point to the directory that
+#  2. Below, modify the line containing "TARGET" to refer to the name of
+#     of your program's file without an extension (e.g. TARGET = foo).
+#
+#  3. Modify the line containg "INSTALL_DIR" to point to the directory that
 #     contains the Arduino installation (for example, under Mac OS X, this
-#     might be /Applications/arduino-0012).
+#     might be /Applications/arduino-0011).
 #
-#  3. Modify the line containing "PORT" to refer to the filename
+#  4. Modify the line containing "PORT" to refer to the filename
 #     representing the USB or serial connection to your Arduino board
 #     (e.g. PORT = /dev/tty.USB0).  If the exact name of this file
-#     changes, you can use * as a wildcard (e.g. PORT = /dev/tty.usb*).
+#     changes, you can use * as a wildcard (e.g. PORT = /dev/tty.USB*).
 #
-#  4. Set the line containing "MCU" to match your board's processor. 
+#  5. Set the line containing "MCU" to match your board's processor. 
 #     Older one's are atmega8 based, newer ones like Arduino Mini, Bluetooth
 #     or Diecimila have the atmega168.  If you're using a LilyPad Arduino,
 #     change F_CPU to 8000000.
 #
-#  5. At the command line, change to the directory containing your
+#  6. At the command line, change to the directory containing your
 #     program's file and the makefile.
 #
-#  6. Type "make" and press enter to compile/verify your program.
+#  7. Type "make" and press enter to compile/verify your program.
 #
-#  7. Type "make upload", reset your Arduino board, and press enter to
+#  8. Type "make upload", reset your Arduino board, and press enter to
 #     upload your program to the Arduino board.
 #
 # $Id$
 
-include ../common.mk
-
-TARGET = $(notdir $(CURDIR))
-INSTALL_DIR = ../../arduino-dist
-PORT = /dev/ttyUSB0
-UPLOAD_RATE = 57600
+TARGET = interrupt-blinking-led
+INSTALL_DIR = ../../../arduino-core
+PORT = /dev/tty.usb*
+UPLOAD_RATE = 19200
 AVRDUDE_PROGRAMMER = stk500v1
-MCU = atmega328p
+MCU = atmega168
 F_CPU = 16000000
 
 ############################################################################
 # Below here nothing should be changed...
 
-ARDUINO = $(INSTALL_DIR)/hardware/cores/arduino
+ARDUINO = $(INSTALL_DIR)
 AVR_TOOLS_PATH = /usr/bin
 SRC =  $(ARDUINO)/pins_arduino.c $(ARDUINO)/wiring.c \
 $(ARDUINO)/wiring_analog.c $(ARDUINO)/wiring_digital.c \
 $(ARDUINO)/wiring_pulse.c $(ARDUINO)/wiring_serial.c \
 $(ARDUINO)/wiring_shift.c $(ARDUINO)/WInterrupts.c
-CXXSRC = $(ARDUINO)/HardwareSerial.cpp $(ARDUINO)/WMath.cpp $(ARDUINO)/Print.cpp
+CXXSRC = $(ARDUINO)/HardwareSerial.cpp $(ARDUINO)/WMath.cpp
 FORMAT = ihex
 
 
@@ -72,7 +72,7 @@ CDEFS = -DF_CPU=$(F_CPU)
 CXXDEFS = -DF_CPU=$(F_CPU)
 
 # Place -I options here
-CINCS = -I$(ARDUINO) -I$(FLASK_RUNTIME)
+CINCS = -I$(ARDUINO)
 CXXINCS = -I$(ARDUINO)
 
 # Compiler flag to set the C Standard level.
@@ -95,7 +95,7 @@ LDFLAGS = -lm
 # Programming support using avrdude. Settings and variables.
 AVRDUDE_PORT = $(PORT)
 AVRDUDE_WRITE_FLASH = -U flash:w:applet/$(TARGET).hex
-AVRDUDE_FLAGS = -v -D -C $(INSTALL_DIR)/hardware/tools/avrdude.conf \
+AVRDUDE_FLAGS = -V -F -C $(INSTALL_DIR)/hardware/tools/avr/etc/avrdude.conf \
 -p $(MCU) -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER) \
 -b $(UPLOAD_RATE)
 
