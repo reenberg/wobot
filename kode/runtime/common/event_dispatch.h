@@ -1,4 +1,3 @@
-/*#include "queue.h"*/
 #define EVENT_QUEUE_SIZE 10
 
 typedef unsigned char byte;

@@ -88,6 +88,7 @@ defaultMain m = do
                     addCInclude "avr/interrupt.h"
                     addCInclude "avr/io.h"
                     addCInclude "common/Flask.h"
+                    addCInclude "common/event_dispatch.h"
                     fdecls <- forPrelude [] compileHs
                     modifyFlaskEnv $ \s ->
                         s { f_fdecls = f_fdecls s ++ fdecls }
