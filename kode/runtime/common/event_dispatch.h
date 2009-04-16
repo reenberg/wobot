@@ -4,8 +4,9 @@ typedef unsigned char byte;
 typedef unsigned int word;
 
 enum event_type { 
-  TIMER_EVENT, 
-  DUMMY_EVENT 
+  TIMER_EVENT,
+  DUMMY_EVENT,
+  FCALL_EVENT
 };
 
 struct timer_event_data {
@@ -15,6 +16,8 @@ struct timer_event_data {
 struct dummy_event_data {
   word data;
 };
+
+str
 
 union event_data {
   struct timer_event_data timer_event_data;
@@ -39,10 +42,11 @@ void event_queue_push(struct event_queue* queue, struct event event) {
 }
 
 unsigned char event_queue_empty(struct event_queue* queue) {
-  return queue->n == queue->p;
+  return queue->n == 0;
 }
 
 struct event event_queue_pop(struct event_queue* queue) {
+  queue->n--;
   return queue->events[queue->p++ % EVENT_QUEUE_SIZE];
 }
 
@@ -59,4 +63,8 @@ void push_event(struct event event) {
 
 struct event pop_event() {
   event_queue_pop(&event_queue);
+}
+
+unsigned char event_available() {
+  return !event_queue_empty(&event_queue);
 }
