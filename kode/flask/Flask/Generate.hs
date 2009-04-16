@@ -164,10 +164,18 @@ void setup()
 
 void loop()
 {
-  digitalWrite(ledPin, HIGH);
-  delay(20);
-  digitalWrite(ledPin, LOW);
-  delay(20);
+  if (event_available()) 
+         {
+           struct event event = pop_event();
+           switch (event.type)
+                      {
+                        case FCALL_EVENT:
+                             (*event.data.fcall_event_data.func)();
+                        break;
+                        default:
+                        break;
+                      }
+         }
 }
 |]
   where
@@ -235,21 +243,23 @@ finalizeTimers :: forall m . MonadFlask m
                => m ()
 finalizeTimers = do
     timers <- getsFlaskEnv $ \s -> Map.toList (f_timers s)
-    when (timers /= []) $ do addCInclude "common/timersupport.h"
-                             addCInitStm [$cstm|timerLoadValue = SetupTimer2(OVERFLOWS_PER_SECOND);|]
+    when (timers /= []) $ do 
+                   addCInclude "common/timersupport.h"
+                   addCInitStm [$cstm|timerLoadValue = SetupTimer2(OVERFLOWS_PER_SECOND);|]
     counterCode <- forM timers $ \(period, timerC) ->
         finalizeTimer period timerC
-    let (counterDefs, counterStms) = unzip counterCode
+    let (funcs, counterDefs, counterStms) = unzip3 counterCode
     let stms = concat counterStms
+    mapM_ addCFundef funcs
     addCFundef [$cedecl|
-void timer2_called (void)
+void timer2_interrupt_handler (void)
 {
   $decls:counterDefs
   $stms:stms
 }
 |]
   where
-    finalizeTimer :: Int -> String -> m (InitGroup, [Stm])
+    finalizeTimer :: Int -> String -> m (Definition, InitGroup, [Stm])
     finalizeTimer period _ = do
         let c_period = toInteger period
         vs <- getsFlaskEnv $ \s ->
@@ -257,19 +267,22 @@ void timer2_called (void)
         stms <- forM vs $ \(_, v) -> do
                 e <- hcall v $ ToC.CLowered unitGTy [$cexp|NULL|]
                 return $ Exp (Just e) internalLoc
-        return ([$cdecl|static int $id:counterCP = 0;|], 
+        return ([$cedecl|void $id:timerCP (void) { $stms:stms } |],
+                [$cdecl|static int $id:counterCP = 0;|], 
                 [[$cstm|$id:counterCP = $id:counterCP + 1;|],
                  [$cstm|if ( $id:counterCP >= (OVERFLOWS_PER_SECOND/1000* $int:c_period ))
                            {
+                             struct event event;
+                             struct fcall_event_data data;
+                             data.func = & $id:timerCP;
+                             event.type = FCALL_EVENT;
+                             event.data.fcall_event_data = data;
+                             push_event(event);
                              $id:counterCP = 0;
-                             $stms:stms
                            }|]])
       where
-        timerCP :: String
-        timerCP = "Timer" ++ show period
-
-        counterCP :: String
-        counterCP = timerCP ++ "Counter"
+        timerCP = "timer" ++ show period
+        counterCP = timerCP ++ "_counter"
 
 finalizeADCs :: MonadFlask m => m ()
 finalizeADCs = do

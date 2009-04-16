@@ -4,7 +4,7 @@
 #include <avr/interrupt.h>  
 #include <avr/io.h>
 
-void timer2_called(void);
+void timer2_interrupt_handler(void);
 
 unsigned int timerLoadValue;
 
@@ -45,7 +45,7 @@ unsigned char SetupTimer2(float timeoutFrequency){
 
 ISR(TIMER2_OVF_vect) {
   //Toggle the IO pin to the other state.
-  timer2_called();
+  timer2_interrupt_handler();
 
   //Capture the current timer value. This is how much error we
   //have due to interrupt latency and the work in this function

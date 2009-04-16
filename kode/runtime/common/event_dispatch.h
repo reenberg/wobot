@@ -17,11 +17,14 @@ struct dummy_event_data {
   word data;
 };
 
-str
+struct fcall_event_data {
+  void (*func)(void);
+};
 
 union event_data {
   struct timer_event_data timer_event_data;
   struct dummy_event_data dummy_event_data;
+  struct fcall_event_data fcall_event_data;
 };
 
 struct event {
@@ -62,7 +65,7 @@ void push_event(struct event event) {
 }
 
 struct event pop_event() {
-  event_queue_pop(&event_queue);
+  return event_queue_pop(&event_queue);
 }
 
 unsigned char event_available() {
