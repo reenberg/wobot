@@ -272,12 +272,7 @@ void timer2_interrupt_handler (void)
                 [[$cstm|$id:counterCP = $id:counterCP + 1;|],
                  [$cstm|if ( $id:counterCP >= (OVERFLOWS_PER_SECOND/1000* $int:c_period ))
                            {
-                             struct event event;
-                             struct fcall_event_data data;
-                             data.func = & $id:timerCP;
-                             event.type = FCALL_EVENT;
-                             event.data.fcall_event_data = data;
-                             push_event(event);
+                             queue_funcall(&$id:timerCP);
                              $id:counterCP = 0;
                            }|]])
       where
