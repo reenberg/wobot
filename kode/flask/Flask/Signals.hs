@@ -435,42 +435,29 @@ adc name from =  S $ do
         e_out <- hcall v_out $ ToC.CLowered floatGTy [$cexp|data|]
         --usesProvides True [$ncusesprovides|uses interface ADC as $id:name;|]
         i <- adcFlag
-        return ()
-        --adcGetData i [$cexp|call $id:name.getData()|]
-        {-let c_i = toInteger i
+        adcGetData i [$cexp|$id:name()|]
+        let c_i = toInteger i
         addCFundef [$cedecl|
 void $id:c_v_in()
 {
-    atomic {
         if (adc_pending == 0)
-            call $id:name.getData();
+            queue_funcall(&$id:name);
         adc_pending |= 1 << $int:c_i;
-    }
 }
 |]
         addCFundef [$cedecl|
-task void $id:adc_task()
+void $id:adc_task()
 {
     typename uint16_t data;
 
-    atomic {
-        data = adc_val;
-        adc_pending &= ~(1 << $int:c_i);
-        if (adc_pending != 0)
-            post adc_process_pending();
-    }
+    data = adc_val;
+    adc_pending &= ~(1 << $int:c_i);
+    if (adc_pending != 0)
+       queue_funcall(&adc_process_pending);
 
     $exp:e_out;
 }
 |]
-        addCVardef [$cedecl|
-async event typename result_t $id:name.dataReady(typename uint16_t data)
-{
-    adc_val = data;
-    post $id:adc_task();
-    return SUCCESS;
-}
-|]-}
       where
         v_in     = varIn this ""
         c_v_in   = show v_in
