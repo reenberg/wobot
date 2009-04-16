@@ -564,6 +564,42 @@ sink a = S $ do
           v_in    = varIn this ""
           c_v_in = show v_in
 
+digitalWrite :: S (Integer, Integer) -> S ()
+digitalWrite a = S $ do
+    sa   <- unS a
+    addStream "digitalWrite"
+              unitTy
+              (SBlackbox "digitalWrite")
+              genHs
+              genC $ \this -> do
+    connect sa this tau (varIn this "")
+  where
+    tau :: H.Type
+    tau = reify (undefined :: (Integer, Integer))
+
+    genHs :: SCode m -> FlaskM ()
+    genHs this =
+        addCImport c_v_in [$ty|$ty:tau -> ()|] [$cexp|$id:c_v_in|]
+        where
+          v_in    = varIn this ""
+          c_v_in = show v_in
+
+    genC :: SCode m -> FlaskM ()
+    genC this = do
+        tauf <- toF tau
+        (params, ce_params) <- ToC.flattenParams tauf
+        e <- ToC.flattenArgs ce_params
+        let pinExp = e!!0
+        let signalExp = e!!1
+        addCFundef [$cedecl|void $id:c_v_in($params:params) 
+                                     { 
+                                       digitalWrite($exp:pinExp, $exp:signalExp);
+                                     }|]
+        where
+          v_in    = varIn this ""
+          c_v_in = show v_in
+          state    = ident this "state"
+
 sloop :: forall a b c . (Reify a, Reify b, Reify c)
       => Int
       -> N c

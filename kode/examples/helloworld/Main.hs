@@ -18,7 +18,7 @@ main =
     genStream s
   where
     s :: S ()
-    s = clk >>> onezero >>> ewma 0.5 >>> sink
+    s = clk >>> altPair 10 >>> digitalWrite
 
     onezero :: forall a . Reify a => S a -> S Float
     onezero =  sintegrate zero int
@@ -28,6 +28,15 @@ main =
 
         int :: N ((a, Integer) -> (Float, Integer))
         int = liftN [$decls|f (x, 0) = (1.0, 1); f (x, 1) = (0.0, 0)|]
+
+    altPair :: forall a . Reify a => Integer -> S a -> S (Integer, Integer)
+    altPair pin = sintegrate zero int
+        where
+          zero :: N Integer
+          zero = liftN [$exp|$int:pin|]
+
+          int :: N ((a, Integer) -> ((Integer, Integer), Integer))
+          int = liftN [$decls|f (x, 0) = (($int:pin,1), 1); f (x, 1) = (($int:pin,0), 0)|]
 
     ewma :: Double -> S Float -> S Float
     ewma alpha = sintegrate zero int
