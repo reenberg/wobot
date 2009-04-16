@@ -71,3 +71,12 @@ struct event pop_event() {
 unsigned char event_available() {
   return !event_queue_empty(&event_queue);
 }
+
+void queue_funcall(void (*func)()) {
+  struct event event;
+  struct fcall_event_data data;
+  data.func = func;
+  event.type = FCALL_EVENT;
+  event.data.fcall_event_data = data;
+  push_event(event);
+}

@@ -272,12 +272,7 @@ void timer2_interrupt_handler (void)
                 [[$cstm|$id:counterCP = $id:counterCP + 1;|],
                  [$cstm|if ( $id:counterCP >= (OVERFLOWS_PER_SECOND/1000* $int:c_period ))
                            {
-                             struct event event;
-                             struct fcall_event_data data;
-                             data.func = & $id:timerCP;
-                             event.type = FCALL_EVENT;
-                             event.data.fcall_event_data = data;
-                             push_event(event);
+                             queue_funcall(&$id:timerCP);
                              $id:counterCP = 0;
                            }|]])
       where
@@ -292,25 +287,21 @@ finalizeADCs = do
             forM [0..adcs - 1] $ \i -> do
                 let c_i = toInteger i
                 e <- getsFlaskEnv $ \s -> f_adc_getdata s Map.! i
-                return ();
-                {-return [$cstm|
+                return [$cstm|
 if ((adc_pending & 1 << $int:c_i) != 0) {
     $exp:e;
     return;
 }
-|]-}
-        return ()
-        {-addCDecldef [$cedecl|typename uint16_t adc_val;|]
+|]
+        addCDecldef [$cedecl|typename uint16_t adc_val;|]
         addCDecldef [$cedecl|typename uint32_t adc_pending;|]
         addCInitStm [$cstm|adc_pending = 0;|]
         addCFundef [$cedecl|
-task void adc_process_pending()
+void adc_process_pending()
 {
-    atomic {
-        $stms:adc_stms
-    }
+  $stms:adc_stms
 }
-|]-}
+|]
 
 finalizeFlows ::  FlaskM ()
 finalizeFlows = do
