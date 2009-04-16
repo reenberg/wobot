@@ -116,7 +116,7 @@ smap f a = S $ do
 
     gen :: NCode -> SCode m -> FlaskM ()
     gen nf this = do
-        -- addDecls [$decls|$var:v_in :: $ty:tau_a -> $ty:tau_b|]
+        addDecls [$decls|$var:v_in :: $ty:tau_a -> $ty:tau_b|]
         addDecls [$decls|$var:v_in x = $var:v_out ($var:v_f x)|]
       where
         v_in  = varIn this ""
@@ -149,7 +149,7 @@ sfilter f a = S $ do
 
     gen :: NCode -> SCode n -> FlaskM ()
     gen nf this = do
-        -- addDecls [$decls|$var:v_in :: $ty:tau_a -> $ty:tau_a|]
+        addDecls [$decls|$var:v_in :: $ty:tau_a -> $ty:tau_a|]
         addDecls [$decls|$var:v_in x = if $var:v_f x then $var:v_out x else ()|]
       where
         v_in  = varIn this ""
@@ -433,7 +433,6 @@ adc name from =  S $ do
     genC :: SCode m -> SCode m -> FlaskM ()
     genC sfrom this = do
         e_out <- hcall v_out $ ToC.CLowered floatGTy [$cexp|data|]
-        --usesProvides True [$ncusesprovides|uses interface ADC as $id:name;|]
         i <- adcFlag
         adcGetData i [$cexp|$id:name()|]
         let c_i = toInteger i
@@ -525,7 +524,6 @@ send chan act a = S $ do
             e <- ToC.concrete ce_params
             --addCStm [$cstm|call Flow.anycast($int:chan, &$exp:e, sizeof($exp:e));|]
             return ()
-        return ()
         addCFundef [$cedecl|
 void $id:c_v_in($params:params)
          {
@@ -624,22 +622,19 @@ sloop depth zero f a = S $ do
         addCInitStm [$cstm|$id:count = 0;|]
         addCDecldef [$cedecl|$ty:cty_a $id:pending[$int:cdepth];|]
 
-        {-tauf_state <- toF tau_state
-        tauf_f_in  <- toF tau_f_in-}
+        tauf_state <- toF tau_state
+        tauf_f_in  <- toF tau_f_in
         (params_stm, params) <- newScope False $ do
             (params, params_ce) <- ToC.flattenParams tauf_a
             e_params <- ToC.concrete params_ce
-            {-addCStm [$cstm|
-atomic {
+            addCStm [$cstm|
     if($id:count < $int:cdepth - 1) {
         $id:pending[$id:count++] = $exp:e_params;
-        post $id:task();
+        queue_funcall(&$id:task);
     }
-}
-|]-}
+|]
             return params
-        return ()
-        {-addCFundef [$cedecl|
+        addCFundef [$cedecl|
 void $id:c_v_in($params:params)
 {
     $stm:params_stm;
@@ -650,11 +645,11 @@ void $id:c_v_in($params:params)
                            [ToC.CLowered tauf_a [$cexp|$id:pending[$id:count-1]|],
                             ToC.CLowered tauf_state [$cexp|$id:state|]]
         addCFundef [$cedecl|
-task void $id:task()
+void $id:task()
 {
     $exp:e_out;
 }
-|]-}
+|]
       where
         v_in     = varIn this ""
         c_v_in   = show v_in
@@ -685,16 +680,15 @@ task void $id:task()
             addCStm [$cstm|$id:state = $exp:ce_state;|]
             addCStm [$cstm|$exp:ce_out;|]
             return params
-        return ()
-        {-addCFundef [$cedecl|
+        addCFundef [$cedecl|
 void $id:c_v_in($params:params)
 {
     $stm:params_stm;
     $id:count--;
     if ($id:count > 0)
-        post $id:task();
+        queue_funcall(&$id:task);
 }
-|]-}
+|]
       where
         v_in     = varIn this ""
         c_v_in   = show v_in
