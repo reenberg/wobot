@@ -152,7 +152,6 @@ $edecls:cdefs_toc
 
 void setup()
 {
-  pinMode(ledPin, OUTPUT);
   $stms:cstms_toc
 }
 
