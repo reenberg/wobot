@@ -147,14 +147,8 @@ genStreams ss = do
     --flaskc_components    <- getComponents
     --flaskc_connections   <- getConnections
     filepath <- return (maybe "Flask" id) `ap` optVal output
-    pin <- getsFlaskEnv f_output_pin >>= return . toInteger
     putDoc (filepath ++ ".pde") $ ppr [$cunit|
 $edecls:cdefs_toc
-int ledPin = $int:pin ;
-void delay(int time)
-{
-  _delay_us(time);
-}
 
 void setup()
 {

@@ -92,8 +92,6 @@ data FlaskEnv m = FlaskEnv
     ,  f_channel_receiving   :: Map.Map FlowChannel FlowActivity
     ,  f_channel_sending     :: Map.Map FlowChannel FlowActivity
     ,  f_channel_connections :: Map.Map FlowChannel [(SCode m, H.Var)]
-
-    ,  f_output_pin :: Int
     }
 
 emptyFlaskEnv :: FlaskEnv m
@@ -121,7 +119,6 @@ emptyFlaskEnv = FlaskEnv
     ,  f_channel_receiving = Map.empty
     ,  f_channel_sending = Map.empty
     ,  f_channel_connections = Map.empty
-    ,  f_output_pin = 13
     }
 
 type NCodeID = Int

@@ -14,7 +14,6 @@ import Flask
 main :: IO ()
 main =
     defaultMain $ do
-    modifyFlaskEnv $ \s -> s { f_output_pin = 10 }
     genStream s
   where
     s :: S ()
