@@ -4,6 +4,8 @@
 #include <avr/interrupt.h>  
 #include <avr/io.h>
 
+#define OVERFLOWS_PER_SECOND 1000
+
 void timer2_interrupt_handler(void);
 
 unsigned char timerLoadValue;

@@ -245,7 +245,7 @@ finalizeTimers = do
     timers <- getsFlaskEnv $ \s -> Map.toList (f_timers s)
     when (timers /= []) $ do 
                    addCInclude "common/timersupport.h"
-                   addCInitStm [$cstm|timerLoadValue = SetupTimer2(OVERFLOWS_PER_SECOND);|]
+                   addCInitStm [$cstm|SetupTimer2(OVERFLOWS_PER_SECOND);|]
     counterCode <- forM timers $ \(period, timerC) ->
         finalizeTimer period timerC
     let (funcs, counterDefs, counterStms) = unzip3 counterCode
