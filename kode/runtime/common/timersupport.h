@@ -6,42 +6,24 @@
 
 void timer2_interrupt_handler(void);
 
-unsigned int timerLoadValue;
+unsigned char timerLoadValue;
 
-#define TIMER_CLOCK_FREQ 2000000.0 //2MHz for /8 prescale from 16MHz
+void SetupTimer2(float timeoutFrequency){
+  int prescaler = 64;
+  int timerClockFreq = 16000000 / prescaler;
 
-//Setup Timer2.
-//Configures the ATMega168 8-Bit Timer2 to generate an interrupt
-//at the specified frequency.
-//Returns the timer load value which must be loaded into TCNT2
-//inside your ISR routine.
-//See the example usage below.
-unsigned char SetupTimer2(float timeoutFrequency){
-  unsigned char result; //The timer load value.
+  timerLoadValue = 256 - (timerClockFreq/timeoutFrequency);
 
-  //Calculate the timer load value
-  result=(int)((257.0-(TIMER_CLOCK_FREQ/timeoutFrequency))+0.5);
-  //The 257 really should be 256 but I get better results with 257.
-
-  //Timer2 Settings: Timer Prescaler /8, mode 0
-  //Timer clock = 16MHz/8 = 2Mhz or 0.5us
-  //The /8 prescale gives us a good range to work with
-  //so we just hard code this for now.
-  TCCR2A = 0;
-  TCCR2B = 0<<CS22 | 1<<CS21 | 0<<CS20;
-
-  //Timer2 Overflow Interrupt Enable
-  TIMSK2 = 1<<TOIE2;
+  TCCR2A = 0;   // Normal counting mode
+  TCCR2B = _BV(CS22); // prescaler: /64
 
   //load the timer for its first cycle
-  TCNT2=result;
+  TCNT2 = timerLoadValue;
 
-  return(result);
+  TIMSK2 = _BV(TOIE2); 
+  sei();
 }
 
-// Aruino runs at 16 Mhz, so we have 1000 Overflows per second...  
-// 1/ ((16000000 / 64) / 256) = 1 / 1000
-#define OVERFLOWS_PER_SECOND 1000
 
 ISR(TIMER2_OVF_vect) {
   //Toggle the IO pin to the other state.
