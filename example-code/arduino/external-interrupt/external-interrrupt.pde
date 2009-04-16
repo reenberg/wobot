@@ -46,7 +46,13 @@ void interrupt() {
 }
 */
 
-volatile int state = LOW;
+volatile int state = 0;
+
+
+void blink()
+{
+  state = 1 - state;
+}
 
 void setup()
 {
@@ -57,9 +63,4 @@ void setup()
 void loop()
 {
   digitalWrite(LED1, state);
-}
-
-void blink()
-{
-  state = !state;
 }
