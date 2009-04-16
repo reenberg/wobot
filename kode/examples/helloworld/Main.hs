@@ -32,7 +32,7 @@ main =
     altPair pin = sintegrate zero int
         where
           zero :: N Integer
-          zero = liftN [$exp|$int:pin|]
+          zero = liftN [$exp|0|]
 
           int :: N ((a, Integer) -> ((Integer, Integer), Integer))
           int = liftN [$decls|f (x, 0) = (($int:pin,1), 1); f (x, 1) = (($int:pin,0), 0)|]
