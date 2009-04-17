@@ -539,7 +539,7 @@ sink a = S $ do
     sa   <- unS a
     addStream "ssink"
               tau
-              (SBlackbox "ssink")
+              (SBlackbox $ show $ s_id sa)
               genHs
               genC $ \this -> do
     connect sa this tau (varIn this "")
@@ -551,9 +551,9 @@ sink a = S $ do
     genHs :: SCode m -> FlaskM ()
     genHs this =
         addCImport c_v_in [$ty|$ty:tau -> ()|] [$cexp|$id:c_v_in|]
-        where
-          v_in    = varIn this ""
-          c_v_in = show v_in
+       where
+         v_in    = varIn this ""
+         c_v_in = show v_in
 
     genC :: SCode m -> FlaskM ()
     genC this = do
@@ -569,7 +569,7 @@ digitalWrite a = S $ do
     sa   <- unS a
     addStream "digitalWrite"
               unitTy
-              (SBlackbox "digitalWrite")
+              (SBlackbox $ show $ s_id sa)
               genHs
               genC $ \this -> do
     connect sa this tau (varIn this "")

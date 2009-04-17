@@ -14,10 +14,11 @@ import Flask
 main :: IO ()
 main =
     defaultMain $ do
-    genStream s
+    genStreams $ map unS [s, s2]
   where
     s :: S ()
-    s = clk >>> altPair 10 >>> digitalWrite
+    s = clock 500 >>> altPair 10 >>> digitalWrite
+    s2 = clock 300 >>> altPair 10 >>> digitalWrite
 
     onezero :: forall a . Reify a => S a -> S Float
     onezero =  sintegrate zero int
@@ -51,4 +52,4 @@ main =
                                         in (cur, cur)|]
 
     clk :: S ()
-    clk = clock 10
+    clk = clock 500
