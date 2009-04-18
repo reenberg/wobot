@@ -7,6 +7,9 @@ import Data.Loc
 import Data.Name
 import qualified Language.Hs.Syntax
 import Language.Hs.Quote
+import Language.C.Syntax
+import Language.C.Quote
+import Control.Monad.CGen
 import Text.PrettyPrint.Mainland
 
 import Flask
@@ -14,6 +17,7 @@ import Flask
 main :: IO ()
 main =
     defaultMain $ do
+    addCInitStm [$cstm|pinMode(10, HIGH);|]
     genStream s
     where
     s = smerge (clock 1 >>> (sconst [$exp|0|])) (clock 1000 >>> sconst [$exp|1|]) >>> altPair 10 >>> digitalWrite
