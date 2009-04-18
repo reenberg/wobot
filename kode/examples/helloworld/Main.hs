@@ -5,51 +5,28 @@ import Prelude hiding (exp)
 
 import Data.Loc
 import Data.Name
-import Text.PrettyPrint.Mainland
 import qualified Language.Hs.Syntax
 import Language.Hs.Quote
+import Text.PrettyPrint.Mainland
 
 import Flask
 
 main :: IO ()
 main =
     defaultMain $ do
-    genStreams $ map unS [s, s2]
-  where
-    s :: S ()
-    s = clock 500 >>> altPair 10 >>> digitalWrite
-    s2 = clock 300 >>> altPair 10 >>> digitalWrite
+    genStream s
+    where
+    s = smerge (clock 1 >>> (sconst [$exp|0|])) (clock 1000 >>> sconst [$exp|1|]) >>> altPair 10 >>> digitalWrite
 
-    onezero :: forall a . Reify a => S a -> S Float
-    onezero =  sintegrate zero int
-      where
-        zero :: N Integer
-        zero = liftN [$exp|0|]
-
-        int :: N ((a, Integer) -> (Float, Integer))
-        int = liftN [$decls|f (x, 0) = (1.0, 1); f (x, 1) = (0.0, 0)|]
-
-    altPair :: forall a . Reify a => Integer -> S a -> S (Integer, Integer)
+    altPair :: Integer -> S Integer -> S (Integer, Integer)
     altPair pin = sintegrate zero int
         where
-          zero :: N Integer
-          zero = liftN [$exp|0|]
+          zero :: N (Integer, Integer)
+          zero = liftN [$exp|(1,0)|]
 
-          int :: N ((a, Integer) -> ((Integer, Integer), Integer))
-          int = liftN [$decls|f (x, 0) = (($int:pin,1), 1); f (x, 1) = (($int:pin,0), 0)|]
-
-    ewma :: Double -> S Float -> S Float
-    ewma alpha = sintegrate zero int
-      where
-        one_minus_alpha :: Double
-        one_minus_alpha = 1.0 - alpha
-
-        zero :: N Float
-        zero = liftN [$exp|0.0|]
-
-        int :: N ((Float, Float) -> (Float, Float))
-        int = liftN [$exp|\(x, prev) -> let cur = ($flo:alpha*x) + ($flo:one_minus_alpha*prev)
-                                        in (cur, cur)|]
-
-    clk :: S ()
-    clk = clock 500
+          int :: N ((Integer, (Integer, Integer)) -> ((Integer, Integer), (Integer, Integer)))
+          -- The version below would work if pattern-matching wasn't broken.
+          --int = liftN [$decls|f (1, (1,x)) = (($int:pin,0), (0,x)); f (1, (0,x)) = (($int:pin,0), (1,x)); f (0, (1,1)) = (($int:pin,0), (1,0)); f (0, (1,0)) = (($int:pin,1), (1,1)); f (0, (0,x)) = (($int:pin,0), (0,x))|]
+          -- But we have to make do with this shit.
+          int = liftN [$decls|f (change, (enabled, state)) = if (change == 1) then if (enabled == 1) then (($int:pin,0),(0,state)) else (($int:pin,0),(1,state)) else if (enabled == 1) then if (state == 1) then (($int:pin,0),(1,0)) else (($int:pin,1),(1,1)) else (($int:pin,0),(0,state))|]
+          -- Also, newlines cause parse errors.  Fun fun!
