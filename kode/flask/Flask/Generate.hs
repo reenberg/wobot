@@ -136,6 +136,7 @@ genStreams ss = do
     fdecls' <- optimizeF basename (Set.toList live) (f_fdecls env ++ fdecls)
     ToC.transDecls fdecls'
     genC Set.empty scodes'
+    finalizeDevices
     finalizeTimers
     finalizeADCs
     finalizeFlows
@@ -231,6 +232,14 @@ void loop()
 
     unitE :: H.Exp
     unitE = H.conE (H.TupleCon 0)
+
+finalizeDevices :: forall m . MonadFlask m
+               => m ()
+finalizeDevices = do
+  devices <- getsFlaskEnv f_devices
+  forM_ devices $ \dc -> do
+    (d_setup dc) ()
+  return ()
 
 finalizeTimers :: forall m . MonadFlask m
                => m ()

@@ -13,17 +13,20 @@ import Control.Monad.CGen
 import Text.PrettyPrint.Mainland
 
 import Flask
+import Flask.Device
 
 main :: IO ()
 main =
     defaultMain $ do
-    addCInitStm [$cstm|pinMode(10, HIGH);|]
-    genStream s
+    --genStream s
+    genStreams $ map unS [clock 500 >>> (toggle $ Pin 10 False), clock 500 >>> (toggle $ Pin 9 True), clock 100 >>> (toggle $ Pin 8 True)]
     where
-    s = smerge (clock 1 >>> (sconst [$exp|0|])) (clock 1000 >>> sconst [$exp|1|]) >>> altPair 10 >>> digitalWrite
+      output = Pin 10 False
+      --s = smerge (clock 4 >>> sconst [$exp|0|]) (clock 1000 >>> sconst [$exp|1|]) >>> altPair 10 >>> digitalWrite
+      s = clock 100 >>> toggle output
 
-    altPair :: Integer -> S Integer -> S (Integer, Integer)
-    altPair pin = sintegrate zero int
+      altPair :: Integer -> S Integer -> S (Integer, Integer)
+      altPair pin = sintegrate zero int
         where
           zero :: N (Integer, Integer)
           zero = liftN [$exp|(1,0)|]

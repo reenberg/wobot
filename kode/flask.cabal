@@ -51,6 +51,7 @@ Library
     Flask
     Flask.Driver
     Flask.Exceptions
+    Flask.Device
     Flask.Generate
     Flask.LiftN
     Flask.Monad

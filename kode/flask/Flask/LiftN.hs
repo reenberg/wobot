@@ -82,7 +82,7 @@ instance LiftN (N a) a where
     liftN = id
 
 instance forall a . (Reify a) => LiftN [H.Decl] a where
-    liftN decls = N $ addCode ty (NHsDecls ty decls) $ do
+    liftN decls = N $ addCode ty (HsDecls ty decls) $ do
         decls' <- Rename.rename decls >>= Desugar.desugar
         v <- case binders decls' of
                [v]  ->  return v
@@ -96,7 +96,7 @@ instance forall a . (Reify a) => LiftN [H.Decl] a where
         ty = reify (undefined :: a)
 
 instance forall a . (Reify a) => LiftN H.Exp a where
-    liftN e = N $ addCode ty (NHsExp ty e) $
+    liftN e = N $ addCode ty (HsExp ty e) $
         liftDecls [decl] v ty
       where
         v :: H.Var
@@ -109,7 +109,7 @@ instance forall a . (Reify a) => LiftN H.Exp a where
         decl =  H.patD (H.varP v) (H.rhsD [H.sigE e ty])
 
 instance Reify a => LiftN Func a where
-    liftN f = N $ addCode ty (NCFun ty f) $ do
+    liftN f = N $ addCode ty (CFun ty f) $ do
         cty  <- toC ty
         when (funTy f /= cty) $
              throwException $ CTypeError cty (funTy f)

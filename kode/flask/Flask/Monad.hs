@@ -5,6 +5,8 @@
 {-# LANGUAGE OverlappingInstances #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ExistentialQuantification #-}
 
 -- Copyright (c) 2008
 --         The President and Fellows of Harvard College.
@@ -56,6 +58,7 @@ import qualified Check.Hs
 import Compiler
 import Control.Monad.CGen
 import Control.Monad.Ref
+import Data.List
 import Data.Loc
 import Data.Name
 import qualified Language.C.Syntax
@@ -85,6 +88,8 @@ data FlaskEnv m = FlaskEnv
     ,  f_timers            :: Map.Map Int String
     ,  f_timer_connections :: Map.Map Int [(SCode m, H.Var)]
 
+    ,  f_devices :: [DCode m]
+
     ,  f_adcs         :: Int
     ,  f_adc_getdata  :: Map.Map Int Exp
 
@@ -112,6 +117,8 @@ emptyFlaskEnv = FlaskEnv
     ,  f_timers = Map.empty
     ,  f_timer_connections = Map.empty
 
+    ,  f_devices = []
+
     ,  f_adcs = 0
     ,  f_adc_getdata = Map.empty
 
@@ -134,9 +141,9 @@ data NCode = NCode
 instance Show NCode where
     show (NCode { n_rep = nrep }) = show nrep
 
-data NRep  =  NHsDecls H.Type [H.Decl]
-           |  NHsExp H.Type H.Exp
-           |  NCFun H.Type Func
+data NRep  =  HsDecls H.Type [H.Decl]
+           |  HsExp H.Type H.Exp
+           |  CFun H.Type Func
   deriving (Eq, Ord, Show)
 
 type SCodeID = Int
@@ -161,6 +168,14 @@ instance Ord (SCode m) where
 instance Show (SCode m) where
     show (SCode { s_id = sid }) = show sid
 
+data DCode m = DCode
+    { d_setup :: () -> m ()
+    , d_id :: String -- ^ Unique identifier
+    }
+
+instance Eq (DCode m) where
+    d1 == d2 = d_id d1 == d_id d2
+
 data SRep m  =  SConst NCode (SCode m)
              |  SMap NCode (SCode m)
              |  SFilter NCode (SCode m)
@@ -174,6 +189,7 @@ data SRep m  =  SConst NCode (SCode m)
              |  SRecv FlowChannel FlowActivity
              |  SLoop Int NCode NCode (SCode m)
              |  SBlackbox String
+             |  DeviceWrite (SCode m) String
   deriving (Eq, Ord, Show)
 
 type FlowChannel = Integer
@@ -316,6 +332,22 @@ class (MonadCompiler m,
                                  (f_timer_connections s)
               }
 
+    addDevice :: Device d => d -> m ()
+    addDevice d = once $ do
+                    devices <- getsFlaskEnv f_devices
+                    modifyFlaskEnv $ \s -> 
+                        s { f_devices = (DCode { d_id = unique_id d
+                                               , d_setup = \_ -> setup d}) : (f_devices s) }
+                    return ()
+        where
+
+        once :: MonadFlask m => m () -> m ()
+        once m = do
+          devices <- getsFlaskEnv f_devices
+          case find (\d2 -> d_id d2 == unique_id d) devices of
+            Just device -> return ()
+            Nothing ->     m
+
     useChannel :: FlowChannel -> F.Type -> m ()
     useChannel chan tau = do
         tau_chan <- getsFlaskEnv $ \s ->
@@ -419,3 +451,7 @@ varIn s v  = H.var $ s_name s ++ show (s_id s) ++ "_in_" ++ v
 ident :: SCode m -> String -> String
 ident s ""     = s_name s ++ show (s_id s) ++ "_c"
 ident s suffix = s_name s ++ show (s_id s) ++ "_c" ++ suffix
+
+class (Eq a) => Device a where
+    setup :: MonadFlask m => a -> m ()
+    unique_id :: a -> String
