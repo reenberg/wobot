@@ -754,5 +754,25 @@ nfold' chan zero f sin =
             (smap [$exp|Right|] sin)
     >>> sloop 1 zero f >>> send chan Passive
 
+sref :: forall a . (Reify a) => String -> S a -> S a
+sref code from = S $ do
+    sfrom  <- unS from
+    addStream "sref"
+              tau_a
+              (SBlackbox code)
+              gen
+              (const (return ())) $ \this -> do
+    connect sfrom this tau_a (varIn this "")
+  where
+    tau_a :: H.Type
+    tau_a = reify (undefined :: a)
+
+    gen :: SCode m -> FlaskM ()
+    gen this =
+        addDecls [$decls|$var:v_in x = $var:v_out x|]
+      where
+        v_in    = varIn this ""
+        v_out   = s_vout this
+
 infixl 5 >>>
 (>>>) = flip ($)
