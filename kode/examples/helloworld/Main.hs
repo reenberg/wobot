@@ -19,7 +19,7 @@ main :: IO ()
 main =
     defaultMain $ do
     --genStream s
-    genStreams $ map unS [clock 500 >>> (toggle $ Pin 10 False), clock 500 >>> (toggle $ Pin 9 True), clock 100 >>> (toggle $ Pin 8 True)]
+    genStreams $ map unS [clock 500 >>> (toggle $ Pin 9 True), clock 500 >>> (toggle $ Pin 10 False), clock 100 >>> (turnOff $ Pin 10 True)]
     where
       output = Pin 10 False
       --s = smerge (clock 4 >>> sconst [$exp|0|]) (clock 1000 >>> sconst [$exp|1|]) >>> altPair 10 >>> digitalWrite

@@ -86,7 +86,7 @@ statevar d s = do
   devices <- getsFlaskEnv f_devices
   case findIndex (\d2 -> d_id d2 == unique_id d) devices of
     Just n -> return $ "device_" ++ (show n) ++ s
-    Nothing -> return $ error "Unknown device encountered."
+    Nothing -> return $ error $ "Unknown device " ++ unique_id d ++ " encountered."
 
 
 data Pin = Pin Integer Bool
@@ -104,16 +104,72 @@ instance Device Pin where
             val = if initstate then "HIGH" else "LOW"
     unique_id (Pin pin initstate) = "pin_" ++ (show pin)
 
-toggle :: forall a . Reify a => Pin -> S a -> S ()
-toggle d@(Pin pin startstate) a = S $ do
+modDev :: forall a d. (Reify a, Device d) => d -> (d -> String -> String -> Definition) -> S a -> S ()
+modDev d f a = S $ do
+    sa   <- unS a
+    addDevice d
+    addStream "toggle"
+              unitTy
+              (DeviceWrite sa $ unique_id d)
+              genHs
+              genC $ \this -> do
+    connect sa this tau (varIn this "")
+  where
+    tau :: H.Type
+    tau = reify (undefined :: a)
+
+    genHs :: SCode m -> FlaskM ()
+    genHs this =
+        addCImport c_v_in [$ty|$ty:tau -> ()|] [$cexp|$id:c_v_in|]
+        where
+          v_in    = varIn this ""
+          c_v_in = show v_in
+
+    genC :: SCode m -> FlaskM ()
+    genC this = do
+        tauf <- toF tau
+        sv <- statevar d "state"
+        (params, ce_params) <- ToC.flattenParams tauf
+        addCFundef $ f d c_v_in sv
+        where
+          v_in   = varIn this ""
+          c_v_in = show v_in
+
+toggle :: forall a . (Reify a) => Pin -> S a -> S ()
+toggle pin = modDev pin $ \(Pin pin _ ) c_v_in sv ->
+             [$cedecl|void $id:c_v_in()
+                               { 
+                                       if ($id:sv == HIGH) $id:sv = LOW;
+                                       else $id:sv = HIGH;
+                                       digitalWrite($int:pin, $id:sv);
+                               }|]
+
+turnOn :: forall a . (Reify a) => Pin -> S a -> S ()
+turnOn pin = modDev pin $ \(Pin pin _ ) c_v_in sv ->
+             [$cedecl|void $id:c_v_in()
+                               { 
+                                       $id:sv = HIGH;
+                                       digitalWrite($int:pin, $id:sv);
+                               }|]
+
+turnOff :: forall a . (Reify a) => Pin -> S a -> S ()
+turnOff pin = modDev pin $ \(Pin pin _ ) c_v_in sv ->
+             [$cedecl|void $id:c_v_in()
+                               { 
+                                       $id:sv = LOW;
+                                       digitalWrite($int:pin, $id:sv);
+                               }|]
+
+-- It would be nice if the succint code below could be used, but we need to share the state data between toggle/turnOn/turnOff.
+{-toggle d@(Pin pin startstate) a = S $ do
   sa <- unS a
   addDevice d
-  unS (a >>> onezero >>> digitalWrite)
+  unS (a >>> sref (unique_id d) >>> onezero >>> digitalWrite)
     where
-      onezero =  sintegrate zero int
+      onezero = sintegrate zero int
           where
             startval = if startstate then 1 else 0
             zero :: N Integer
             zero = liftN [$exp|$int:startval|]
             int :: N ((a, Integer) -> ((Integer, Integer), Integer))
-            int = liftN [$decls|f (x, 0) = (($int:pin, 1), 1); f (x, 1) = (($int:pin, 0), 0)|]
+            int = liftN [$decls|f (x, 0) = (($int:pin, 1), 1); f (x, 1) = (($int:pin, 0), 0)|]-}
