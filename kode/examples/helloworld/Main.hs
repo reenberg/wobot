@@ -18,12 +18,21 @@ import Flask.Device
 main :: IO ()
 main =
     defaultMain $ do
-    --genStream s
-    genStreams $ map unS [clock 500 >>> (toggle $ Pin 9 True), clock 500 >>> (toggle $ Pin 10 False), clock 100 >>> (turnOff $ Pin 10 True)]
+    genStream s
+    --genStreams $ map unS [clock 500 >>> (toggle $ diode 9 True), clock 500 >>> (toggle $ diode 10 False), clock 100 >>> (turnOff $ diode 10 True)]
     where
-      output = Pin 10 False
+      output = diode 10 False
       --s = smerge (clock 4 >>> sconst [$exp|0|]) (clock 1000 >>> sconst [$exp|1|]) >>> altPair 10 >>> digitalWrite
-      s = clock 100 >>> toggle output
+      s = clock 1 >>> vary >>> (setValue $ AnalogOutputPin 10 0)
+
+      vary :: forall a . Reify a => S a -> S Integer
+      vary =  sintegrate zero int
+          where
+            zero :: N Integer
+            zero = liftN [$exp|0|]
+
+            int :: N ((a, Integer) -> (Integer, Integer))
+            int = liftN [$decls|f (x, 512) = (0, 0); f (x, state) = if (state >= 256) then (256-(state-256), state + 1) else (state, state + 1)|]
 
       altPair :: Integer -> S Integer -> S (Integer, Integer)
       altPair pin = sintegrate zero int

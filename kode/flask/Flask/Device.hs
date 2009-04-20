@@ -89,11 +89,20 @@ statevar d s = do
     Nothing -> return $ error $ "Unknown device " ++ unique_id d ++ " encountered."
 
 
-data Pin = Pin Integer Bool
+data DigitalOutputPin = DigitalOutputPin Integer Bool
            deriving Eq
 
-instance Device Pin where
-    setup d@(Pin pin initstate) = 
+data AnalogOutputPin = AnalogOutputPin Integer Integer
+           deriving Eq
+
+data DigitalInputPin = DigitalInputPin Integer
+           deriving Eq
+
+data AnalogInputPin = AnalogInputPin Integer
+           deriving Eq
+
+instance Device DigitalOutputPin where
+    setup d@(DigitalOutputPin pin initstate) = 
         do 
           sv <- statevar d "state"
           addCDecldef [$cedecl|unsigned char $id:sv;|]
@@ -102,9 +111,16 @@ instance Device Pin where
           addCInitStm [$cstm|digitalWrite($int:pin, $id:val);|]
           where
             val = if initstate then "HIGH" else "LOW"
-    unique_id (Pin pin initstate) = "pin_" ++ (show pin)
+    unique_id (DigitalOutputPin pin initstate) = "digital_output_pin_" ++ (show pin)
 
-modDev :: forall a d. (Reify a, Device d) => d -> (d -> String -> String -> Definition) -> S a -> S ()
+instance Device AnalogOutputPin where
+    setup d@(AnalogOutputPin pin initstate) = 
+        do 
+          addCInitStm [$cstm|pinMode($int:pin, OUTPUT);|]
+          addCInitStm [$cstm|analogWrite($int:pin, $int:initstate);|]
+    unique_id (AnalogOutputPin pin initstate) = "analog_output_pin_" ++ (show pin)
+
+modDev :: forall a d. (Reify a, Device d) => d -> (d -> String -> String -> ([Param], [Exp]) -> Definition) -> S a -> S ()
 modDev d f a = S $ do
     sa   <- unS a
     addDevice d
@@ -130,13 +146,14 @@ modDev d f a = S $ do
         tauf <- toF tau
         sv <- statevar d "state"
         (params, ce_params) <- ToC.flattenParams tauf
-        addCFundef $ f d c_v_in sv
+        e <- ToC.flattenArgs ce_params
+        addCFundef $ f d c_v_in sv (params, e)
         where
           v_in   = varIn this ""
           c_v_in = show v_in
 
-toggle :: forall a . (Reify a) => Pin -> S a -> S ()
-toggle pin = modDev pin $ \(Pin pin _ ) c_v_in sv ->
+toggle :: forall a . (Reify a) => DigitalOutputPin -> S a -> S ()
+toggle pin = modDev pin $ \(DigitalOutputPin pin _ ) c_v_in sv _ ->
              [$cedecl|void $id:c_v_in()
                                { 
                                        if ($id:sv == HIGH) $id:sv = LOW;
@@ -144,24 +161,34 @@ toggle pin = modDev pin $ \(Pin pin _ ) c_v_in sv ->
                                        digitalWrite($int:pin, $id:sv);
                                }|]
 
-turnOn :: forall a . (Reify a) => Pin -> S a -> S ()
-turnOn pin = modDev pin $ \(Pin pin _ ) c_v_in sv ->
+turnOn :: forall a . (Reify a) => DigitalOutputPin -> S a -> S ()
+turnOn pin = modDev pin $ \(DigitalOutputPin pin _ ) c_v_in sv _ ->
              [$cedecl|void $id:c_v_in()
                                { 
                                        $id:sv = HIGH;
                                        digitalWrite($int:pin, $id:sv);
                                }|]
 
-turnOff :: forall a . (Reify a) => Pin -> S a -> S ()
-turnOff pin = modDev pin $ \(Pin pin _ ) c_v_in sv ->
+turnOff :: forall a . (Reify a) => DigitalOutputPin -> S a -> S ()
+turnOff pin = modDev pin $ \(DigitalOutputPin pin _ ) c_v_in sv _ ->
              [$cedecl|void $id:c_v_in()
                                { 
                                        $id:sv = LOW;
                                        digitalWrite($int:pin, $id:sv);
                                }|]
 
+setValue :: AnalogOutputPin -> S Integer -> S ()
+setValue pin = modDev pin $ \(AnalogOutputPin pin _ ) c_v_in sv (params, e) ->
+               let valueexp = e!!0
+               in [$cedecl|void $id:c_v_in($params:params)
+                                 {
+                                   analogWrite($int:pin, $exp:valueexp);
+                                 }|]
+
+diode pin initiallyOn = DigitalOutputPin pin initiallyOn
+
 -- It would be nice if the succint code below could be used, but we need to share the state data between toggle/turnOn/turnOff.
-{-toggle d@(Pin pin startstate) a = S $ do
+{-toggle d@(DigitalOutputPin pin startstate) a = S $ do
   sa <- unS a
   addDevice d
   unS (a >>> sref (unique_id d) >>> onezero >>> digitalWrite)
