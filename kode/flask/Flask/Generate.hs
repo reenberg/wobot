@@ -138,7 +138,7 @@ genStreams ss = do
     genC Set.empty scodes'
     finalizeDevices
     finalizeTimers
-    finalizeADCs
+--    finalizeADCs
     finalizeFlows
     cdefs_toc            <- getCDefs
     cstms_toc            <- getCInitStms

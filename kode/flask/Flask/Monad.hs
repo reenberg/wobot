@@ -423,6 +423,9 @@ unitGTy = F.TyConTy (F.TupleTyCon 0) internalLoc
 floatTy :: H.Type
 floatTy = H.TyConTy (H.TyCon prelFloat)
 
+integerTy :: H.Type
+integerTy = H.TyConTy (H.TyCon prelInteger)
+
 floatGTy :: F.Type
 floatGTy = F.TyConTy (F.TyCon prelFloat) internalLoc
 

@@ -412,67 +412,40 @@ clock period = S $ do
         v_in  = varIn this ""
         v_out = s_vout this
 
-adc :: String -> S () -> S Float
-adc name from =  S $ do
-    sfrom <- unS from
-    addStream  "sadc"
-               floatTy
-               (SADC name)
-               (genHs sfrom)
-               (genC sfrom) $ \this -> do
-    liveVar (s_vout this)
+adc :: Integer -> S () -> S Integer
+adc pin from = S $ do
+    sfrom   <- unS from
+    addStream "adc"
+              integerTy
+              (SADC $ show $ s_id sfrom)
+              genHs
+              genC $ \this -> do
     connect sfrom this unitTy (varIn this "")
   where
-    genHs :: SCode m -> SCode m -> FlaskM ()
-    genHs sfrom this =
+    genHs :: SCode m -> FlaskM ()
+    genHs this =
         addCImport c_v_in [$ty|() -> ()|] [$cexp|$id:c_v_in|]
-      where
-        v_in     = varIn this ""
-        c_v_in   = show v_in
+        where
+          v_in    = varIn this ""
+          c_v_in = show v_in
 
-    genC :: SCode m -> SCode m -> FlaskM ()
-    genC sfrom this = do
-        e_out <- hcall v_out $ ToC.CLowered floatGTy [$cexp|data|]
-        i <- adcFlag
-        adcGetData i [$cexp|$id:name()|]
-        let c_i = toInteger i
-        addCFundef [$cedecl|
-void $id:c_v_in()
-{
-        if (adc_pending == 0)
-            queue_funcall(&$id:name);
-        adc_pending |= 1 << $int:c_i;
-}
-|]
-        addCFundef [$cedecl|
-void $id:adc_task()
-{
-    typename uint16_t data;
+    genC :: SCode m -> FlaskM ()
+    genC this = do
+        tauf <- toF unitTy
+        tauf_out <- toF integerTy
+        (params, ce_params) <- ToC.flattenParams tauf
+        ce_out <-  hcall v_out $
+                   ToC.CLowered tauf_out [$cexp|v|]
+        addCFundef [$cedecl|void $id:c_v_in($params:params) 
+                                     { 
+                                       int v = analogRead($int:pin);
+                                       $exp:ce_out;
+                                     }|]
+        where
+          v_in    = varIn this ""
+          c_v_in = show v_in
+          v_out = s_vout this
 
-    data = adc_val;
-    adc_pending &= ~(1 << $int:c_i);
-    if (adc_pending != 0)
-       queue_funcall(&adc_process_pending);
-
-    $exp:e_out;
-}
-|]
-      where
-        v_in     = varIn this ""
-        c_v_in   = show v_in
-        v_out    = s_vout this
-        adc_task = ident this "task"
-
-        adcFlag :: MonadFlask m => m Int
-        adcFlag = do
-            i <- getsFlaskEnv $ \s -> f_adcs s
-            modifyFlaskEnv $ \s -> s { f_adcs = i + 1 }
-            return i
-
-        adcGetData :: MonadFlask m => Int -> Exp -> m ()
-        adcGetData flag e =
-            modifyFlaskEnv $ \s ->
-                s { f_adc_getdata = Map.insert flag e (f_adc_getdata s) }
 
 recv :: forall a . Reify a => FlowChannel -> FlowActivity -> S a
 recv chan activity = S $ do
@@ -598,7 +571,6 @@ digitalWrite a = S $ do
         where
           v_in    = varIn this ""
           c_v_in = show v_in
-          state    = ident this "state"
 
 sloop :: forall a b c . (Reify a, Reify b, Reify c)
       => Int
