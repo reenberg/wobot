@@ -116,7 +116,7 @@ smap f a = S $ do
 
     gen :: NCode -> SCode m -> FlaskM ()
     gen nf this = do
-        addDecls [$decls|$var:v_in :: $ty:tau_a -> $ty:tau_b|]
+        addDecls [$decls|$var:v_in :: $ty:tau_a -> ()|]
         addDecls [$decls|$var:v_in x = $var:v_out ($var:v_f x)|]
       where
         v_in  = varIn this ""
