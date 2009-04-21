@@ -18,7 +18,7 @@ import Flask.Device
 main :: IO ()
 main =
     defaultMain $ do
-      genStream $ clock 1 >>> adc 0 >>> smap scale >>> (setValue $ AnalogOutputPin 10 0)
+      genStream $ clock 1 >>> (valueOf $ Potentiometer 0) >>> smap scale >>> (setValue $ AnalogOutputPin 10 0)
     where
       scale :: N (Integer -> Integer)
       scale = liftN [$decls| f i = i/4|]
