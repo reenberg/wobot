@@ -120,11 +120,11 @@ instance Device AnalogOutputPin where
           addCInitStm [$cstm|analogWrite($int:pin, $int:initstate);|]
     unique_id (AnalogOutputPin pin initstate) = "analog_output_pin_" ++ (show pin)
 
-modDev :: forall a d. (Reify a, Device d) => d -> (d -> String -> String -> ([Param], [Exp]) -> Definition) -> S a -> S ()
-modDev d f a = S $ do
+modDev :: forall a d. (Reify a, Device d) => String -> d -> (d -> String -> String -> ([Param], [Exp]) -> Definition) -> S a -> S ()
+modDev name d f a = S $ do
     sa   <- unS a
     addDevice d
-    addStream "toggle"
+    addStream name
               unitTy
               (DeviceWrite sa $ unique_id d)
               genHs
@@ -153,7 +153,7 @@ modDev d f a = S $ do
           c_v_in = show v_in
 
 toggle :: forall a . (Reify a) => DigitalOutputPin -> S a -> S ()
-toggle pin = modDev pin $ \(DigitalOutputPin pin _ ) c_v_in sv _ ->
+toggle pin = modDev "toggle" pin $ \(DigitalOutputPin pin _ ) c_v_in sv _ ->
              [$cedecl|void $id:c_v_in()
                                { 
                                        if ($id:sv == HIGH) $id:sv = LOW;
@@ -162,7 +162,7 @@ toggle pin = modDev pin $ \(DigitalOutputPin pin _ ) c_v_in sv _ ->
                                }|]
 
 turnOn :: forall a . (Reify a) => DigitalOutputPin -> S a -> S ()
-turnOn pin = modDev pin $ \(DigitalOutputPin pin _ ) c_v_in sv _ ->
+turnOn pin = modDev "turnOn" pin $ \(DigitalOutputPin pin _ ) c_v_in sv _ ->
              [$cedecl|void $id:c_v_in()
                                { 
                                        $id:sv = HIGH;
@@ -170,7 +170,7 @@ turnOn pin = modDev pin $ \(DigitalOutputPin pin _ ) c_v_in sv _ ->
                                }|]
 
 turnOff :: forall a . (Reify a) => DigitalOutputPin -> S a -> S ()
-turnOff pin = modDev pin $ \(DigitalOutputPin pin _ ) c_v_in sv _ ->
+turnOff pin = modDev "turnOff" pin $ \(DigitalOutputPin pin _ ) c_v_in sv _ ->
              [$cedecl|void $id:c_v_in()
                                { 
                                        $id:sv = LOW;
@@ -178,7 +178,7 @@ turnOff pin = modDev pin $ \(DigitalOutputPin pin _ ) c_v_in sv _ ->
                                }|]
 
 setValue :: AnalogOutputPin -> S Integer -> S ()
-setValue pin = modDev pin $ \(AnalogOutputPin pin _ ) c_v_in sv (params, e) ->
+setValue pin = modDev "setValue" pin $ \(AnalogOutputPin pin _ ) c_v_in sv (params, e) ->
                let valueexp = e!!0
                in [$cedecl|void $id:c_v_in($params:params)
                                  {
@@ -200,3 +200,59 @@ diode pin initiallyOn = DigitalOutputPin pin initiallyOn
             zero = liftN [$exp|$int:startval|]
             int :: N ((a, Integer) -> ((Integer, Integer), Integer))
             int = liftN [$decls|f (x, 0) = (($int:pin, 1), 1); f (x, 1) = (($int:pin, 0), 0)|]-}
+
+class (Device a) => AnalogInputDevice a where
+    genReadCode :: a -> String -> [Stm]
+    
+valueOf :: forall a d. (Reify a, AnalogInputDevice d) => d -> S a -> S Integer
+valueOf d a = S $ do
+    sa   <- unS a
+    addDevice d
+    addStream "valueOf"
+              tau_b
+              (DeviceRead sa $ unique_id d)
+              genHs
+              genC $ \this -> do
+    connect sa this tau (varIn this "")
+  where
+    tau :: H.Type
+    tau = reify (undefined :: a)
+    tau_b :: H.Type
+    tau_b = reify (undefined :: Integer)
+
+    genHs :: SCode m -> FlaskM ()
+    genHs this =
+        addCImport c_v_in [$ty|$ty:tau -> ()|] [$cexp|$id:c_v_in|]
+        where
+          v_in    = varIn this ""
+          c_v_in = show v_in
+
+    genC :: SCode m -> FlaskM ()
+    genC this = do
+        tauf <- toF tau
+        tauf_out <- toF tau_b
+        (params, ce_params) <- ToC.flattenParams tauf
+        ce_out <-  hcall v_out $ ToC.CLowered tauf_out [$cexp|v|]
+        let stms = genReadCode d "v"
+        addCFundef $ [$cedecl|
+void $id:c_v_in($params:params)
+{
+  unsigned int v;
+  $stms:stms;
+  $exp:ce_out;
+}
+|]
+        where
+          v_in   = varIn this ""
+          c_v_in = show v_in
+          v_out = s_vout this
+
+data Potentiometer = Potentiometer Integer
+                     deriving Eq
+
+instance Device Potentiometer where
+    setup _ = return ()
+    unique_id (Potentiometer pin) = "potentiometer_" ++ (show pin)
+
+instance AnalogInputDevice Potentiometer where
+    genReadCode (Potentiometer pin) resultvar = [[$cstm|$id:resultvar = analogRead($int:pin);|]]

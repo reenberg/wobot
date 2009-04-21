@@ -190,6 +190,7 @@ data SRep m  =  SConst NCode (SCode m)
              |  SLoop Int NCode NCode (SCode m)
              |  SBlackbox String
              |  DeviceWrite (SCode m) String
+             |  DeviceRead (SCode m) String
   deriving (Eq, Ord, Show)
 
 type FlowChannel = Integer
