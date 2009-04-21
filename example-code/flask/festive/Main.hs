@@ -33,9 +33,3 @@ main =
 
             int :: N ((a, Integer) -> (Integer, Integer))
             int = liftN [$decls|f (x, 512) = (0, 0); f (x, state) = if (state >= 256) then (256-(state-256), state + 1) else (state, state + 1)|]
-
-      altPair :: Integer -> S Integer -> S (Integer, Integer)
-      altPair pin = sintegrate zero int
-        where
-          zero :: N (Integer, Integer)
-          zero = liftN [$exp|(1,0)|]
