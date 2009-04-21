@@ -244,12 +244,15 @@ finalizeDevices = do
 finalizeTimers :: forall m . MonadFlask m
                => m ()
 finalizeTimers = do
-    timers <- getsFlaskEnv $ \s -> Map.toList (f_timers s)
+    timersMap <- getsFlaskEnv $ \s -> f_timers s
+    let timers = Map.toList timersMap
+    -- We must at least have 62 interrupts each second
+    let interruptsPerSecond = max 62 (1000 / (fromIntegral . fst $ Map.findMin timersMap))
     when (timers /= []) $ do 
                    addCInclude "common/timersupport.h"
-                   addCInitStm [$cstm|SetupTimer2(OVERFLOWS_PER_SECOND);|]
+                   addCInitStm [$cstm|SetupTimer2($float:interruptsPerSecond);|]
     counterCode <- forM timers $ \(period, timerC) ->
-        finalizeTimer period timerC
+        finalizeTimer period timerC interruptsPerSecond
     let (funcs, counterDefs, counterStms) = unzip3 counterCode
     let stms = concat counterStms
     mapM_ addCFundef funcs
@@ -261,8 +264,8 @@ void timer2_interrupt_handler (void)
 }
 |]
   where
-    finalizeTimer :: Int -> String -> m (Definition, InitGroup, [Stm])
-    finalizeTimer period _ = do
+    finalizeTimer :: Int -> String -> Double -> m (Definition, InitGroup, [Stm])
+    finalizeTimer period _ interruptsPerSecond = do
         let c_period = toInteger period
         vs <- getsFlaskEnv $ \s ->
             Map.findWithDefault [] period (f_timer_connections s)
@@ -272,7 +275,7 @@ void timer2_interrupt_handler (void)
         return ([$cedecl|void $id:timerCP (void) { $stms:stms } |],
                 [$cdecl|static int $id:counterCP = 0;|], 
                 [[$cstm|$id:counterCP = $id:counterCP + 1;|],
-                 [$cstm|if ( $id:counterCP >= (OVERFLOWS_PER_SECOND/1000* $int:c_period ))
+                 [$cstm|if ( $id:counterCP >= ($float:interruptsPerSecond/1000* $int:c_period ))
                            {
                              queue_funcall(&$id:timerCP);
                              $id:counterCP = 0;
