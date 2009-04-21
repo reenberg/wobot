@@ -37,7 +37,7 @@
 include ../common.mk
 
 TARGET = $(notdir $(CURDIR))
-INSTALL_DIR = ../../arduino-dist
+INSTALL_DIR = ../../../arduino-dist
 PORT = /dev/ttyUSB0
 UPLOAD_RATE = 57600
 AVRDUDE_PROGRAMMER = stk500v1

@@ -1,0 +1,19 @@
+#!/bin/sh
+
+for platform in `ls -d */`
+do 
+    cd $platform
+    echo "entering" `pwd`
+    for project in `dir -d */`
+    do
+        cd $project
+        echo "entering" `pwd`
+        echo "===================================================================================================="
+        echo "Compiling:" $platform$project
+        echo "===================================================================================================="
+        make -f Makefile
+        cd ..
+    done
+    cd ..
+
+done
