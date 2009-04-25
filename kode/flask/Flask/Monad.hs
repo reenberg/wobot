@@ -191,6 +191,7 @@ data SRep m  =  SConst NCode (SCode m)
              |  SBlackbox String
              |  DeviceWrite (SCode m) String
              |  DeviceRead (SCode m) String
+             |  GenericSRep (SCode m) String -- For random new operators.
   deriving (Eq, Ord, Show)
 
 type FlowChannel = Integer
