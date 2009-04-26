@@ -772,3 +772,6 @@ sif f a = S $ do
 
 infixl 5 >>>
 (>>>) = flip ($)
+
+infixl 6 &&&
+a &&& b = szip a b
