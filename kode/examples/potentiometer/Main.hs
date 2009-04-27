@@ -18,4 +18,4 @@ import Flask.Device
 main :: IO ()
 main =
     defaultMain $ do
-      genStream $ clock 1 >>> (valueOf $ Potentiometer 0) >>> smap [$exp|(+1)|] >>> (setValue $ AnalogOutputPin 10 0)
+      genStream $ clock 1 >>> (valueOf $ Potentiometer 0) >>> smap [$exp|(/4)|] >>> (setValue $ AnalogOutputPin 10 0)
