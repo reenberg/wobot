@@ -108,4 +108,67 @@ Troels Henriksen (athas@sigkill.dk)}
 \bibliographystyle{plain}
 \bibliography{rapport}
 
+\appendix
+
+\chapter{Small guide to Arduino and electronics}
+Arduino is an Open Source project ... hardware ... software
+... prototyping.
+
+\fixme{<<Image of our Duemilanove>>}
+
+There are different kinds of Arduino boards. All are based on
+different ATmega* processors from Atmel. The older boards used serial
+communication while the newer are connected to a computer through a
+USB cable, but still using the same serial communication protocol
+(i.e. serial through USB). The USB cable also provides power for the
+board.  
+
+We will describe the Arduino Duemilanove board we have used in the
+sections that follow, but most (if not all) information will apply to
+the other Arduino boards as well.
+
+\section{Pins}
+The Arduino board can connect to several external components through
+diverse input and output pins. The pins are split in three sections on
+the board \textit{power}, \textit{analog in} and \textit{digital}.
+
+\subsection{Power pins}
+\begin{itemize}
+\item Gnd: Ground
+\item 5v: constant 5v output
+\item Reset: resets the board when connected to ground. \fixme{tror jeg i
+    hvert fald..}
+\item 3V3: ???
+\item Vin: ???
+\item Sixth pin: ???
+\end{itemize}
+
+\subsection{Analog input}
+There are 6 analog input pins. It's possible to read a voltage level
+from each of them using the function
+\texttt{int analogRead(int pinnumber)} where \textit{pinnumber} is a
+number between 0 and 5 indicating which pin to read from. The result is given
+as an integer in the range from 0 to 1023.
+
+\subsection{Digital pins}
+There are 14 digital input and output pins.
+\fixme{description of how to use them and special features of the
+  different pins}
+
+
+\section{Timers}
+The ATmega168/ATmega328 processors has three different hardware
+timers. One of them is used by arduino software to provide a
+\texttt{millis()} function that gives us the amount of milliseconds
+since the timer started and a \texttt{delay} function that actively
+holds the processor occupied for a given time period.
+
+\fixme{...which are 8 bit and 16 bit timers. Interference problems with the
+PWM output pins.}
+
+\section{Electronics}
+\fixme{Maybe a little refresher on electronics (e.g. how each
+  component are drawn in a diagram, if we are going to use diagrams in
+  the article). }
+
 \end{document}

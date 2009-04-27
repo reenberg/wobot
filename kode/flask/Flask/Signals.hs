@@ -746,5 +746,32 @@ sref code from = S $ do
         v_in    = varIn this ""
         v_out   = s_vout this
 
+sif  ::  forall a eta . (Reify a, LiftN eta (a -> Bool))
+         => eta -> S a -> S a
+sif f a = S $ do
+    nf    <- unN $ (liftN f :: N (a -> Bool))
+    sa    <- unS a
+    addStream "sif"
+              tau_a
+              (GenericSRep sa ("sif_" ++ (show $ n_var nf)))
+              (genHs nf)
+              (const (return ())) $ \this -> do
+    liveVar (n_var nf)
+    liveVar (s_vout this)
+    connect sa this tau_a (varIn this "")
+  where
+    tau_a :: H.Type
+    tau_a = reify (undefined :: a)
+    
+    genHs nf this =
+        addDecls [$decls|$var:v_in x = if ($var:v_f x) then $var:v_out x else ()|]
+      where
+        v_in     = varIn this ""
+        v_out    = s_vout this
+        v_f      = n_var nf
+
 infixl 5 >>>
 (>>>) = flip ($)
+
+infixl 6 &&&
+a &&& b = szip a b
