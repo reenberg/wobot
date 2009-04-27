@@ -7,10 +7,6 @@ import Data.Loc
 import Data.Name
 import qualified Language.Hs.Syntax
 import Language.Hs.Quote
-import Language.C.Syntax
-import Language.C.Quote
-import Control.Monad.CGen
-import Text.PrettyPrint.Mainland
 
 import Flask
 import Flask.Device
