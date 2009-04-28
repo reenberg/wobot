@@ -84,7 +84,7 @@ import Flask.LiftN
 statevar :: Device d => MonadFlask m => d -> String -> m String
 statevar d s = do
   devices <- getsFlaskEnv f_devices
-  case findIndex (\d2 -> d_id d2 == unique_id d) devices of
+  case findIndex (\(DRef d2) -> unique_id d2 == unique_id d) devices of
     Just n -> return $ "device_" ++ (show n) ++ s
     Nothing -> return $ error $ "Unknown device " ++ unique_id d ++ " encountered."
 
@@ -111,14 +111,16 @@ instance Device DigitalOutputPin where
           addCInitStm [$cstm|digitalWrite($int:pin, $id:val);|]
           where
             val = if initstate then "HIGH" else "LOW"
-    unique_id (DigitalOutputPin pin initstate) = "digital_output_pin_" ++ (show pin)
+    deviceClass _ = "digital_output_pin"
+    unique_id d@(DigitalOutputPin pin initstate) = deviceClass d ++ (show pin)
 
 instance Device AnalogOutputPin where
     setup d@(AnalogOutputPin pin initstate) = 
         do 
           addCInitStm [$cstm|pinMode($int:pin, OUTPUT);|]
           addCInitStm [$cstm|analogWrite($int:pin, $int:initstate);|]
-    unique_id (AnalogOutputPin pin initstate) = "analog_output_pin_" ++ (show pin)
+    deviceClass _ = "analog_output_pin"
+    unique_id d@(AnalogOutputPin pin initstate) = deviceClass d ++ (show pin)
 
 modDev :: forall a d. (Reify a, Device d) => String -> d -> (d -> String -> String -> ([Param], [Exp]) -> Definition) -> S a -> S ()
 modDev name d f a = S $ do
@@ -252,7 +254,8 @@ data Potentiometer = Potentiometer Integer
 
 instance Device Potentiometer where
     setup _ = return ()
-    unique_id (Potentiometer pin) = "potentiometer_" ++ (show pin)
+    deviceClass _ = "potentiometer"
+    unique_id d@(Potentiometer pin) = deviceClass d ++ (show pin)
 
 instance AnalogInputDevice Potentiometer where
     genReadCode (Potentiometer pin) resultvar = [[$cstm|$id:resultvar = analogRead($int:pin);|]]

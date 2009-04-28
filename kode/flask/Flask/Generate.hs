@@ -237,8 +237,8 @@ finalizeDevices :: forall m . MonadFlask m
                => m ()
 finalizeDevices = do
   devices <- getsFlaskEnv f_devices
-  forM_ devices $ \dc -> do
-    (d_setup dc) ()
+  forM_ devices $ \(DRef d) -> do
+                    setup d
   return ()
 
 finalizeTimers :: forall m . MonadFlask m
