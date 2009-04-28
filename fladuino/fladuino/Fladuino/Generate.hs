@@ -289,7 +289,7 @@ void timer2_interrupt_handler (void)
 finalizeInterrupts :: forall m . MonadFladuino m
                => m ()
 finalizeInterrupts = do
-    interrupts <- getsFladuinoEnv $ \s -> Map.toList $ f_interrupts s
+    interrupts <- getsFladuinoEnv $ Map.toList . f_interrupts
     when (interrupts /= []) $ do 
                    addCInclude "common/PCINT.h"
     
