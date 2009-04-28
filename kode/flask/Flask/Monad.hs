@@ -88,6 +88,9 @@ data FlaskEnv m = FlaskEnv
     ,  f_timers            :: Map.Map Int String
     ,  f_timer_connections :: Map.Map Int [(SCode m, H.Var)]
 
+    , f_interrupts :: Map.Map Int String
+    , f_interrupt_connections :: Map.Map Int [(SCode m, H.Var)]
+
     ,  f_devices :: [DRef m]
 
     ,  f_adcs         :: Int
@@ -116,6 +119,9 @@ emptyFlaskEnv = FlaskEnv
 
     ,  f_timers = Map.empty
     ,  f_timer_connections = Map.empty
+
+    ,  f_interrupts = Map.empty
+    ,  f_interrupt_connections = Map.empty
 
     ,  f_devices = []
 
@@ -182,6 +188,7 @@ data SRep m  =  SConst NCode (SCode m)
              |  SIntegrate NCode NCode (SCode m)
              |  SJust (SCode m)
              |  SClock Int
+             |  SExternalInterrupt Int
              |  SADC String
              |  SSend FlowChannel FlowActivity (SCode m)
              |  SRecv FlowChannel FlowActivity
@@ -332,6 +339,35 @@ class (MonadCompiler m,
                                  (f_timer_connections s)
               }
 
+    addInterrupt :: Int -> m String 
+    addInterrupt pin = once $ do
+        modifyFlaskEnv $ \s ->
+            s { f_interrupts = Map.insert pin interruptID (f_interrupts s) }
+        return interruptID
+      where
+        interruptID = "Interrupt" ++ show pin
+          
+        once :: MonadFlask m => m String -> m String
+        once m = do
+            maybe_interrupt <- getsFlaskEnv $ \s -> Map.lookup pin (f_interrupts s)
+            case maybe_interrupt of
+              Just interrupt -> return interrupt
+              Nothing ->     m
+
+
+    connectInterrupt :: Int -> SCode m -> H.Var -> m ()
+    connectInterrupt pin stream v = do
+        liveVar v
+        modifyFlaskEnv $ \s ->
+            s { f_interrupt_connections =
+                    let connections = Map.findWithDefault []
+                                      pin (f_interrupt_connections s)
+                    in
+                      Map.insert pin ((stream, v) : connections)
+                                 (f_interrupt_connections s)
+              }
+    
+
     addDevice :: Device d => d -> m ()
     addDevice d = once $ do
                     devices <- getsFlaskEnv f_devices
@@ -424,6 +460,9 @@ floatTy = H.TyConTy (H.TyCon prelFloat)
 
 integerTy :: H.Type
 integerTy = H.TyConTy (H.TyCon prelInteger)
+
+boolTy :: H.Type
+boolTy = H.TyConTy (H.TyCon prelBool)
 
 floatGTy :: F.Type
 floatGTy = F.TyConTy (F.TyCon prelFloat) internalLoc
