@@ -88,7 +88,7 @@ data FlaskEnv m = FlaskEnv
     ,  f_timers            :: Map.Map Int String
     ,  f_timer_connections :: Map.Map Int [(SCode m, H.Var)]
 
-    ,  f_devices :: [DCode m]
+    ,  f_devices :: [DRef m]
 
     ,  f_adcs         :: Int
     ,  f_adc_getdata  :: Map.Map Int Exp
@@ -168,13 +168,11 @@ instance Ord (SCode m) where
 instance Show (SCode m) where
     show (SCode { s_id = sid }) = show sid
 
-data DCode m = DCode
-    { d_setup :: () -> m ()
-    , d_id :: String -- ^ Unique identifier
-    }
+-- A bit of indirection for convenience...
+data DRef m = forall a. (Device a) => DRef a
 
-instance Eq (DCode m) where
-    d1 == d2 = d_id d1 == d_id d2
+instance Eq (DRef m) where
+    DRef d1 == DRef d2 = unique_id d1 == unique_id d2
 
 data SRep m  =  SConst NCode (SCode m)
              |  SMap NCode (SCode m)
@@ -338,15 +336,14 @@ class (MonadCompiler m,
     addDevice d = once $ do
                     devices <- getsFlaskEnv f_devices
                     modifyFlaskEnv $ \s -> 
-                        s { f_devices = (DCode { d_id = unique_id d
-                                               , d_setup = \_ -> setup d}) : (f_devices s) }
+                        s { f_devices = (DRef d) : (f_devices s) }
                     return ()
         where
 
         once :: MonadFlask m => m () -> m ()
         once m = do
           devices <- getsFlaskEnv f_devices
-          case find (\d2 -> d_id d2 == unique_id d) devices of
+          case find (\(DRef d2) -> unique_id d2 == unique_id d) devices of
             Just device -> return ()
             Nothing ->     m
 
@@ -459,4 +456,6 @@ ident s suffix = s_name s ++ show (s_id s) ++ "_c" ++ suffix
 
 class (Eq a) => Device a where
     setup :: MonadFlask m => a -> m ()
+    deviceClass :: a -> String
     unique_id :: a -> String
+    unique_id = deviceClass
