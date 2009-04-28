@@ -37,14 +37,14 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Flask.Signals
+-- Module      :  Fladuino.Signals
 -- Copyright   :  (c) Harvard University 2008
 -- License     :  BSD-style
 -- Maintainer  :  mainland@eecs.harvard.edu
 --
 --------------------------------------------------------------------------------
 
-module Flask.Signals where
+module Fladuino.Signals where
 
 import Prelude hiding (exp)
 
@@ -64,12 +64,12 @@ import Language.C.Syntax
 import Language.C.Quote
 import qualified Transform.F.ToC as ToC
 
-import Flask.Driver
-import Flask.LiftN
-import Flask.Monad
-import Flask.Reify
+import Fladuino.Driver
+import Fladuino.LiftN
+import Fladuino.Monad
+import Fladuino.Reify
 
-newtype S a = S { unS :: FlaskM (SCode FlaskM) }
+newtype S a = S { unS :: FladuinoM (SCode FladuinoM) }
 
 sconst :: forall a b eta . (Reify b, LiftN eta a)
        => eta
@@ -88,7 +88,7 @@ sconst k from = S $ do
     tau_b :: H.Type
     tau_b = reify (undefined :: b)
 
-    gen :: NCode -> SCode m -> FlaskM ()
+    gen :: NCode -> SCode m -> FladuinoM ()
     gen nconst this =
         addDecls [$decls|$var:v_in _ = $var:v_out $var:v_const|]
       where
@@ -114,7 +114,7 @@ smap f a = S $ do
     tau_a = reify (undefined :: a)
     tau_b = reify (undefined :: b)
 
-    gen :: NCode -> SCode m -> FlaskM ()
+    gen :: NCode -> SCode m -> FladuinoM ()
     gen nf this = do
         addDecls [$decls|$var:v_in :: $ty:tau_a -> ()|]
         addDecls [$decls|$var:v_in x = $var:v_out ($var:v_f x)|]
@@ -147,7 +147,7 @@ sfilter f a = S $ do
     tau_a :: H.Type
     tau_a = reify (undefined :: a)
 
-    gen :: NCode -> SCode n -> FlaskM ()
+    gen :: NCode -> SCode n -> FladuinoM ()
     gen nf this = do
         addDecls [$decls|$var:v_in :: $ty:tau_a -> $ty:tau_a|]
         addDecls [$decls|$var:v_in x = if $var:v_f x then $var:v_out x else ()|]
@@ -174,7 +174,7 @@ smerge a b = S $ do
     tau_a :: H.Type
     tau_a = reify (undefined :: a)
 
-    gen :: SCode m -> FlaskM ()
+    gen :: SCode m -> FladuinoM ()
     gen this =
         addDecls [$decls|$var:v_in = $var:v_out|]
       where
@@ -205,7 +205,7 @@ szip a b = S $ do
     tau_b   = reify (undefined :: b)
     tau_out = [$ty|($ty:tau_a, $ty:tau_b)|]
 
-    genHs :: SCode m -> SCode m -> SCode m -> FlaskM ()
+    genHs :: SCode m -> SCode m -> SCode m -> FladuinoM ()
     genHs sa sb this = do
         addCImport c_v_in_a [$ty|$ty:tau_a -> ()|] [$cexp|$id:c_v_in_a|]
         addCImport c_v_in_b [$ty|$ty:tau_b -> ()|] [$cexp|$id:c_v_in_b|]
@@ -217,7 +217,7 @@ szip a b = S $ do
         v_in_b    = varIn this "b"
         c_v_in_b  = show v_in_b
 
-    genC :: SCode m -> SCode m -> SCode m -> FlaskM ()
+    genC :: SCode m -> SCode m -> SCode m -> FladuinoM ()
     genC sa sb this = do
         tauf_a  <- toF tau_a
         tauf_b  <- toF tau_b
@@ -244,7 +244,7 @@ szip a b = S $ do
         buf_b_set = ident this "_b_set"
         buf_b     = ident this "_b"
 
-        genZipInput :: MonadFlask m
+        genZipInput :: MonadFladuino m
                     => H.Type
                     -> F.Type
                     -> H.Var
@@ -303,14 +303,14 @@ sintegrate zero f a = S $ do
     tau_f_in  = reify (undefined :: a, undefined :: c)
     tau_f_out = reify (undefined :: b, undefined :: c)
 
-    genHs :: SCode m -> FlaskM ()
+    genHs :: SCode m -> FladuinoM ()
     genHs this =
         addCImport c_v_in [$ty|$ty:tau_a -> ()|] [$cexp|$id:c_v_in|]
       where
         v_in     = varIn this ""
         c_v_in   = show v_in
 
-    genC :: NCode -> NCode -> SCode m -> FlaskM ()
+    genC :: NCode -> NCode -> SCode m -> FladuinoM ()
     genC nzero nf this = do
         cty_state <- toC tau_state
         ce_zero   <- toC v_zero
@@ -365,14 +365,14 @@ sjust maybe_a = S $ do
     tau_a       = reify (undefined :: a)
     tau_maybe_a = reify (undefined :: Maybe a)
 
-    genHs :: SCode m -> FlaskM ()
+    genHs :: SCode m -> FladuinoM ()
     genHs this =
         addCImport c_v_in [$ty|$ty:tau_maybe_a -> ()|] [$cexp|$id:c_v_in|]
       where
         v_in   = varIn this ""
         c_v_in = show v_in
 
-    genC :: SCode m -> FlaskM ()
+    genC :: SCode m -> FladuinoM ()
     genC this = do
         tauf_maybe_a        <- toF tau_maybe_a
         tauf_a              <- toF tau_a
@@ -404,7 +404,7 @@ clock period = S $ do
     addTimer period
     connectTimer period this (varIn this "")
   where
-    gen :: Int -> SCode m -> FlaskM ()
+    gen :: Int -> SCode m -> FladuinoM ()
     gen period this = do
         addDecls [$decls|$var:v_in :: () -> ()|]
         addDecls [$decls|$var:v_in x = $var:v_out ()|]
@@ -423,7 +423,7 @@ externalInterrupt pin = S $ do
     addInterrupt pin
     connectInterrupt pin this (varIn this "")
   where
-    genHs :: SCode m -> FlaskM ()
+    genHs :: SCode m -> FladuinoM ()
     genHs this = do
         addDecls [$decls|$var:v_in :: () -> ()|]
         addDecls [$decls|$var:v_in x = $var:v_out ()|]
@@ -442,14 +442,14 @@ adc pin from = S $ do
               genC $ \this -> do
     connect sfrom this unitTy (varIn this "")
   where
-    genHs :: SCode m -> FlaskM ()
+    genHs :: SCode m -> FladuinoM ()
     genHs this =
         addCImport c_v_in [$ty|() -> ()|] [$cexp|$id:c_v_in|]
         where
           v_in    = varIn this ""
           c_v_in = show v_in
 
-    genC :: SCode m -> FlaskM ()
+    genC :: SCode m -> FladuinoM ()
     genC this = do
         tauf <- toF unitTy
         tauf_out <- toF integerTy
@@ -480,7 +480,7 @@ recv chan activity = S $ do
     tau :: H.Type
     tau = reify (undefined :: a)
 
-    gen :: SCode m -> FlaskM ()
+    gen :: SCode m -> FladuinoM ()
     gen this =
         addDecls [$decls|$var:v_in = $var:v_out|]
       where
@@ -502,14 +502,14 @@ send chan act a = S $ do
     tau :: H.Type
     tau = reify (undefined :: a)
 
-    genHs :: SCode m -> FlaskM ()
+    genHs :: SCode m -> FladuinoM ()
     genHs this =
         addCImport c_v_in [$ty|$ty:tau -> ()|] [$cexp|$id:c_v_in|]
       where
         v_in   = varIn this ""
         c_v_in = show v_in
 
-    genC :: SCode m -> SCode m -> FlaskM ()
+    genC :: SCode m -> SCode m -> FladuinoM ()
     genC sa this = do
         tauf <- toF tau
         (params, ce_params) <- ToC.flattenParams tauf
@@ -541,14 +541,14 @@ sink a = S $ do
     tau = reify (undefined :: a)
 
     
-    genHs :: SCode m -> FlaskM ()
+    genHs :: SCode m -> FladuinoM ()
     genHs this =
         addCImport c_v_in [$ty|$ty:tau -> ()|] [$cexp|$id:c_v_in|]
        where
          v_in    = varIn this ""
          c_v_in = show v_in
 
-    genC :: SCode m -> FlaskM ()
+    genC :: SCode m -> FladuinoM ()
     genC this = do
         tauf <- toF tau
         (params, ce_params) <- ToC.flattenParams tauf
@@ -570,14 +570,14 @@ digitalWrite a = S $ do
     tau :: H.Type
     tau = reify (undefined :: (Integer, Integer))
 
-    genHs :: SCode m -> FlaskM ()
+    genHs :: SCode m -> FladuinoM ()
     genHs this =
         addCImport c_v_in [$ty|$ty:tau -> ()|] [$cexp|$id:c_v_in|]
         where
           v_in    = varIn this ""
           c_v_in = show v_in
 
-    genC :: SCode m -> FlaskM ()
+    genC :: SCode m -> FladuinoM ()
     genC this = do
         tauf <- toF tau
         (params, ce_params) <- ToC.flattenParams tauf
@@ -631,14 +631,14 @@ sloop depth zero f a = S $ do
     cdepth :: Integer
     cdepth = toInteger depth
 
-    genEnterHs :: SCode m -> FlaskM ()
+    genEnterHs :: SCode m -> FladuinoM ()
     genEnterHs this =
         addCImport c_v_in [$ty|$ty:tau_a -> ()|] [$cexp|$id:c_v_in|]
       where
         v_in     = varIn this ""
         c_v_in   = show v_in
 
-    genEnterC :: NCode -> SCode m -> SCode m -> FlaskM ()
+    genEnterC :: NCode -> SCode m -> SCode m -> FladuinoM ()
     genEnterC nzero sa this = do
         tauf_a     <- toF tau_a
         cty_a      <- toC tau_a
@@ -688,14 +688,14 @@ void $id:task()
         pending  = ident this "pending"
         task     = ident this "task"
 
-    genExitHs :: SCode m -> FlaskM ()
+    genExitHs :: SCode m -> FladuinoM ()
     genExitHs this =
         addCImport c_v_in [$ty|$ty:tau_f_out -> ()|] [$cexp|$id:c_v_in|]
       where
         v_in     = varIn this ""
         c_v_in   = show v_in
 
-    genExitC :: SCode m -> SCode m -> SCode m -> FlaskM ()
+    genExitC :: SCode m -> SCode m -> SCode m -> FladuinoM ()
     genExitC f enter this = do
         tauf_b     <- toF tau_b
         tauf_f_out <- toF tau_f_out
@@ -759,7 +759,7 @@ sref code from = S $ do
     tau_a :: H.Type
     tau_a = reify (undefined :: a)
 
-    gen :: SCode m -> FlaskM ()
+    gen :: SCode m -> FladuinoM ()
     gen this =
         addDecls [$decls|$var:v_in x = $var:v_out x|]
       where

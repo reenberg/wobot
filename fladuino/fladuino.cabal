@@ -1,13 +1,13 @@
-Name:		flask
-Version:	0.1.1
+Name:		fladuino
+Version:	0.0.1
 Cabal-Version:  >= 1.2
 License:	BSD3
 License-File:	LICENSE
 Copyright:	(c) 2006-2008 Harvard University
-Author:		Troels Henriksen <athas@sigkill.dk>, Martin Dybdal <dybber@dybber.dk>
+Author:		Troels Henriksen <athas@sigkill.dk>, Martin Dybdal <dybber@dybber.dk>, Jesper Reenberb <jesper.reenberg@gmail.com>
 Stability:	alpha
 Category:	Development tool
-Synopsis:	Flask meta-programming toolkit, modified for arduino.
+Synopsis:	The Flask meta-programming toolkit, crudely modified for arduino.
 
 Build-type:	Custom
 
@@ -16,7 +16,7 @@ Library
                         mtl, template-haskell, filepath, editline, process,
                         directory
   Cpp-Options:          
-  Hs-source-dirs:	flask language massaman syntax
+  Hs-source-dirs:	fladuino language massaman syntax
   Exposed-modules:
     Check.F
     Check.F.Bindings
@@ -48,15 +48,15 @@ Library
     Data.Name
     DepAnal
     Eval.F
-    Flask
-    Flask.Driver
-    Flask.Exceptions
-    Flask.Device
-    Flask.Generate
-    Flask.LiftN
-    Flask.Monad
-    Flask.Reify
-    Flask.Signals
+    Fladuino
+    Fladuino.Driver
+    Fladuino.Exceptions
+    Fladuino.Device
+    Fladuino.Generate
+    Fladuino.LiftN
+    Fladuino.Monad
+    Fladuino.Reify
+    Fladuino.Signals
     Language.F
     Language.F.Parser
     Language.F.Parser.Exceptions

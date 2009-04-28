@@ -8,8 +8,8 @@ import Data.Name
 import qualified Language.Hs.Syntax
 import Language.Hs.Quote
 
-import Flask
-import Flask.Device
+import Fladuino
+import Fladuino.Device
 
 main :: IO ()
 main =

@@ -37,14 +37,14 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Flask.Driver
+-- Module      :  Fladuino.Driver
 -- Copyright   :  (c) Harvard University 2008
 -- License     :  BSD-style
 -- Maintainer  :  mainland@eecs.harvard.edu
 --
 --------------------------------------------------------------------------------
 
-module Flask.Driver where
+module Fladuino.Driver where
 
 import Prelude hiding (exp)
 
@@ -63,30 +63,30 @@ import Control.Monad.ContextException
 import Control.Monad.Ref
 import Control.Monad.Trace
 import Control.Monad.Unique
-import Flask.Monad
+import Fladuino.Monad
 import qualified Transform.F.ToC as ToC
 import qualified Transform.F.Simplify as Simplify
 
-newtype FlaskM a = FlaskM
-    { unFlaskM :: StateT FlaskState (ErrorT SomeException IO) a }
+newtype FladuinoM a = FladuinoM
+    { unFladuinoM :: StateT FladuinoState (ErrorT SomeException IO) a }
 
-data FlaskState = FlaskState
+data FladuinoState = FladuinoState
     {  uniq        :: IORef Uniq
     ,  opts        :: Opts
     ,  contextenv  :: ContextEnv
     ,  traceenv    :: TraceEnv
-    ,  tcenv       :: Check.Hs.TcEnv IORef FlaskM
+    ,  tcenv       :: Check.Hs.TcEnv IORef FladuinoM
     ,  ftcenv      :: Check.F.TcEnv
     ,  simplenv    :: Simplify.SimplEnv
     ,  cgenenv     :: CGen.CGenEnv
-    ,  tocenv      :: ToC.ToCEnv FlaskM
-    ,  flaskenv    :: FlaskEnv FlaskM
+    ,  tocenv      :: ToC.ToCEnv FladuinoM
+    ,  fladuinoenv    :: FladuinoEnv FladuinoM
     }
 
-emptyFlaskState :: Opts -> IO FlaskState
-emptyFlaskState opts = do
+emptyFladuinoState :: Opts -> IO FladuinoState
+emptyFladuinoState opts = do
     u <- newRef 0
-    return FlaskState  {  uniq        = u
+    return FladuinoState  {  uniq        = u
                        ,  opts        = opts
                        ,  contextenv  = emptyContextEnv
                        ,  traceenv    = emptyTraceEnv
@@ -95,85 +95,85 @@ emptyFlaskState opts = do
                        ,  simplenv    = Simplify.emptySimplEnv
                        ,  cgenenv     = CGen.emptyCGenEnv
                        ,  tocenv      = ToC.emptyToCEnv
-                       ,  flaskenv    = emptyFlaskEnv
+                       ,  fladuinoenv    = emptyFladuinoEnv
                        }
 
-runFlaskM  ::  FlaskM a
-           ->  FlaskState
-           ->  IO (Either SomeException (a, FlaskState))
-runFlaskM m s = runErrorT (runStateT (unFlaskM m) s)
+runFladuinoM  ::  FladuinoM a
+           ->  FladuinoState
+           ->  IO (Either SomeException (a, FladuinoState))
+runFladuinoM m s = runErrorT (runStateT (unFladuinoM m) s)
 
-evalFlaskM  ::  FlaskM a
-            ->  FlaskState
+evalFladuinoM  ::  FladuinoM a
+            ->  FladuinoState
             ->  IO (Either SomeException a)
-evalFlaskM m s = runErrorT (evalStateT (unFlaskM m) s)
+evalFladuinoM m s = runErrorT (evalStateT (unFladuinoM m) s)
 
-instance Monad FlaskM where
-    m >>= f   = FlaskM $ unFlaskM m >>= unFlaskM . f
-    m1 >> m2  = FlaskM $ unFlaskM m1 >> unFlaskM m2
-    return    = FlaskM . return
+instance Monad FladuinoM where
+    m >>= f   = FladuinoM $ unFladuinoM m >>= unFladuinoM . f
+    m1 >> m2  = FladuinoM $ unFladuinoM m1 >> unFladuinoM m2
+    return    = FladuinoM . return
     fail msg  = throwException $ StrMsgException msg
 
-instance MonadIO FlaskM where
-    liftIO = FlaskM . liftIO
+instance MonadIO FladuinoM where
+    liftIO = FladuinoM . liftIO
 
-instance MonadRef IORef FlaskM where
-    newRef a      = FlaskM $ lift $ lift $ newRef a
-    readRef r     = FlaskM $ lift $ lift $ readRef r
-    writeRef r a  = FlaskM $ lift $ lift $ writeRef r a
-    modifyRef r f = FlaskM $ lift $ lift $ modifyRef r f
+instance MonadRef IORef FladuinoM where
+    newRef a      = FladuinoM $ lift $ lift $ newRef a
+    readRef r     = FladuinoM $ lift $ lift $ readRef r
+    writeRef r a  = FladuinoM $ lift $ lift $ writeRef r a
+    modifyRef r f = FladuinoM $ lift $ lift $ modifyRef r f
 
-instance MonadError SomeException FlaskM where
-    throwError e            = FlaskM $ throwError e
-    m `catchError` handler  = FlaskM $ unFlaskM m `catchError` \e ->
-                                  unFlaskM (handler e)
+instance MonadError SomeException FladuinoM where
+    throwError e            = FladuinoM $ throwError e
+    m `catchError` handler  = FladuinoM $ unFladuinoM m `catchError` \e ->
+                                  unFladuinoM (handler e)
 
-instance MonadState FlaskState FlaskM where
-    get    = FlaskM $ get
-    put s  = FlaskM $ put s
+instance MonadState FladuinoState FladuinoM where
+    get    = FladuinoM $ get
+    put s  = FladuinoM $ put s
 
-instance MonadUnique FlaskM where
+instance MonadUnique FladuinoM where
     newUnique = do
         ref <- gets uniq
         uniq <- readRef ref
         writeRef ref (uniq + 1)
         return uniq
 
-instance MonadOpts FlaskM where
-    optVal opt    = FlaskM $ gets (opt . opts)
-    getOpts       = FlaskM $ gets opts
-    setOpts opts  = FlaskM $ modify $ \s -> s{ opts=opts }
+instance MonadOpts FladuinoM where
+    optVal opt    = FladuinoM $ gets (opt . opts)
+    getOpts       = FladuinoM $ gets opts
+    setOpts opts  = FladuinoM $ modify $ \s -> s{ opts=opts }
 
-instance MonadContextException FlaskM where
-    getContextEnv      = FlaskM $ gets    $ \s -> contextenv s
-    putContextEnv env  = FlaskM $ modify  $ \s -> s { contextenv = env }
+instance MonadContextException FladuinoM where
+    getContextEnv      = FladuinoM $ gets    $ \s -> contextenv s
+    putContextEnv env  = FladuinoM $ modify  $ \s -> s { contextenv = env }
 
-instance MonadTrace FlaskM where
-    getTraceEnv      = FlaskM $ gets traceenv
-    putTraceEnv env  = FlaskM $ modify $ \s -> s { traceenv = env }
+instance MonadTrace FladuinoM where
+    getTraceEnv      = FladuinoM $ gets traceenv
+    putTraceEnv env  = FladuinoM $ modify $ \s -> s { traceenv = env }
 
-instance Check.Hs.MonadTc IORef FlaskM where
+instance Check.Hs.MonadTc IORef FladuinoM where
     getTcEnv      = gets tcenv
     putTcEnv env  = modify $ \s -> s { tcenv = env }
 
-instance Check.F.MonadTc FlaskM where
-    getTcEnv      = FlaskM $ gets ftcenv
-    putTcEnv env  = FlaskM $ modify $ \s -> s { ftcenv = env }
+instance Check.F.MonadTc FladuinoM where
+    getTcEnv      = FladuinoM $ gets ftcenv
+    putTcEnv env  = FladuinoM $ modify $ \s -> s { ftcenv = env }
 
-instance Simplify.MonadSimpl FlaskM where
-    getSimplEnv      = FlaskM $ gets simplenv
-    putSimplEnv env  = FlaskM $ modify $ \s -> s { simplenv = env }
+instance Simplify.MonadSimpl FladuinoM where
+    getSimplEnv      = FladuinoM $ gets simplenv
+    putSimplEnv env  = FladuinoM $ modify $ \s -> s { simplenv = env }
 
-instance CGen.MonadCGen FlaskM where
+instance CGen.MonadCGen FladuinoM where
     getCGenEnv      = gets cgenenv
     putCGenEnv env  = modify $ \s -> s { cgenenv = env }
 
-instance ToC.MonadToC IORef FlaskM where
+instance ToC.MonadToC IORef FladuinoM where
     getToCEnv      = gets tocenv
     putToCEnv env  = modify $ \s -> s { tocenv = env }
 
-instance MonadCompiler FlaskM where
+instance MonadCompiler FladuinoM where
 
-instance MonadFlask FlaskM where
-    getFlaskEnv      = gets flaskenv
-    putFlaskEnv env  = modify $ \s -> s { flaskenv = env }
+instance MonadFladuino FladuinoM where
+    getFladuinoEnv      = gets fladuinoenv
+    putFladuinoEnv env  = modify $ \s -> s { fladuinoenv = env }

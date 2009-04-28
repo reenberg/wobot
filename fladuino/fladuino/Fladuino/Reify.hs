@@ -1,3 +1,5 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+
 -- Copyright (c) 2008
 --         The President and Fellows of Harvard College.
 --
@@ -27,27 +29,65 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Flask
+-- Module      :  Fladuino.Reify
 -- Copyright   :  (c) Harvard University 2008
 -- License     :  BSD-style
 -- Maintainer  :  mainland@eecs.harvard.edu
 --
 --------------------------------------------------------------------------------
 
-module Flask (
-    module Flask.Driver,
-    module Flask.Exceptions,
-    module Flask.Generate,
-    module Flask.LiftN,
-    module Flask.Monad,
-    module Flask.Reify,
-    module Flask.Signals
-  ) where
+module Fladuino.Reify where
 
-import Flask.Driver
-import Flask.Exceptions
-import Flask.Generate
-import Flask.LiftN
-import Flask.Monad
-import Flask.Reify
-import Flask.Signals
+import Data.Name
+import qualified Language.Hs.Syntax as H
+
+class Reify a where
+    reify :: a -> H.Type
+
+instance Reify () where
+    reify _ = H.TyConTy (H.TupleTyCon 0)
+
+instance Reify Integer where
+    reify _ = H.TyConTy (H.TyCon prelInteger)
+
+instance Reify Char where
+    reify _ = H.TyConTy (H.TyCon prelChar)
+
+instance Reify Bool where
+    reify _ = H.TyConTy (H.TyCon prelBool)
+
+instance Reify Float where
+    reify _ = H.TyConTy (H.TyCon prelFloat)
+
+instance forall a . Reify a => Reify (Maybe a) where
+    reify _ = H.AppTy (H.TyConTy (H.TyCon tycon)) tya
+      where
+        tycon  = prelMaybe
+        tya    = reify (undefined :: a)
+
+instance forall a b . (Reify a, Reify b) => Reify (Either a b) where
+    reify _ = H.AppTy  (H.AppTy (H.TyConTy (H.TyCon tycon)) tya) tyb
+      where
+        tycon  = prelEither
+        tya    = reify (undefined :: a)
+        tyb    = reify (undefined :: b)
+
+instance forall a b . (Reify a, Reify b) => Reify (a, b) where
+    reify _ = H.AppTy (H.AppTy (H.TyConTy (H.TupleTyCon 2)) tya) tyb
+      where
+        tya = reify (undefined :: a)
+        tyb = reify (undefined :: b)
+
+instance forall a b c . (Reify a, Reify b, Reify c) => Reify (a, b, c) where
+    reify _ = H.AppTy (H.AppTy (H.AppTy (H.TyConTy (H.TupleTyCon 3)) tya) tyb) tyc
+      where
+        tya = reify (undefined :: a)
+        tyb = reify (undefined :: b)
+        tyc = reify (undefined :: c)
+
+instance forall a b . (Reify a, Reify b) => Reify (a -> b) where
+    reify _ = H.AppTy (H.AppTy (H.TyConTy (H.TyCon tycon)) ty1) ty2
+      where
+        tycon  = builtinArrow
+        ty1    = reify (undefined :: a)
+        ty2    = reify (undefined :: b)

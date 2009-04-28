@@ -1,5 +1,3 @@
-{-# LANGUAGE ScopedTypeVariables #-}
-
 -- Copyright (c) 2008
 --         The President and Fellows of Harvard College.
 --
@@ -29,65 +27,27 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Flask.Reify
+-- Module      :  Fladuino
 -- Copyright   :  (c) Harvard University 2008
 -- License     :  BSD-style
 -- Maintainer  :  mainland@eecs.harvard.edu
 --
 --------------------------------------------------------------------------------
 
-module Flask.Reify where
+module Fladuino (
+    module Fladuino.Driver,
+    module Fladuino.Exceptions,
+    module Fladuino.Generate,
+    module Fladuino.LiftN,
+    module Fladuino.Monad,
+    module Fladuino.Reify,
+    module Fladuino.Signals
+  ) where
 
-import Data.Name
-import qualified Language.Hs.Syntax as H
-
-class Reify a where
-    reify :: a -> H.Type
-
-instance Reify () where
-    reify _ = H.TyConTy (H.TupleTyCon 0)
-
-instance Reify Integer where
-    reify _ = H.TyConTy (H.TyCon prelInteger)
-
-instance Reify Char where
-    reify _ = H.TyConTy (H.TyCon prelChar)
-
-instance Reify Bool where
-    reify _ = H.TyConTy (H.TyCon prelBool)
-
-instance Reify Float where
-    reify _ = H.TyConTy (H.TyCon prelFloat)
-
-instance forall a . Reify a => Reify (Maybe a) where
-    reify _ = H.AppTy (H.TyConTy (H.TyCon tycon)) tya
-      where
-        tycon  = prelMaybe
-        tya    = reify (undefined :: a)
-
-instance forall a b . (Reify a, Reify b) => Reify (Either a b) where
-    reify _ = H.AppTy  (H.AppTy (H.TyConTy (H.TyCon tycon)) tya) tyb
-      where
-        tycon  = prelEither
-        tya    = reify (undefined :: a)
-        tyb    = reify (undefined :: b)
-
-instance forall a b . (Reify a, Reify b) => Reify (a, b) where
-    reify _ = H.AppTy (H.AppTy (H.TyConTy (H.TupleTyCon 2)) tya) tyb
-      where
-        tya = reify (undefined :: a)
-        tyb = reify (undefined :: b)
-
-instance forall a b c . (Reify a, Reify b, Reify c) => Reify (a, b, c) where
-    reify _ = H.AppTy (H.AppTy (H.AppTy (H.TyConTy (H.TupleTyCon 3)) tya) tyb) tyc
-      where
-        tya = reify (undefined :: a)
-        tyb = reify (undefined :: b)
-        tyc = reify (undefined :: c)
-
-instance forall a b . (Reify a, Reify b) => Reify (a -> b) where
-    reify _ = H.AppTy (H.AppTy (H.TyConTy (H.TyCon tycon)) ty1) ty2
-      where
-        tycon  = builtinArrow
-        ty1    = reify (undefined :: a)
-        ty2    = reify (undefined :: b)
+import Fladuino.Driver
+import Fladuino.Exceptions
+import Fladuino.Generate
+import Fladuino.LiftN
+import Fladuino.Monad
+import Fladuino.Reify
+import Fladuino.Signals

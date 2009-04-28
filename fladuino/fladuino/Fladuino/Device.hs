@@ -38,14 +38,14 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Flask.Device
+-- Module      :  Fladuino.Device
 -- Copyright   :  (c) Harvard University 2008
 -- License     :  BSD-style
 -- Maintainer  :  athas@sigkill.dk
 --
 --------------------------------------------------------------------------------
 
-module Flask.Device where
+module Fladuino.Device where
 
 import Prelude hiding (exp)
 
@@ -75,15 +75,15 @@ import qualified Transform.F.ToC as ToC
 import qualified Transform.Hs.Desugar as Desugar
 import qualified Transform.Hs.Rename as Rename
 
-import Flask.Driver
-import Flask.Monad
-import Flask.Signals
-import Flask.Reify
-import Flask.LiftN
+import Fladuino.Driver
+import Fladuino.Monad
+import Fladuino.Signals
+import Fladuino.Reify
+import Fladuino.LiftN
 
-statevar :: Device d => MonadFlask m => d -> String -> m String
+statevar :: Device d => MonadFladuino m => d -> String -> m String
 statevar d s = do
-  devices <- getsFlaskEnv f_devices
+  devices <- getsFladuinoEnv f_devices
   case findIndex (\(DRef d2) -> uniqueId d2 == uniqueId d) devices of
     Just n -> return $ "device_" ++ (show n) ++ s
     Nothing -> return $ error $ "Unknown device " ++ uniqueId d ++ " encountered."
@@ -136,14 +136,14 @@ modDev name d f a = S $ do
     tau :: H.Type
     tau = reify (undefined :: a)
 
-    genHs :: SCode m -> FlaskM ()
+    genHs :: SCode m -> FladuinoM ()
     genHs this =
         addCImport c_v_in [$ty|$ty:tau -> ()|] [$cexp|$id:c_v_in|]
         where
           v_in    = varIn this ""
           c_v_in = show v_in
 
-    genC :: SCode m -> FlaskM ()
+    genC :: SCode m -> FladuinoM ()
     genC this = do
         tauf <- toF tau
         sv <- statevar d "state"
@@ -222,14 +222,14 @@ valueOf d a = S $ do
     tau_b :: H.Type
     tau_b = reify (undefined :: Integer)
 
-    genHs :: SCode m -> FlaskM ()
+    genHs :: SCode m -> FladuinoM ()
     genHs this =
         addCImport c_v_in [$ty|$ty:tau -> ()|] [$cexp|$id:c_v_in|]
         where
           v_in    = varIn this ""
           c_v_in = show v_in
 
-    genC :: SCode m -> FlaskM ()
+    genC :: SCode m -> FladuinoM ()
     genC this = do
         tauf <- toF tau
         tauf_out <- toF tau_b
@@ -278,7 +278,7 @@ onEvent event = S $ do
     tau_t :: H.Type
     tau_t = reify (undefined :: t)
 
-    gen :: SCode m -> FlaskM ()
+    gen :: SCode m -> FladuinoM ()
     gen this = do
         addDecls [$decls|$var:v_in :: () -> ()|]
         addDecls [$decls|$var:v_in x = $var:v_out ()|]
