@@ -29,10 +29,10 @@
 
 /* Author: Geoffrey Mainland <mainland@eecs.harvard.edu> */
 
-#ifndef FLASK_H
-#define FLASK_H
+#ifndef FLADUINO_H
+#define FLADUINO_H
 
 #define error(x)
 #define undefined()
 
-#endif /* FLASK_H */
+#endif /* FLADUINO_H */

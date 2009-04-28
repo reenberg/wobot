@@ -38,14 +38,14 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Flask.LiftN
+-- Module      :  Fladuino.LiftN
 -- Copyright   :  (c) Harvard University 2008
 -- License     :  BSD-style
 -- Maintainer  :  mainland@eecs.harvard.edu
 --
 --------------------------------------------------------------------------------
 
-module Flask.LiftN where
+module Fladuino.LiftN where
 
 import Prelude hiding (exp)
 
@@ -65,15 +65,15 @@ import Text.PrettyPrint.Mainland
 import qualified Transform.Hs.Desugar as Desugar
 import qualified Transform.Hs.Rename as Rename
 
-import Flask.Driver
-import Flask.Exceptions
-import Flask.Monad
-import Flask.Reify
+import Fladuino.Driver
+import Fladuino.Exceptions
+import Fladuino.Monad
+import Fladuino.Reify
 
 -- |A value of type @N a@ represents node-level code of type @a@. The @LiftN@
 -- type class allows us to lift either C or "Red" code to node-level code.
 
-newtype N a =  N { unN :: FlaskM NCode }
+newtype N a =  N { unN :: FladuinoM NCode }
 
 class LiftN n a where
     liftN :: n -> N a
@@ -131,7 +131,7 @@ instance Reify a => LiftN Func a where
         stripParam (Param _ decl_spec decl) = Param Nothing decl_spec decl
         stripParam _                        = error "internal error"
 
-liftDecls :: MonadFlask m
+liftDecls :: MonadFladuino m
           => [H.Decl]
           -> H.Var
           -> H.Type
@@ -139,13 +139,13 @@ liftDecls :: MonadFlask m
 liftDecls decls v@(H.Var n) ty = do
     v' <-  return H.var `ap` gensym (nameString n)
     let decl = H.patD (H.varP v') (H.rhsD [H.letE decls (H.varE v)])
-    modifyFlaskEnv $ \s ->
+    modifyFladuinoEnv $ \s ->
         s { f_hsdecls = f_hsdecls s ++ [H.sigD [v'] ty, decl] }
     return v'
 
 liftDecls _ _ _ = fail "Cannot lift"
 
-liftCFun :: MonadFlask m
+liftCFun :: MonadFladuino m
             => Func
             -> H.Type
             -> m H.Var
@@ -178,7 +178,7 @@ nzip na nb = N $ do
     nzip <- unN $ (liftN [$exp|($exp:n1, $exp:n2)|] :: N (a, b))
     return nzip
 
-nexp :: N a -> FlaskM H.Exp
+nexp :: N a -> FladuinoM H.Exp
 nexp n = do
     ncode <- unN n
     return $ H.varE (n_var ncode)

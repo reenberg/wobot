@@ -12,8 +12,8 @@ import Language.C.Quote
 import Control.Monad.CGen
 import Text.PrettyPrint.Mainland
 
-import Flask
-import Flask.Device
+import Fladuino
+import Fladuino.Device
 
 main :: IO ()
 main =

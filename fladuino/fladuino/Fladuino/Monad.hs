@@ -38,14 +38,14 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Flask.Monad
+-- Module      :  Fladuino.Monad
 -- Copyright   :  (c) Harvard University 2008
 -- License     :  BSD-style
 -- Maintainer  :  mainland@eecs.harvard.edu
 --
 --------------------------------------------------------------------------------
 
-module Flask.Monad where
+module Fladuino.Monad where
 
 import Prelude hiding (exp)
 
@@ -72,7 +72,7 @@ import qualified Language.F as F
 import Text.PrettyPrint.Mainland
 import qualified Transform.F.ToC as ToC
 
-data FlaskEnv m = FlaskEnv
+data FladuinoEnv m = FladuinoEnv
     {  f_fdecls      :: [F.Decl]
     ,  f_hstopdecls  :: [H.Decl]
     ,  f_hsdecls     :: [H.Decl]
@@ -106,8 +106,8 @@ data FlaskEnv m = FlaskEnv
     ,  f_channel_connections :: Map.Map FlowChannel [(SCode m, H.Var)]
     }
 
-emptyFlaskEnv :: FlaskEnv m
-emptyFlaskEnv = FlaskEnv
+emptyFladuinoEnv :: FladuinoEnv m
+emptyFladuinoEnv = FladuinoEnv
     {  f_fdecls      = []
     ,  f_hsdecls     = []
     ,  f_hstopdecls  = []
@@ -220,29 +220,29 @@ data FlowActivity = Passive | Active
 class (MonadCompiler m,
        MonadCGen m,
        MonadRef IORef m,
-       ToC.MonadToC IORef m) => MonadFlask m where
-    getFlaskEnv   :: m (FlaskEnv m)
-    putFlaskEnv   :: FlaskEnv m -> m ()
+       ToC.MonadToC IORef m) => MonadFladuino m where
+    getFladuinoEnv   :: m (FladuinoEnv m)
+    putFladuinoEnv   :: FladuinoEnv m -> m ()
 
-    getsFlaskEnv :: (FlaskEnv m -> a) -> m a
-    getsFlaskEnv f = getFlaskEnv >>= \s -> return (f s)
+    getsFladuinoEnv :: (FladuinoEnv m -> a) -> m a
+    getsFladuinoEnv f = getFladuinoEnv >>= \s -> return (f s)
 
-    modifyFlaskEnv :: (FlaskEnv m -> FlaskEnv m) -> m ()
-    modifyFlaskEnv f = getFlaskEnv >>= \s -> putFlaskEnv (f s)
+    modifyFladuinoEnv :: (FladuinoEnv m -> FladuinoEnv m) -> m ()
+    modifyFladuinoEnv f = getFladuinoEnv >>= \s -> putFladuinoEnv (f s)
 
     liveVar :: H.Var -> m ()
     liveVar (H.Var v) =
-        modifyFlaskEnv $ \s ->
+        modifyFladuinoEnv $ \s ->
             s { f_live_vars = Set.insert (F.Var v) (f_live_vars s) }
 
     addTopDecls :: [H.Decl] -> m ()
     addTopDecls decls =
-        modifyFlaskEnv $ \s ->
+        modifyFladuinoEnv $ \s ->
             s { f_hstopdecls = f_hstopdecls s ++ decls }
 
     addDecls :: [H.Decl] -> m ()
     addDecls decls =
-        modifyFlaskEnv $ \s -> s { f_hsdecls = f_hsdecls s ++ decls }
+        modifyFladuinoEnv $ \s -> s { f_hsdecls = f_hsdecls s ++ decls }
 
     addAbstractType :: H.Type -> Type -> m ()
     addAbstractType tau cty = do
@@ -254,14 +254,14 @@ class (MonadCompiler m,
         tau_f <- toF tau
         let ce = ToC.CLowered tau_f e
         addDecls [$decls|$id:v :: $ty:tau|]
-        modifyFlaskEnv $ \s ->
+        modifyFladuinoEnv $ \s ->
             s { f_cvars = (F.var v, tau_f, ce) : f_cvars s }
 
     addCExpImport :: String -> H.Type -> ToC.CExp -> m ()
     addCExpImport v tau ce = do
         tau_f <- toF tau
         addDecls [$decls|$id:v :: $ty:tau|]
-        modifyFlaskEnv $ \s ->
+        modifyFladuinoEnv $ \s ->
             s { f_cvars = (F.var v, tau_f, ce) : f_cvars s }
 
     addCode  ::  H.Type
@@ -269,19 +269,19 @@ class (MonadCompiler m,
              ->  m H.Var
              ->  m NCode
     addCode tau nrep m = do
-        maybe_ncode <- getsFlaskEnv $ \s -> Map.lookup nrep (f_ncode_hash s)
+        maybe_ncode <- getsFladuinoEnv $ \s -> Map.lookup nrep (f_ncode_hash s)
         case maybe_ncode of
           Just ncode -> return ncode
           Nothing -> do
               v <- m
-              nid <- getsFlaskEnv f_ncode_id
-              modifyFlaskEnv $ \s -> s { f_ncode_id = (f_ncode_id s) + 1 }
+              nid <- getsFladuinoEnv f_ncode_id
+              modifyFladuinoEnv $ \s -> s { f_ncode_id = (f_ncode_id s) + 1 }
               let ncode = NCode { n_id   = nid
                                 , n_type = tau
                                 , n_var  = v
                                 , n_rep  = nrep
                                 }
-              modifyFlaskEnv $ \s -> s { f_ncode_hash = Map.insert nrep ncode
+              modifyFladuinoEnv $ \s -> s { f_ncode_hash = Map.insert nrep ncode
                                                        (f_ncode_hash s) }
               return ncode
 
@@ -293,12 +293,12 @@ class (MonadCompiler m,
                ->  (SCode m -> m ())  -- ^ Stream constructor
                ->  m (SCode m)
     addStream name ty srep gen_hs gen_c m = do
-        maybe_scode <- getsFlaskEnv $ \s -> Map.lookup srep (f_stream_hash s)
+        maybe_scode <- getsFladuinoEnv $ \s -> Map.lookup srep (f_stream_hash s)
         case maybe_scode of
           Just scode -> return scode
           Nothing -> do
-              sid <- getsFlaskEnv f_stream_id
-              modifyFlaskEnv $ \s -> s { f_stream_id = (f_stream_id s) + 1 }
+              sid <- getsFladuinoEnv f_stream_id
+              modifyFladuinoEnv $ \s -> s { f_stream_id = (f_stream_id s) + 1 }
               let scode = SCode { s_id       = sid
                                 , s_name     = name
                                 , s_vout     = H.var $
@@ -308,7 +308,7 @@ class (MonadCompiler m,
                                 , s_gen_hs   = gen_hs
                                 , s_gen_c = gen_c
                                 }
-              modifyFlaskEnv $ \s -> s { f_stream_hash = Map.insert srep scode
+              modifyFladuinoEnv $ \s -> s { f_stream_hash = Map.insert srep scode
                                                          (f_stream_hash s) }
               m scode
               return scode
@@ -319,23 +319,23 @@ class (MonadCompiler m,
             fail $ pretty 80 $ text "type" <+> squotes (ppr tau_from) <+> text "and" <+>
                 squotes (ppr tau) <+> text "don't match when connecting stream" <+>
                 squotes (ppr (s_name sfrom)) <+> text "to" <+> squotes (ppr (s_name sto))
-        modifyFlaskEnv $ \s ->
+        modifyFladuinoEnv $ \s ->
             s { f_stream_connections = (sfrom, sto, v) : f_stream_connections s }
       where
         tau_from = s_type sfrom
 
     addTimer :: Int -> m String
     addTimer period = once $ do
-        modifyFlaskEnv $ \s ->
+        modifyFladuinoEnv $ \s ->
             s { f_timers = Map.insert period timerCP (f_timers s) }
         return timerCP
       where
         timerCP :: String
         timerCP = "Timer" ++ show period
 
-        once :: MonadFlask m => m String -> m String
+        once :: MonadFladuino m => m String -> m String
         once m = do
-            maybe_timerc <- getsFlaskEnv $ \s -> Map.lookup period (f_timers s)
+            maybe_timerc <- getsFladuinoEnv $ \s -> Map.lookup period (f_timers s)
             case maybe_timerc of
               Just timerc -> return timerc
               Nothing ->     m
@@ -343,7 +343,7 @@ class (MonadCompiler m,
     connectTimer :: Int -> SCode m -> H.Var -> m ()
     connectTimer period stream v = do
         liveVar v
-        modifyFlaskEnv $ \s ->
+        modifyFladuinoEnv $ \s ->
             s { f_timer_connections =
                     let connections = Map.findWithDefault []
                                       period (f_timer_connections s)
@@ -354,15 +354,15 @@ class (MonadCompiler m,
 
     addInterrupt :: Int -> m String 
     addInterrupt pin = once $ do
-        modifyFlaskEnv $ \s ->
+        modifyFladuinoEnv $ \s ->
             s { f_interrupts = Map.insert pin interruptID (f_interrupts s) }
         return interruptID
       where
         interruptID = "Interrupt" ++ show pin
           
-        once :: MonadFlask m => m String -> m String
+        once :: MonadFladuino m => m String -> m String
         once m = do
-            maybe_interrupt <- getsFlaskEnv $ \s -> Map.lookup pin (f_interrupts s)
+            maybe_interrupt <- getsFladuinoEnv $ \s -> Map.lookup pin (f_interrupts s)
             case maybe_interrupt of
               Just interrupt -> return interrupt
               Nothing ->     m
@@ -371,7 +371,7 @@ class (MonadCompiler m,
     connectInterrupt :: Int -> SCode m -> H.Var -> m ()
     connectInterrupt pin stream v = do
         liveVar v
-        modifyFlaskEnv $ \s ->
+        modifyFladuinoEnv $ \s ->
             s { f_interrupt_connections =
                     let connections = Map.findWithDefault []
                                       pin (f_interrupt_connections s)
@@ -383,27 +383,27 @@ class (MonadCompiler m,
 
     addDevice :: Device d => d -> m ()
     addDevice d = once $ do
-                    modifyFlaskEnv $ \s -> 
+                    modifyFladuinoEnv $ \s -> 
                         s { f_devices = (DRef d) : (f_devices s) }
                     return ()
         where
 
-        once :: MonadFlask m => m () -> m ()
+        once :: MonadFladuino m => m () -> m ()
         once m = do
-          devices <- getsFlaskEnv f_devices
+          devices <- getsFladuinoEnv f_devices
           case find (\(DRef d2) -> uniqueId d2 == uniqueId d) devices of
             Just device -> return ()
             Nothing ->     m
 
     addEvent :: (Event e t) => e -> m ()
     addEvent event = once $ do
-                       modifyFlaskEnv $ \s ->
+                       modifyFladuinoEnv $ \s ->
                            s { f_events = (ERef event) : (f_events s) }
                        return ()
         where
-        once :: MonadFlask m => m () -> m ()
+        once :: MonadFladuino m => m () -> m ()
         once m = do
-            events <- getsFlaskEnv f_events
+            events <- getsFladuinoEnv f_events
             case elem (ERef event) events of
               True  -> return ()
               False -> m
@@ -411,7 +411,7 @@ class (MonadCompiler m,
     connectEvent :: (Event e t) => e -> SCode m -> H.Var -> m ()
     connectEvent event stream v = do
         liveVar v
-        modifyFlaskEnv $ \s ->
+        modifyFladuinoEnv $ \s ->
             s { f_event_connections = update (ERef event, (stream, v)) (f_event_connections s) }
         where
           update :: Eq a => (a, b) -> [(a,[b])] -> [(a,[b])]
@@ -423,13 +423,13 @@ class (MonadCompiler m,
 
     useChannel :: FlowChannel -> F.Type -> m ()
     useChannel chan tau = do
-        tau_chan <- getsFlaskEnv $ \s ->
+        tau_chan <- getsFladuinoEnv $ \s ->
             Map.findWithDefault tau chan (f_channel_types s)
         when (tau /= tau_chan) $
             fail $ pretty 80 $
             text "channel" <+> ppr chan <+> text "has type" <+> ppr tau_chan
             <+> text "but requested type" <+> ppr tau
-        modifyFlaskEnv $ \s ->
+        modifyFladuinoEnv $ \s ->
             s { f_channel_types = Map.insert chan tau (f_channel_types s)
               }
 
@@ -437,7 +437,7 @@ class (MonadCompiler m,
     connectFlow chan act tau stream v = do
         liveVar v
         useChannel chan tau
-        modifyFlaskEnv $ \s ->
+        modifyFladuinoEnv $ \s ->
             s { f_channel_receiving = Map.adjust (activityLUB act) chan
                                                  (f_channel_receiving s)
               , f_channel_connections =
@@ -451,7 +451,7 @@ class (MonadCompiler m,
     sendOnFlow :: FlowChannel -> FlowActivity -> F.Type -> m ()
     sendOnFlow chan act tau = do
         useChannel chan tau
-        modifyFlaskEnv $ \s ->
+        modifyFladuinoEnv $ \s ->
             s { f_channel_sending = Map.adjust (activityLUB act) chan
                                                (f_channel_sending s)
               }
@@ -462,7 +462,7 @@ activityLUB _      Active = Active
 activityLUB _      _      = Passive
 
 class ToF a b where
-    toF :: MonadFlask m => a -> m b
+    toF :: MonadFladuino m => a -> m b
 
 instance ToF H.Type F.Type where
     toF tau = do
@@ -470,7 +470,7 @@ instance ToF H.Type F.Type where
         Check.Hs.coerceAst tau_f
 
 class ToC a b where
-    toC :: MonadFlask m => a -> m b
+    toC :: MonadFladuino m => a -> m b
 
 instance ToC H.Type Type where
     toC tau = do
@@ -505,7 +505,7 @@ boolTy = H.TyConTy (H.TyCon prelBool)
 floatGTy :: F.Type
 floatGTy = F.TyConTy (F.TyCon prelFloat) internalLoc
 
-hcall :: MonadFlask m => H.Var -> ToC.CExp -> m Exp
+hcall :: MonadFladuino m => H.Var -> ToC.CExp -> m Exp
 hcall (H.Var n_v) ce_arg = do
     ce <- Check.F.extendVars [(x, ToC.cexpTy ce_arg)] $
           ToC.extendCVars [(x, return ce_arg)] $
@@ -517,10 +517,10 @@ hcall (H.Var n_v) ce_arg = do
 
 hcall _ _ = fail "bad H.Var"
 
-hfst :: MonadFlask m => ToC.CExp -> m Exp
+hfst :: MonadFladuino m => ToC.CExp -> m Exp
 hfst = hcall (H.var "fst")
 
-hsnd :: MonadFlask m => ToC.CExp -> m Exp
+hsnd :: MonadFladuino m => ToC.CExp -> m Exp
 hsnd = hcall (H.var "snd")
 
 varIn :: SCode m -> String -> H.Var
@@ -532,7 +532,7 @@ ident s ""     = s_name s ++ show (s_id s) ++ "_c"
 ident s suffix = s_name s ++ show (s_id s) ++ "_c" ++ suffix
 
 class (Eq a) => Device a where
-    setup :: MonadFlask m => a -> m ()
+    setup :: MonadFladuino m => a -> m ()
     deviceClass :: a -> String
     uniqueId :: a -> String
     uniqueId = deviceClass

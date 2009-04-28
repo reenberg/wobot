@@ -37,14 +37,14 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Flask.Generate
+-- Module      :  Fladuino.Generate
 -- Copyright   :  (c) Harvard University 2008
 -- License     :  BSD-style
 -- Maintainer  :  mainland@eecs.harvard.edu
 --
 --------------------------------------------------------------------------------
 
-module Flask.Generate where
+module Fladuino.Generate where
 
 import Prelude hiding (exp)
 
@@ -73,24 +73,24 @@ import qualified Transform.F.ToC as ToC
 import qualified Transform.Hs.Desugar as Desugar
 import qualified Transform.Hs.Rename as Rename
 
-import Flask.Driver
-import Flask.Monad
-import Flask.Signals
+import Fladuino.Driver
+import Fladuino.Monad
+import Fladuino.Signals
 
-defaultMain :: FlaskM a -> IO a
+defaultMain :: FladuinoM a -> IO a
 defaultMain m = do
     args       <- getArgs
     (opts, _)  <- parseOpts defaultOpts args
     writeIORef Language.Hs.Quote.quasiOpts defaultOpts
-    env        <- emptyFlaskState opts
-    result     <- (flip evalFlaskM) env $ do
+    env        <- emptyFladuinoState opts
+    result     <- (flip evalFladuinoM) env $ do
                     addCInclude "util/delay.h"
                     addCInclude "avr/interrupt.h"
                     addCInclude "avr/io.h"
-                    addCInclude "common/Flask.h"
+                    addCInclude "common/Fladuino.h"
                     addCInclude "common/event_dispatch.h"
                     fdecls <- forPrelude [] compileHs
-                    modifyFlaskEnv $ \s ->
+                    modifyFladuinoEnv $ \s ->
                         s { f_fdecls = f_fdecls s ++ fdecls }
                     m
     case result of
@@ -98,40 +98,40 @@ defaultMain m = do
       Right a   -> return a
   where
     defaultOpts :: Opts
-    defaultOpts = Opts  {  output    = Just "Flask"
+    defaultOpts = Opts  {  output    = Just "Fladuino"
                         ,  prelude   = Nothing
                         ,  flags     = [Opt_OptC, Opt_ImplicitPrelude]
                         }
 
-putDoc :: MonadFlask m => FilePath -> Doc -> m ()
+putDoc :: MonadFladuino m => FilePath -> Doc -> m ()
 putDoc filepath doc = do
     h <- liftIO $ openFile filepath WriteMode
     liftIO $ hPutStr h $ pretty 80 doc
     liftIO $ hClose h
 
-genStream :: S a -> FlaskM ()
+genStream :: S a -> FladuinoM ()
 genStream s = genStreams [unS s]
 
-genStreams :: [FlaskM (SCode FlaskM)]
-           -> FlaskM ()
+genStreams :: [FladuinoM (SCode FladuinoM)]
+           -> FladuinoM ()
 genStreams ss = do
-    basename <- return (maybe "Flask" id) `ap` optVal output
+    basename <- return (maybe "Fladuino" id) `ap` optVal output
     scodes <- sequence ss
-    timer_connections   <- getsFlaskEnv f_timer_connections
-    channel_connections <- getsFlaskEnv f_channel_connections
+    timer_connections   <- getsFladuinoEnv f_timer_connections
+    channel_connections <- getsFladuinoEnv f_channel_connections
     let scodes' = scodes ++ [scode | (_, conns) <- Map.toList timer_connections,
                                      (scode, _) <- conns]
                          ++ [scode | (_, conns) <- Map.toList channel_connections,
                                      (scode, _) <- conns]
     genHs Set.empty scodes'
-    env <- getFlaskEnv
+    env <- getFladuinoEnv
     forM_ (f_cvars env) $ \(gv, gty, ce) -> do
         Check.F.insertVar gv gty
         ToC.insertCVar gv (return ce)
     topdecls  <-  Rename.rename (f_hstopdecls env ++ f_hsdecls env) >>=
                   Desugar.desugar
     dump "hs" Opt_d_dump_hs basename "" topdecls
-    live    <- getsFlaskEnv f_live_vars
+    live    <- getsFladuinoEnv f_live_vars
     fdecls  <- Check.Hs.checkTopDecls topdecls
     fdecls' <- optimizeF basename (Set.toList live) (f_fdecls env ++ fdecls)
     ToC.transDecls fdecls'
@@ -143,12 +143,12 @@ genStreams ss = do
     finalizeFlows
     cdefs_toc            <- getCDefs
     cstms_toc            <- getCInitStms
-    --flaskm               <- moduleName
-    --flaskm_usesprovides  <- getModuleUsesProvides
-    --flaskc_usesprovides  <- getConfigUsesProvides
-    --flaskc_components    <- getComponents
-    --flaskc_connections   <- getConnections
-    filepath <- return (maybe "Flask" id) `ap` optVal output
+    --fladuinom               <- moduleName
+    --fladuinom_usesprovides  <- getModuleUsesProvides
+    --fladuinoc_usesprovides  <- getConfigUsesProvides
+    --fladuinoc_components    <- getComponents
+    --fladuinoc_connections   <- getConnections
+    filepath <- return (maybe "Fladuino" id) `ap` optVal output
     putDoc (filepath ++ ".pde") $ ppr [$cunit|
 $edecls:cdefs_toc
 
@@ -174,13 +174,13 @@ void loop()
 }
 |]
   where
-    genHs :: Set.Set SCodeID -> [SCode FlaskM] -> FlaskM ()
+    genHs :: Set.Set SCodeID -> [SCode FladuinoM] -> FladuinoM ()
     genHs _       []      = return ()
     genHs visited (scode : scodes)
         | s_id scode `Set.member` visited = genHs visited scodes
         | otherwise = do
             --liftIO $ print $ s_name scode
-            connections <- getsFlaskEnv f_stream_connections
+            connections <- getsFladuinoEnv f_stream_connections
             let sconnections = [(to, v) |  (from, to, v) <- connections,
                                            s_id from == s_id scode]
             {-
@@ -194,7 +194,7 @@ void loop()
             let e_call   = seqsE es
             let decls    = [H.sigD [v_out] (tau H.--> unitTy),
                             H.varD  v_out [H.varP x] (H.rhsD [e_call])]
-            modifyFlaskEnv $ \s -> s { f_hsdecls = f_hsdecls s ++ decls }
+            modifyFladuinoEnv $ \s -> s { f_hsdecls = f_hsdecls s ++ decls }
             (s_gen_hs scode) scode
             genHs visited' ([from |  (from, to, _) <- connections,
                                      s_id to == s_id scode] ++
@@ -207,12 +207,12 @@ void loop()
         x        = H.var "x"
         visited' = Set.insert (s_id scode) visited
 
-    genC :: Set.Set SCodeID -> [SCode FlaskM] -> FlaskM ()
+    genC :: Set.Set SCodeID -> [SCode FladuinoM] -> FladuinoM ()
     genC _       []      = return ()
     genC visited (scode : scodes)
         | s_id scode `Set.member` visited = genC visited scodes
         | otherwise = do
-            connections <- getsFlaskEnv f_stream_connections
+            connections <- getsFladuinoEnv f_stream_connections
             (s_gen_c scode) scode
             genC visited' ([from |  (from, to, _) <- connections,
                                        s_id to == s_id scode] ++
@@ -234,18 +234,18 @@ void loop()
     unitE :: H.Exp
     unitE = H.conE (H.TupleCon 0)
 
-finalizeDevices :: forall m . MonadFlask m
+finalizeDevices :: forall m . MonadFladuino m
                => m ()
 finalizeDevices = do
-  devices <- getsFlaskEnv f_devices
+  devices <- getsFladuinoEnv f_devices
   forM_ devices $ \(DRef d) -> do
                     setup d
   return ()
 
-finalizeTimers :: forall m . MonadFlask m
+finalizeTimers :: forall m . MonadFladuino m
                => m ()
 finalizeTimers = do
-    timersMap <- getsFlaskEnv $ \s -> f_timers s
+    timersMap <- getsFladuinoEnv $ \s -> f_timers s
     let timers = Map.toList timersMap
     -- We must at least have 62 interrupts each second
     let interruptsPerSecond = max 62 (1000 / (fromIntegral . fst $ Map.findMin timersMap))
@@ -268,7 +268,7 @@ void timer2_interrupt_handler (void)
     finalizeTimer :: Int -> String -> Double -> m (Definition, InitGroup, [Stm])
     finalizeTimer period _ interruptsPerSecond = do
         let c_period = toInteger period
-        vs <- getsFlaskEnv $ \s ->
+        vs <- getsFladuinoEnv $ \s ->
             Map.findWithDefault [] period (f_timer_connections s)
         stms <- forM vs $ \(_, v) -> do
                 e <- hcall v $ ToC.CLowered unitGTy [$cexp|NULL|]
@@ -286,10 +286,10 @@ void timer2_interrupt_handler (void)
         counterCP = timerCP ++ "_counter"
 
 
-finalizeInterrupts :: forall m . MonadFlask m
+finalizeInterrupts :: forall m . MonadFladuino m
                => m ()
 finalizeInterrupts = do
-    interrupts <- getsFlaskEnv $ \s -> Map.toList $ f_interrupts s
+    interrupts <- getsFladuinoEnv $ \s -> Map.toList $ f_interrupts s
     when (interrupts /= []) $ do 
                    addCInclude "common/PCINT.h"
     
@@ -312,7 +312,7 @@ finalizeInterrupts = do
     finalizeInterrupt :: Int -> String -> m ([Definition], [Stm])
     finalizeInterrupt pin _ = do
         let c_pin = toInteger pin
-        vs <- getsFlaskEnv $ \s ->
+        vs <- getsFladuinoEnv $ \s ->
             Map.findWithDefault [] pin (f_interrupt_connections s)
         stms <- forM vs $ \(_, v) -> do
                 e <- hcall v $ ToC.CLowered unitGTy [$cexp|NULL|]
@@ -337,14 +337,14 @@ finalizeInterrupts = do
               counterCP = interruptCP ++ "_counter"
 
 
-finalizeADCs :: MonadFlask m => m ()
+finalizeADCs :: MonadFladuino m => m ()
 finalizeADCs = do
-    adcs <- getsFlaskEnv f_adcs
+    adcs <- getsFladuinoEnv f_adcs
     when (adcs > 0) $ do
         adc_stms <-
             forM [0..adcs - 1] $ \i -> do
                 let c_i = toInteger i
-                e <- getsFlaskEnv $ \s -> f_adc_getdata s Map.! i
+                e <- getsFladuinoEnv $ \s -> f_adc_getdata s Map.! i
                 return [$cstm|
 if ((adc_pending & 1 << $int:c_i) != 0) {
     $exp:e;
@@ -361,21 +361,21 @@ void adc_process_pending()
 }
 |]
 
-finalizeFlows ::  FlaskM ()
+finalizeFlows ::  FladuinoM ()
 finalizeFlows = do
-    receiving <- getsFlaskEnv $ \s -> Map.toList (f_channel_receiving s)
+    receiving <- getsFladuinoEnv $ \s -> Map.toList (f_channel_receiving s)
     {-forM receiving $ \(chan, activity) ->
         case activity of
           Active   -> addCInitStm [$cstm|call Flow.subscribe($int:chan, TRUE);|]
           Passive  -> addCInitStm [$cstm|call Flow.subscribe($int:chan, FALSE);|]-}
 
-    sending <- getsFlaskEnv $ \s -> Map.toList (f_channel_sending s)
+    sending <- getsFladuinoEnv $ \s -> Map.toList (f_channel_sending s)
     {-forM sending $ \(chan, activity) ->
         case activity of
           Active   -> addCInitStm [$cstm|call Flow.publish($int:chan, TRUE);|]
           Passive  -> addCInitStm [$cstm|call Flow.publish($int:chan, FALSE);|]-}
 
-    connections <- getsFlaskEnv $ \s -> Map.toList (f_channel_connections s)
+    connections <- getsFladuinoEnv $ \s -> Map.toList (f_channel_connections s)
     return ()
     --handlers    <- forM connections $ \(chan, vs) -> finalizeChannel chan vs
     --let switch_stms = intersperse [$cstm|break;|] handlers
@@ -390,9 +390,9 @@ event void Flow.receive(typename flowid_t flow_id, void *data, typename size_t s
 |]-}
   where
     {-
-    finalizeChannel :: Integer -> [(SCode FlaskM, H.Var)] -> FlaskM Stm
+    finalizeChannel :: Integer -> [(SCode FladuinoM, H.Var)] -> FladuinoM Stm
     finalizeChannel chan vs = do
-        tau  <- getsFlaskEnv $ \s -> f_channel_types s Map.! chan
+        tau  <- getsFladuinoEnv $ \s -> f_channel_types s Map.! chan
         cty  <- toC tau
         stms <- forM vs $ \(_, v) -> do
                 e <- hcall v $ ToC.CLowered tau [$cexp|temp|]

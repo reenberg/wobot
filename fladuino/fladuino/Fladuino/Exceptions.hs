@@ -30,14 +30,14 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Flask.Exceptions
+-- Module      :  Fladuino.Exceptions
 -- Copyright   :  (c) Harvard University 2008
 -- License     :  BSD-style
 -- Maintainer  :  mainland@eecs.harvard.edu
 --
 --------------------------------------------------------------------------------
 
-module Flask.Exceptions where
+module Fladuino.Exceptions where
 
 import Control.Exception
 import Data.Typeable
@@ -46,34 +46,34 @@ import Language.C.Syntax as C
 import Language.C.Pretty ()
 import Text.PrettyPrint.Mainland
 
-data SomeFlaskException  =   forall a . (Pretty a, Exception a)
-                          =>  SomeFlaskException a
+data SomeFladuinoException  =   forall a . (Pretty a, Exception a)
+                          =>  SomeFladuinoException a
   deriving (Typeable)
 
-instance Show SomeFlaskException where
-    show (SomeFlaskException e) = show e
+instance Show SomeFladuinoException where
+    show (SomeFladuinoException e) = show e
 
-instance Pretty SomeFlaskException where
-    ppr (SomeFlaskException e) = ppr e
+instance Pretty SomeFladuinoException where
+    ppr (SomeFladuinoException e) = ppr e
 
-instance Exception SomeFlaskException
+instance Exception SomeFladuinoException
 
-flaskToException :: (Pretty a, Exception a)
+fladuinoToException :: (Pretty a, Exception a)
                   => a -> SomeException
-flaskToException = toException . SomeFlaskException
+fladuinoToException = toException . SomeFladuinoException
 
-flaskFromException :: (Pretty a, Exception a)
+fladuinoFromException :: (Pretty a, Exception a)
                     => SomeException -> Maybe a
-flaskFromException x = do
-    SomeFlaskException a <- fromException x
+fladuinoFromException x = do
+    SomeFladuinoException a <- fromException x
     cast a
 
 data CTypeError = CTypeError C.Type C.Type
   deriving (Typeable)
 
 instance Exception CTypeError where
-    toException   = flaskToException
-    fromException = flaskFromException
+    toException   = fladuinoToException
+    fromException = fladuinoFromException
 
 instance Pretty CTypeError where
     ppr (CTypeError tau1 tau2) =
