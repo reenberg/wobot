@@ -7,6 +7,7 @@
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE FunctionalDependencies #-}
 
 -- Copyright (c) 2008
 --         The President and Fellows of Harvard College.
@@ -93,6 +94,9 @@ data FlaskEnv m = FlaskEnv
 
     ,  f_devices :: [DRef m]
 
+    ,  f_events            :: [ERef m]
+    ,  f_event_connections :: [(ERef m, [(SCode m, H.Var)])]
+
     ,  f_adcs         :: Int
     ,  f_adc_getdata  :: Map.Map Int Exp
 
@@ -124,6 +128,9 @@ emptyFlaskEnv = FlaskEnv
     ,  f_interrupt_connections = Map.empty
 
     ,  f_devices = []
+
+    ,  f_events = []
+    ,  f_event_connections = []
 
     ,  f_adcs = 0
     ,  f_adc_getdata = Map.empty
@@ -178,7 +185,12 @@ instance Show (SCode m) where
 data DRef m = forall a. (Device a) => DRef a
 
 instance Eq (DRef m) where
-    DRef d1 == DRef d2 = unique_id d1 == unique_id d2
+    DRef d1 == DRef d2 = uniqueId d1 == uniqueId d2
+
+data ERef m = forall e t. (Event e t) => ERef e
+
+instance Eq (ERef m) where
+    ERef e1 == ERef e2 = show e1 == show e2
 
 data SRep m  =  SConst NCode (SCode m)
              |  SMap NCode (SCode m)
@@ -196,6 +208,7 @@ data SRep m  =  SConst NCode (SCode m)
              |  SBlackbox String
              |  DeviceWrite (SCode m) String
              |  DeviceRead (SCode m) String
+             |  OnEvent String
              |  GenericSRep (SCode m) String -- For random new operators.
   deriving (Eq, Ord, Show)
 
@@ -370,7 +383,6 @@ class (MonadCompiler m,
 
     addDevice :: Device d => d -> m ()
     addDevice d = once $ do
-                    devices <- getsFlaskEnv f_devices
                     modifyFlaskEnv $ \s -> 
                         s { f_devices = (DRef d) : (f_devices s) }
                     return ()
@@ -379,9 +391,35 @@ class (MonadCompiler m,
         once :: MonadFlask m => m () -> m ()
         once m = do
           devices <- getsFlaskEnv f_devices
-          case find (\(DRef d2) -> unique_id d2 == unique_id d) devices of
+          case find (\(DRef d2) -> uniqueId d2 == uniqueId d) devices of
             Just device -> return ()
             Nothing ->     m
+
+    addEvent :: (Event e t) => e -> m ()
+    addEvent event = once $ do
+                       modifyFlaskEnv $ \s ->
+                           s { f_events = (ERef event) : (f_events s) }
+                       return ()
+        where
+        once :: MonadFlask m => m () -> m ()
+        once m = do
+            events <- getsFlaskEnv f_events
+            case elem (ERef event) events of
+              True  -> return ()
+              False -> m
+
+    connectEvent :: (Event e t) => e -> SCode m -> H.Var -> m ()
+    connectEvent event stream v = do
+        liveVar v
+        modifyFlaskEnv $ \s ->
+            s { f_event_connections = update (ERef event, (stream, v)) (f_event_connections s) }
+        where
+          update :: Eq a => (a, b) -> [(a,[b])] -> [(a,[b])]
+          update (key, value) [] = [(key, [value])]
+          update (key, value) ((key2, values):xs)
+              | (key == key2) = (key, value:values):xs
+              | otherwise = (key2, values) : update (key, value) xs
+                                           
 
     useChannel :: FlowChannel -> F.Type -> m ()
     useChannel chan tau = do
@@ -496,5 +534,7 @@ ident s suffix = s_name s ++ show (s_id s) ++ "_c" ++ suffix
 class (Eq a) => Device a where
     setup :: MonadFlask m => a -> m ()
     deviceClass :: a -> String
-    unique_id :: a -> String
-    unique_id = deviceClass
+    uniqueId :: a -> String
+    uniqueId = deviceClass
+
+class (Eq e, Show e) => Event e t | e -> t where

@@ -84,9 +84,9 @@ import Flask.LiftN
 statevar :: Device d => MonadFlask m => d -> String -> m String
 statevar d s = do
   devices <- getsFlaskEnv f_devices
-  case findIndex (\(DRef d2) -> unique_id d2 == unique_id d) devices of
+  case findIndex (\(DRef d2) -> uniqueId d2 == uniqueId d) devices of
     Just n -> return $ "device_" ++ (show n) ++ s
-    Nothing -> return $ error $ "Unknown device " ++ unique_id d ++ " encountered."
+    Nothing -> return $ error $ "Unknown device " ++ uniqueId d ++ " encountered."
 
 
 data DigitalOutputPin = DigitalOutputPin Integer Bool
@@ -112,7 +112,7 @@ instance Device DigitalOutputPin where
           where
             val = if initstate then "HIGH" else "LOW"
     deviceClass _ = "digital_output_pin"
-    unique_id d@(DigitalOutputPin pin initstate) = deviceClass d ++ (show pin)
+    uniqueId d@(DigitalOutputPin pin initstate) = deviceClass d ++ (show pin)
 
 instance Device AnalogOutputPin where
     setup d@(AnalogOutputPin pin initstate) = 
@@ -120,7 +120,7 @@ instance Device AnalogOutputPin where
           addCInitStm [$cstm|pinMode($int:pin, OUTPUT);|]
           addCInitStm [$cstm|analogWrite($int:pin, $int:initstate);|]
     deviceClass _ = "analog_output_pin"
-    unique_id d@(AnalogOutputPin pin initstate) = deviceClass d ++ (show pin)
+    uniqueId d@(AnalogOutputPin pin initstate) = deviceClass d ++ (show pin)
 
 modDev :: forall a d. (Reify a, Device d) => String -> d -> (d -> String -> String -> ([Param], [Exp]) -> Definition) -> S a -> S ()
 modDev name d f a = S $ do
@@ -128,7 +128,7 @@ modDev name d f a = S $ do
     addDevice d
     addStream name
               unitTy
-              (DeviceWrite sa $ unique_id d)
+              (DeviceWrite sa $ uniqueId d)
               genHs
               genC $ \this -> do
     connect sa this tau (varIn this "")
@@ -193,7 +193,7 @@ diode pin initiallyOn = DigitalOutputPin pin initiallyOn
 {-toggle d@(DigitalOutputPin pin startstate) a = S $ do
   sa <- unS a
   addDevice d
-  unS (a >>> sref (unique_id d) >>> onezero >>> digitalWrite)
+  unS (a >>> sref (uniqueId d) >>> onezero >>> digitalWrite)
     where
       onezero = sintegrate zero int
           where
@@ -212,7 +212,7 @@ valueOf d a = S $ do
     addDevice d
     addStream "valueOf"
               tau_b
-              (DeviceRead sa $ unique_id d)
+              (DeviceRead sa $ uniqueId d)
               genHs
               genC $ \this -> do
     connect sa this tau (varIn this "")
@@ -255,7 +255,33 @@ data Potentiometer = Potentiometer Integer
 instance Device Potentiometer where
     setup _ = return ()
     deviceClass _ = "potentiometer"
-    unique_id d@(Potentiometer pin) = deviceClass d ++ (show pin)
+    uniqueId d@(Potentiometer pin) = deviceClass d ++ (show pin)
 
 instance AnalogInputDevice Potentiometer where
     genReadCode (Potentiometer pin) resultvar = [[$cstm|$id:resultvar = analogRead($int:pin);|]]
+
+data TestEvent = TestEvent Integer
+                 deriving (Eq, Show)
+
+instance Event TestEvent Integer where
+
+onEvent :: forall e t. (Reify t, Event e Integer) => e -> S t
+onEvent event = S $ do
+    addStream  "onEvent"
+               tau_t
+               (OnEvent $ show event)
+               gen
+               (const (return ())) $ \this -> do
+    addEvent event
+    connectEvent event this (varIn this "")
+  where
+    tau_t :: H.Type
+    tau_t = reify (undefined :: t)
+
+    gen :: SCode m -> FlaskM ()
+    gen this = do
+        addDecls [$decls|$var:v_in :: () -> ()|]
+        addDecls [$decls|$var:v_in x = $var:v_out ()|]
+      where
+        v_in  = varIn this ""
+        v_out = s_vout this
