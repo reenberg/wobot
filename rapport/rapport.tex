@@ -171,4 +171,68 @@ PWM output pins.}
   component are drawn in a diagram, if we are going to use diagrams in
   the article). }
 
+\chapter{Implementation}
+
+The essence of Fladuino can be condensed to a single, conceptually
+simple problem: translate a high-level functional reactive program to
+a form suitable for execution on the Arduino platform.  We have chosen
+to stop a step short, and merely generate C code meant for further
+compilation through an Arduino-specific compiler.  We have no need of
+the additional power we would gain through generating our own machine
+code, and the additional amount of work required would be very large.
+Flask chooses the same approach, in that it produces NesC--code for
+running on sensor motes, likely for the same reasons.
+
+Our target platform, Arduino, imposes constraints on the resulting
+device-level code.  In particular, the low amount of available main
+memory, and the comparatively large amount of available flash memory
+for program code, suggests that we optimise for low memory usage over
+low code size.  Indeed, as we shall see, we have opted to directly
+express much of the control flow in the code itself, where a typical
+program, with plenty of available memory, might instead choose a more
+data-driven approach.
+
+\section{Basic dataflow translation}
+
+At their heart, both Flask and Fladuino--programs consist of an
+acyclic dataflow graph.  A core part of the system involves the
+translation of this high-level description of the passage of data into
+the procedural target environment.  Fladuino adopts Flask's
+implementation almost verbatim, the details of which will be explained
+within this chapter.
+
+As in Flask, the graph is divided into \textit{atomic subgraphs},
+sections that can be executed without blocking
+
+\subsection{Translation of a simple dataflow graph}
+
+A set of nodes connected by a set of directed graph edges make up the
+entirety of the dataflow graph.  We shall adopt the terminology of
+Flask, and refer to nodes as \textit{dataflow operators} and the
+directed edges as \textit{wires} in the following.  Some dataflow
+operators have no predecessor and exist solely as entry points for
+data (they can be triggered by outside events, such as device or timer
+interrupts), while others have no successors and function as data
+sinks.  It is required that the graph is acyclic, something that is
+enforced by every operator being uniquely identified by (among other
+things) its predecessor(s).
+
+For every operator $o$ in the dataflow graph, two unary functions will
+be generated: $o\_in()$ and $o\_out()$.  Whenever a value $v$ arrives
+at $o$, this will be implemented by a call $o\_in(v)$.  Depending on
+the specific semantics of $o$, a value $v'\equiv f(v)$ (where $f()$
+represents the computation done by $o$, the result may not even depend
+on $v$ at all) may be propagated to the successors of $o$.  In this
+case, $o\_in(v)$ will call $o\_out(v')$, the implementation of which
+will feature the calls $\forall s \in S(o). s\_in(v')$, where $S(o)$
+is the set of all successors of $o$.
+
+$o\_in()$ is generated directly by the implementation of the specific
+dataflow operator, but $o\_out()$ is automatically created by Fladuino
+during code generation.  The utility of this division is that the
+implementation of a dataflow operator does not feature tedious
+duplication of the value propagation machinery, yet as it is not
+required that $o\_out()$ is called at all, each dataflow operator can
+still make it own choice whether to propagate a value or not.
+
 \end{document}
