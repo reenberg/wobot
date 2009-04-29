@@ -61,6 +61,8 @@ Troels Henriksen (athas@sigkill.dk)}
 \item Abstract
 
 \item Preface
+
+\item Introduction
   \begin{itemize}
   \item Brief intro to robot programming
     \begin{itemize}
@@ -112,6 +114,8 @@ Troels Henriksen (athas@sigkill.dk)}
 
 \chapter{Small guide to Arduino and electronics}
 
+Description of Arduino from the official
+website\footnote{\url{http://www.arduino.cc/} downloaded the 28. of April 2009 at 15:16}:
 \begin{quotation}
   Arduino is an open-source electronics prototyping platform based on
   flexible, easy-to-use hardware and software. It's intended for
@@ -128,12 +132,10 @@ Troels Henriksen (athas@sigkill.dk)}
   Processing, MaxMSP).
 \end{quotation}
 
-\fixme{This is citet from Arduinos homepage the 28. of April 2009 at 15:16}
-
 \fixme{<<Image of our Duemilanove>>}
 
 There are different kinds of Arduino boards. All are based on
-different ATmega* processors from Atmel. The older boards used serial
+different ATmega processors from Atmel. The older boards used serial
 communication while the newer ones are connected to the computer
 through a USB cable, but still using the same serial communication
 protocol (i.e. serial through USB). The USB cable also serves as a
@@ -146,28 +148,27 @@ the other Arduino boards as well.
 
 \section{Pins}
 The Arduino board can connect to several external components through
-diverse input and output pins. The pins are split in three sections on
+diverse input and output pins. The pins are split in three physical sections on
 the board \textit{power}, \textit{analog in} and
 \textit{digital}. Before any IO can happen on a pin, it's mode must be
-set. The mode of a pin defines if it is to be used to read input or
+set. The mode of a pin defines if it is used to read input or
 write output. The mode is set by the function \texttt{void pinMode(int
   pinnumber, int mode)} where \textit{pinnumber} is a number between
-0-5 for analog and 0-13 for digital and \textit{mode} is either
+0-5 for analog and 0-13 for digital and \textit{mode} is either of the constants
 \texttt{OUTPUT} or \texttt{INPUT}.
 
 \subsection{Power pins}
+% http://arduino.cc/en/Reference/Board?from=Guide.Board
 \begin{itemize}
-\item Reset: Resets the board when connected to ground. \fixme{tror jeg i
-    hvert fald..}
+\item Reset: Resets the board when connected to ground.
 \item 3V3: Constant 3,3v output
 \item 5v: Constant 5v output
-\item Gnd: Ground
-\item Gnd: Ground
-\item Vin: External power supply connection (9v recomented)
+\item Gnd: Two ground pins
+\item Vin: The voltage supplied by the external power supply.
 \end{itemize}
 
 \subsection{Digital pins}
-There are 14 digital input and output pins from which 6 of them can be
+There are 14 digital input and output pins. Six of them can also be
 used to generate analog output by PWM (Pulse Width Modulation). It's
 possible to read a boolean value \texttt{HIGH} and \texttt{LOW} by the
 following function \texttt{bool digitalRead(int pinnumber)} where
@@ -190,6 +191,10 @@ why the 6 analog output pins is located among the digital IO pins is
 that the platform uses PWM to generate the desired voltage level.
 
 \subsubsection{PWM}
+
+A description of PWM from the Arduino website follows:
+\footnote{\url{http://www.arduino.cc/en/Tutorial/PWM} downloaded the
+  28. of April at 17:14}
 
 \begin{quotation}
   Pulse Width Modulation, or PWM, is a technique for getting analog
@@ -217,8 +222,8 @@ that the platform uses PWM to generate the desired voltage level.
     \centering
     \includegraphics[scale=0.8]{images/pwm}
 
-    \caption{How 0\%, 25\%, 50\%, 75\% and 100\% PWM is messured by a
-      osciloscope. Where Each vertical green line indicates the duty
+    \caption{How 0\%, 25\%, 50\%, 75\% and 100\% PWM is measured by a
+      oscilloscope. Where Each vertical green line indicates the duty
       cycle}
     \label{fig:pwm}
   \end{figure}
@@ -232,15 +237,14 @@ that the platform uses PWM to generate the desired voltage level.
   into a line. As the LED fades in and out, those little lines will
   grow and shrink in length. Now you are seeing the pulse width.
 \end{quotation}
-\fixme{taken from \url{http://www.arduino.cc/en/Tutorial/PWM} on the
-  28. of April at 17:14}
+
 
 \section{Timer Interrupts}
 
 \fixme{fix text to support new heading: timer interrupts}
 
 The ATmega168/ATmega328 processors has three different hardware
-timers. One of them (timer 1) is used by Arduino software to provide a
+timers. One of them (timer 0) is used by Arduino software to provide a
 \texttt{millis()} function that gives us the amount of milliseconds
 since the timer started and a \texttt{delay} function that actively
 holds the processor occupied for a given time period. Timer 0 and 2
@@ -248,15 +252,21 @@ uses 8 bit registers and timer 1 uses a 16 bit register. This
 effectively means that timer 0 and 2 can't count to more than 255
 whereas timer 1 can count to 65535. The registers is incremented at
 the speed of the processor, in this case 16MHz, divided by a prescale
-factor which can be either of 1,2,4,8,16,32,64,128 or 256. With a
-prescale of 1 the counter is incremented at a rate of 16MHz
+factor which can be either of 1 (no scaleing), 8, 64, 256, 1024 for
+timer 0 and 1 and either of 1, 8, 32, 64, 128, 256, 1024 for timer
+2. The reason why timer 0 and 1 has 2 less prescale factors is that
+they can be wired up with an external clock source and setup to
+trigger on a falling or rising edge. With a prescale of 256 the
+counter is incremented at a rate of $\frac{16000000\mathrm{Hz}}{256} =
+62500\mathrm{Hz}$, which makes the counter overflow at a rate of
+$\frac{16000000\mathrm{Hz}}{255*256} = \frac{62500\mathrm{Hz}}{255} =
+245.1\mathrm{Hz}$ (pr second). This applies to all three timers where the only
+2 variables are the prescale and the size of the counter register.
 
 The three timers modes of operation is \texttt{Normal},
 \texttt{CTC}(Clear Timer on Compare match), \texttt{Fast PWM},
 \texttt{Phase Correct PWM} where \texttt{Normal} and \texttt{CTC} are
 the ones of interrest:
-
-
 
 \begin{description}
 \item[\texttt{Normal}] mode counts from a optionally specified counter
@@ -276,13 +286,18 @@ the ones of interrest:
 The modes of operation is described in detail in the processors
 datasheet, section 12.7 ``Modes of Operation''.
 
+\subsection{PWM generation}
+
+PWM is generated from these three timers. 
+
+\fixme{info located at http://usethearduino.blogspot.com/}
+
 \fixme{Interference problems with the PWM output pins.}  
-\fixme{Better explanation about prescale modes}
 
 \section{External Interrupts}
 
-Essentialy all the pins on the Arduino board supports external
-interrupts, though only digital pins 2 and 3 is supported directley by
+Essentially all the pins on the Arduino board supports external
+interrupts, though only digital pins 2 and 3 is supported directly by
 the Arduino code via the function \texttt{void attachInterrupt(int
   interruptpin, void (* userfunc)(void), int mode)} where
 \textit{interruptpin} is either 0 or 1, \textit{userfunc} is the user
@@ -293,10 +308,10 @@ external interrupt pins, as the other pins only support the
 \texttt{CHANGE} mode. The full descriptions of the modes is in the
 datasheet of the processor section 10.2.1 ``EICRA - External Interrupt
 Control Register A''. To set up external interrupts on the other pins
-the user ckiick has added an useable header file to the Arduino
+the user \textit{ckiick} has added an usable header file to the Arduino
 playground\footnote{\url{http://www.arduino.cc/playground/Main/PcInt}
-  taken tuesday the 28. of April 2009 at 16:45} also containing an
-example of how it works. This headerfile defines a function
+  taken 28. of April 2009 at 16:45} also containing an
+example of how it works. This header file defines a function
 \texttt{void PCattachInterrupt(int interruptpin, void (*
   userfunc)(void), int mode)} where the only difference is that the
 \textit{mode} property only supports \texttt{CHANGE}.
@@ -306,5 +321,69 @@ example of how it works. This headerfile defines a function
 \fixme{Maybe a little refresher on electronics (e.g. how each
   component are drawn in a diagram, if we are going to use diagrams in
   the article). }
+
+\chapter{Implementation}
+
+The essence of Fladuino can be condensed to a single, conceptually
+simple problem: translate a high-level functional reactive program to
+a form suitable for execution on the Arduino platform.  We have chosen
+to stop a step short, and merely generate C code meant for further
+compilation through an Arduino-specific compiler.  We have no need of
+the additional power we would gain through generating our own machine
+code, and the additional amount of work required would be very large.
+Flask chooses the same approach, in that it produces NesC--code for
+running on sensor motes, likely for the same reasons.
+
+Our target platform, Arduino, imposes constraints on the resulting
+device-level code.  In particular, the low amount of available main
+memory, and the comparatively large amount of available flash memory
+for program code, suggests that we optimise for low memory usage over
+low code size.  Indeed, as we shall see, we have opted to directly
+express much of the control flow in the code itself, where a typical
+program, with plenty of available memory, might instead choose a more
+data-driven approach.
+
+\section{Basic dataflow translation}
+
+At their heart, both Flask and Fladuino--programs consist of an
+acyclic dataflow graph.  A core part of the system involves the
+translation of this high-level description of the passage of data into
+the procedural target environment.  Fladuino adopts Flask's
+implementation almost verbatim, the details of which will be explained
+within this chapter.
+
+As in Flask, the graph is divided into \textit{atomic subgraphs},
+sections that can be executed without blocking
+
+\subsection{Translation of a simple dataflow graph}
+
+A set of nodes connected by a set of directed graph edges make up the
+entirety of the dataflow graph.  We shall adopt the terminology of
+Flask, and refer to nodes as \textit{dataflow operators} and the
+directed edges as \textit{wires} in the following.  Some dataflow
+operators have no predecessor and exist solely as entry points for
+data (they can be triggered by outside events, such as device or timer
+interrupts), while others have no successors and function as data
+sinks.  It is required that the graph is acyclic, something that is
+enforced by every operator being uniquely identified by (among other
+things) its predecessor(s).
+
+For every operator $o$ in the dataflow graph, two unary functions will
+be generated: $o\_in()$ and $o\_out()$.  Whenever a value $v$ arrives
+at $o$, this will be implemented by a call $o\_in(v)$.  Depending on
+the specific semantics of $o$, a value $v'\equiv f(v)$ (where $f()$
+represents the computation done by $o$, the result may not even depend
+on $v$ at all) may be propagated to the successors of $o$.  In this
+case, $o\_in(v)$ will call $o\_out(v')$, the implementation of which
+will feature the calls $\forall s \in S(o). s\_in(v')$, where $S(o)$
+is the set of all successors of $o$.
+
+$o\_in()$ is generated directly by the implementation of the specific
+dataflow operator, but $o\_out()$ is automatically created by Fladuino
+during code generation.  The utility of this division is that the
+implementation of a dataflow operator does not feature tedious
+duplication of the value propagation machinery, yet as it is not
+required that $o\_out()$ is called at all, each dataflow operator can
+still make it own choice whether to propagate a value or not.
 
 \end{document}
