@@ -240,18 +240,42 @@ that the platform uses PWM to generate the desired voltage level.
 \fixme{fix text to support new heading: timer interrupts}
 
 The ATmega168/ATmega328 processors has three different hardware
-timers. One of them is used by Arduino software to provide a
+timers. One of them (timer 1) is used by Arduino software to provide a
 \texttt{millis()} function that gives us the amount of milliseconds
 since the timer started and a \texttt{delay} function that actively
-holds the processor occupied for a given time period. Timer 0 uses a
-16 bit register and timer 1 and 2 uses 8 bit registers. This
-effectively means that timer 0 can count bigger numbers than timer 1
-and 2. The registers is incremented at the speed of the processor, in
-this case 16MHz, divided by a prescale factor which can be either of
-1,2,4,8,16,32,64,128,256. 
+holds the processor occupied for a given time period. Timer 0 and 2
+uses 8 bit registers and timer 1 uses a 16 bit register. This
+effectively means that timer 0 and 2 can't count to more than 255
+whereas timer 1 can count to 65535. The registers is incremented at
+the speed of the processor, in this case 16MHz, divided by a prescale
+factor which can be either of 1,2,4,8,16,32,64,128 or 256. The three
+timers modes of operation is \texttt{Normal}, \texttt{CTC}(Clear Timer
+on Compare match), \texttt{Fast PWM}, \texttt{Phase Correct PWM} where
+\texttt{Normal} and \texttt{CTC} are the ones of
+interrest: 
 
-\fixme{Interference problems with the PWM output pins.}
-\fixme{Counter modes...}
+
+
+\begin{description}
+\item[\texttt{Normal}] mode counts from a optionally specified counter
+  value (initially default set to 0) and increments until it reaches
+  the maximum value 255 where it overruns, restarts from 0, the
+  interrupt is triggered and incrementation of the counter
+  restarts.
+
+\item[\texttt{CTC}] mode has a predefined top value and optionally
+  specified counter value (initially default set to 0). When the
+  counter reaches the defined top value it is cleared to 0, the
+  interrupt is triggered and incrementation of the counter
+  restarts. This gives better resolution of the counter and thus more
+  flexibility than the \texttt{Normal} mode.
+\end{description}
+
+The modes of operation is described in detail in the processors
+datasheet, section 12.7 ``Modes of Operation''.
+
+\fixme{Interference problems with the PWM output pins.}  
+\fixme{Better explanation about prescale modes}
 
 \section{External Interrupts}
 
