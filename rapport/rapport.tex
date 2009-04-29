@@ -248,11 +248,13 @@ uses 8 bit registers and timer 1 uses a 16 bit register. This
 effectively means that timer 0 and 2 can't count to more than 255
 whereas timer 1 can count to 65535. The registers is incremented at
 the speed of the processor, in this case 16MHz, divided by a prescale
-factor which can be either of 1,2,4,8,16,32,64,128 or 256. The three
-timers modes of operation is \texttt{Normal}, \texttt{CTC}(Clear Timer
-on Compare match), \texttt{Fast PWM}, \texttt{Phase Correct PWM} where
-\texttt{Normal} and \texttt{CTC} are the ones of
-interrest: 
+factor which can be either of 1,2,4,8,16,32,64,128 or 256. With a
+prescale of 1 the counter is incremented at a rate of 16MHz
+
+The three timers modes of operation is \texttt{Normal},
+\texttt{CTC}(Clear Timer on Compare match), \texttt{Fast PWM},
+\texttt{Phase Correct PWM} where \texttt{Normal} and \texttt{CTC} are
+the ones of interrest:
 
 
 
