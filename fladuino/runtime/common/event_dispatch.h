@@ -6,7 +6,8 @@ typedef unsigned int word;
 enum event_type { 
   TIMER_EVENT,
   DUMMY_EVENT,
-  FCALL_EVENT
+  FCALL_EVENT,
+  FARGCALL_EVENT
 };
 
 struct timer_event_data {
@@ -21,10 +22,16 @@ struct fcall_event_data {
   void (*func)(void);
 };
 
+struct fargcall_event_data {
+  void (*func)(void*);
+  void* data;
+};
+
 union event_data {
   struct timer_event_data timer_event_data;
   struct dummy_event_data dummy_event_data;
   struct fcall_event_data fcall_event_data;
+  struct fargcall_event_data fargcall_event_data;
 };
 
 struct event {
@@ -78,5 +85,15 @@ void queue_funcall(void (*func)()) {
   data.func = func;
   event.type = FCALL_EVENT;
   event.data.fcall_event_data = data;
+  push_event(event);
+}
+
+void queue_callback(void (*func)(void*), void* cb_data) {
+  struct event event;
+  struct fargcall_event_data data;
+  data.func = func;
+  data.data = cb_data;
+  event.type = FARGCALL_EVENT;
+  event.data.fargcall_event_data = data;
   push_event(event);
 }
