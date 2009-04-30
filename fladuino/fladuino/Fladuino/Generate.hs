@@ -76,6 +76,7 @@ import qualified Transform.Hs.Rename as Rename
 import Fladuino.Driver
 import Fladuino.Monad
 import Fladuino.Signals
+import Fladuino.Device
 
 defaultMain :: FladuinoM a -> IO a
 defaultMain m = do
@@ -139,6 +140,7 @@ genStreams ss = do
     finalizeDevices
     finalizeTimers
     finalizeInterrupts
+    finalizeEvents
 --    finalizeADCs
     finalizeFlows
     cdefs_toc            <- getCDefs
@@ -336,6 +338,34 @@ finalizeInterrupts = do
               interruptCP_on = interruptCP ++ "_on"
               counterCP = interruptCP ++ "_counter"
 
+finalizeEvents :: forall m . MonadFladuino m
+               => m ()
+finalizeEvents = do
+  connections <- getsFladuinoEnv f_event_connections
+  fundefs <- dispatchFundefs connections
+  mapM_ addCFundef fundefs
+  where
+    dispatchFundefs :: [(ERef m, [(SCode m, H.Var)])] -> m [Definition]
+    dispatchFundefs bindings = 
+        forM bindings $ \(ERef d, binding) -> do 
+                   tau_v <- toF $ eventValueType d
+                   ty <- ToC.transType tau_v
+                   (params, ce_params) <- ToC.flattenParams tau_v
+                   e_params <- ToC.concrete ce_params
+                   stms <- forM binding $ \(_, v) -> do
+                                                e <- hcall v $ ToC.CLowered (tau_v) [$cexp|$exp:e_params|]
+                                                return $ Exp (Just e) internalLoc
+                   let eventCP = map (\c -> if (c == ' ') then '_' else c) $ show d
+                   return [$cedecl|void $id:eventCP (void *data) {
+                                              $ty:ty temp = *($ty:ty*) data;
+                                              $ty:ty arg1 = temp;
+                                              free(data);
+                                              $stms:stms
+                                            }|]
+                   where
+                     seqExps :: [Exp] -> Exp
+                     seqExps (a:b:es) = Seq a (seqExps $ b:es) internalLoc
+                     seqExps [a]     = a
 
 finalizeADCs :: MonadFladuino m => m ()
 finalizeADCs = do

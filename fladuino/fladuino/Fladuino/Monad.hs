@@ -72,6 +72,8 @@ import qualified Language.F as F
 import Text.PrettyPrint.Mainland
 import qualified Transform.F.ToC as ToC
 
+import Fladuino.Reify
+
 data FladuinoEnv m = FladuinoEnv
     {  f_fdecls      :: [F.Decl]
     ,  f_hstopdecls  :: [H.Decl]
@@ -537,4 +539,7 @@ class (Eq a) => Device a where
     uniqueId :: a -> String
     uniqueId = deviceClass
 
-class (Eq e, Show e) => Event e t | e -> t where
+class (Eq e, Show e, Reify t) => Event e t | e -> t where
+
+eventValueType :: forall e t. (Event e t) => e -> H.Type
+eventValueType _ = reify (undefined :: t)

@@ -128,7 +128,7 @@ modDev name d f a = S $ do
     addDevice d
     addStream name
               unitTy
-              (DeviceWrite sa $ uniqueId d)
+              (DeviceWrite sa $ uniqueId d ++ "_" ++ name)
               genHs
               genC $ \this -> do
     connect sa this tau (varIn this "")
@@ -265,7 +265,7 @@ data TestEvent = TestEvent Integer
 
 instance Event TestEvent Integer where
 
-onEvent :: forall e t. (Reify t, Event e Integer) => e -> S t
+onEvent :: forall e t. (Reify t, Event e t) => e -> S t
 onEvent event = S $ do
     addStream  "onEvent"
                tau_t
@@ -280,8 +280,8 @@ onEvent event = S $ do
 
     gen :: SCode m -> FladuinoM ()
     gen this = do
-        addDecls [$decls|$var:v_in :: () -> ()|]
-        addDecls [$decls|$var:v_in x = $var:v_out ()|]
+        addDecls [$decls|$var:v_in :: $ty:tau_t -> ()|]
+        addDecls [$decls|$var:v_in x = $var:v_out x|]
       where
         v_in  = varIn this ""
         v_out = s_vout this
