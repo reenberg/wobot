@@ -88,7 +88,7 @@ void queue_funcall(void (*func)()) {
   push_event(event);
 }
 
-void queue_callback(void (*func)(void*), void* cb_data) {
+void queue_fargcall(void (*func)(void*), void* cb_data) {
   struct event event;
   struct fargcall_event_data data;
   data.func = func;
