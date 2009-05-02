@@ -340,7 +340,7 @@ finalizeInterrupts = do
               interruptCP_on = interruptCP ++ "_on"
               counterCP = interruptCP ++ "_counter"
 
-finalizeEvents :: forall m . MonadFladuino m
+finalizeEvents :: forall m. MonadFladuino m
                => m ()
 finalizeEvents = do
   connections <- getsFladuinoEnv f_event_connections
@@ -349,15 +349,20 @@ finalizeEvents = do
   where
     dispatchFundefs :: [(ERef m, [(SCode m, H.Var)])] -> m [Definition]
     dispatchFundefs bindings = 
-        forM bindings $ \(ERef d, binding) -> do 
-                   tau_v <- toF $ eventValueType d
-                   ty <- ToC.transType tau_v
-                   (params, ce_params) <- ToC.flattenParams tau_v
+        forM bindings $ \(ERef (d, v), binding) -> do 
+                   tauf_v <- toF $ eventValueType d
+                   ty <- ToC.transType tauf_v
+                   (params, ce_params) <- ToC.flattenParams tauf_v
                    e_params <- ToC.concrete ce_params
                    stms <- forM binding $ \(_, v) -> do
-                                                e <- hcall v $ ToC.CLowered (tau_v) [$cexp|$exp:e_params|]
+                                                e <- hcall v $ ToC.CLowered (tauf_v) [$cexp|$exp:e_params|]
                                                 return $ Exp (Just e) internalLoc
                    let eventCP = map (\c -> if (c == ' ') then '_' else c) $ show d
+                   eventcall <- hcall v $
+                                ToC.CLowered unitGTy [$cexp|NULL|]
+                   addCDecldef [$cedecl|$ty:ty *vp = ($ty:ty*) malloc(sizeof($ty:ty));|]
+                   addCInitStm [$cstm|*vp = $exp:eventcall;|]
+                   addCInitStm [$cstm|queue_fargcall(&$id:eventCP, (void*)vp);|]
                    return [$cedecl|void $id:eventCP (void *data) {
                                               $ty:ty temp = *($ty:ty*) data;
                                               $ty:ty arg1 = temp;

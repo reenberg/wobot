@@ -260,19 +260,37 @@ instance Device Potentiometer where
 instance AnalogInputDevice Potentiometer where
     genReadCode (Potentiometer pin) resultvar = [[$cstm|$id:resultvar = analogRead($int:pin);|]]
 
-data TestEvent = TestEvent Integer
-                 deriving (Eq, Show)
+class (Event e t) => ValueEvent e t | e -> t where
+    setupEvent :: e -> FladuinoM H.Var
 
-instance Event TestEvent Integer where
+connectEvent :: forall t e. (ValueEvent e t) => e -> SCode FladuinoM -> H.Var -> FladuinoM ()
+connectEvent event stream v = do
+  liveVar v
+  eref <- lookupEvent event
+  case eref of
+    Just eref -> modifyFladuinoEnv $ \s ->
+                              s { f_event_connections = update (eref, (stream, v)) (f_event_connections s) }
+    Nothing -> do addEvent event
+                  connectEvent event stream v
+    where
+      update :: Eq a => (a, b) -> [(a,[b])] -> [(a,[b])]
+      update (key, value) [] = [(key, [value])]
+      update (key, value) ((key2, values):xs)
+          | (key == key2) = (key, value:values):xs
+          | otherwise = (key2, values) : update (key, value) xs
 
-onEvent :: forall e t. (Reify t, Event e t) => e -> S t
+      addEvent event = do v <- setupEvent event
+                          modifyFladuinoEnv $ \s ->
+                              s { f_events = (ERef (event, v)) : (f_events s) }
+                          liveVar v
+
+onEvent :: forall e t. (Reify t, ValueEvent e t) => e -> S t
 onEvent event = S $ do
     addStream  "onEvent"
                tau_t
                (OnEvent $ show event)
                gen
                (const (return ())) $ \this -> do
-    addEvent event
     connectEvent event this (varIn this "")
   where
     tau_t :: H.Type
