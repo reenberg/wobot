@@ -189,11 +189,6 @@ data DRef m = forall a. (Device a) => DRef a
 instance Eq (DRef m) where
     DRef d1 == DRef d2 = uniqueId d1 == uniqueId d2
 
-data ERef m = forall e t. (Event e t) => ERef (e, H.Var)
-
-instance Eq (ERef m) where
-    ERef (e1, _) == ERef (e2, _) = show e1 == show e2
-
 data ERep m = ERep
     { e_value      :: Maybe H.Var
     , e_predicate  :: Maybe H.Var
@@ -408,13 +403,6 @@ class (MonadCompiler m,
             Just device -> return ()
             Nothing ->     m
 
-    lookupEvent :: forall t e. (Event e t) => e -> m (Maybe (ERep m))
-    lookupEvent event = do 
-      events <- getsFladuinoEnv f_events 
-      case find (\(ERep { e_id = id}) -> show event == id) events of
-        Just erep  -> return $ Just erep
-        Nothing -> return Nothing
-
     useChannel :: FlowChannel -> F.Type -> m ()
     useChannel chan tau = do
         tau_chan <- getsFladuinoEnv $ \s ->
@@ -530,9 +518,3 @@ class (Eq a) => Device a where
     deviceClass :: a -> String
     uniqueId :: a -> String
     uniqueId = deviceClass
-
-class (Eq e, Show e, Reify t) => Event e t | e -> t where
-    interruptPins :: e -> [Integer]
-
-eventValueType :: forall e t. (Event e t) => e -> H.Type
-eventValueType _ = reify (undefined :: t)
