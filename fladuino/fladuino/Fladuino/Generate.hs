@@ -168,9 +168,10 @@ void loop()
                       {
                         case FCALL_EVENT:
                              (*event.data.fcall_event_data.func)();
+                             break;
                         case FARGCALL_EVENT:
                              (*event.data.fargcall_event_data.func)(event.data.fargcall_event_data.data);
-                        break;
+                             break;
                         default:
                         break;
                       }
