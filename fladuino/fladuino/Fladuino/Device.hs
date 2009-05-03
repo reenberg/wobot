@@ -261,7 +261,14 @@ instance AnalogInputDevice Potentiometer where
     genReadCode (Potentiometer pin) resultvar = [[$cstm|$id:resultvar = analogRead($int:pin);|]]
 
 class (Event e t) => ValueEvent e t | e -> t where
-    setupEvent :: e -> FladuinoM H.Var
+    setupEvent :: e -> FladuinoM (ERep FladuinoM)
+
+mkEvent :: forall e t. (Event e t) => e -> Maybe H.Var -> Maybe H.Var -> ERep FladuinoM
+mkEvent e val pred = ERep { e_value = val
+                          , e_predicate = pred
+                          , e_id = show e
+                          , e_interrupts = interruptPins e
+                          , e_type = reify (undefined :: t) }
 
 connectEvent :: forall t e. (ValueEvent e t) => e -> SCode FladuinoM -> H.Var -> FladuinoM ()
 connectEvent event stream v = do
@@ -279,10 +286,18 @@ connectEvent event stream v = do
           | (key == key2) = (key, value:values):xs
           | otherwise = (key2, values) : update (key, value) xs
 
-      addEvent event = do v <- setupEvent event
+      addEvent event = do erep <- setupEvent event
+                          let erep' = erep { e_type = eventValueType event }
                           modifyFladuinoEnv $ \s ->
-                              s { f_events = (ERef (event, v)) : (f_events s) }
+                              s { f_events = erep' : (f_events s) }
                           liveVar v
+
+data InterruptEvent = InterruptEvent Integer
+                    deriving (Eq, Show)
+instance Event InterruptEvent () where
+    interruptPins (InterruptEvent n) = [n]
+instance ValueEvent InterruptEvent () where
+    setupEvent e = return $ mkEvent e Nothing Nothing
 
 onEvent :: forall e t. (Reify t, ValueEvent e t) => e -> S t
 onEvent event = S $ do

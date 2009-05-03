@@ -139,7 +139,7 @@ genStreams ss = do
     genC Set.empty scodes'
     finalizeDevices
     finalizeTimers
-    finalizeInterrupts
+    --finalizeInterrupts
     finalizeEvents
 --    finalizeADCs
     finalizeFlows
@@ -344,35 +344,63 @@ finalizeEvents :: forall m. MonadFladuino m
                => m ()
 finalizeEvents = do
   connections <- getsFladuinoEnv f_event_connections
-  fundefs <- dispatchFundefs connections
-  mapM_ addCFundef fundefs
-  where
-    dispatchFundefs :: [(ERef m, [(SCode m, H.Var)])] -> m [Definition]
-    dispatchFundefs bindings = 
-        forM bindings $ \(ERef (d, v), binding) -> do 
-                   tauf_v <- toF $ eventValueType d
-                   ty <- ToC.transType tauf_v
-                   (params, ce_params) <- ToC.flattenParams tauf_v
-                   e_params <- ToC.concrete ce_params
-                   stms <- forM binding $ \(_, v) -> do
-                                                e <- hcall v $ ToC.CLowered (tauf_v) [$cexp|$exp:e_params|]
-                                                return $ Exp (Just e) internalLoc
-                   let eventCP = map (\c -> if (c == ' ') then '_' else c) $ show d
-                   eventcall <- hcall v $
-                                ToC.CLowered unitGTy [$cexp|NULL|]
-                   addCDecldef [$cedecl|$ty:ty *vp = ($ty:ty*) malloc(sizeof($ty:ty));|]
-                   addCInitStm [$cstm|*vp = $exp:eventcall;|]
-                   addCInitStm [$cstm|queue_fargcall(&$id:eventCP, (void*)vp);|]
-                   return [$cedecl|void $id:eventCP (void *data) {
-                                              $ty:ty temp = *($ty:ty*) data;
-                                              $ty:ty arg1 = temp;
-                                              free(data);
-                                              $stms:stms
-                                            }|]
-                   where
-                     seqExps :: [Exp] -> Exp
-                     seqExps (a:b:es) = Seq a (seqExps $ b:es) internalLoc
-                     seqExps [a]     = a
+  when (connections /= []) $ do 
+                   addCInclude "common/PCINT.h"
+  bindings <- forM connections $ \(erep, binding) ->
+      do tauf_v <- toF $ e_type erep
+         ty <- ToC.transType tauf_v
+         (params, ce_params) <- ToC.flattenParams tauf_v
+         e_params <- ToC.concrete ce_params
+         stms <- forM binding $ \(_, v) -> do
+                   e <- hcall v $ ToC.CLowered (tauf_v) [$cexp|$exp:e_params|]
+                   return $ Exp (Just e) internalLoc
+         let eventCP = map (\c -> if (c == ' ') then '_' else c) $ e_id erep
+         let eventCheckCP = eventCP ++ "_check"
+         
+         predcall <- case e_predicate erep of
+                       Just pred -> hcall pred $ ToC.CLowered unitGTy [$cexp|NULL|]
+                       Nothing -> return [$cexp|true|]
+         queueStms <- case e_value erep of
+                        Just valfn -> do
+                          eventcall <- hcall valfn $ ToC.CLowered unitGTy [$cexp|NULL|]
+                          addCFundef [$cedecl|void $id:eventCP (void *data) {
+                                                $ty:ty temp = *($ty:ty*) data;
+                                                $ty:ty arg1 = temp;
+                                                free(data);
+                                                $stms:stms
+                                              }|]
+                          addCFundef [$cedecl|void $id:eventCheckCP () {
+                                                if ($exp:predcall) {
+                                                  $ty:ty *vp = ($ty:ty*) malloc(sizeof($ty:ty));
+                                                  *vp = $exp:eventcall;
+                                                  queue_fargcall(&$id:eventCP, (void*) vp);
+                                                }
+                                              }|]
+                        Nothing -> do
+                          addCFundef [$cedecl|void $id:eventCP () {
+                                                $stms:stms
+                                              }|]
+                          addCFundef [$cedecl|void $id:eventCheckCP () {
+                                                if ($exp:predcall) {
+                                                  queue_funcall(&$id:eventCP);
+                                                }
+                                              }|]
+         return (eventCheckCP, e_interrupts erep)
+  let bindings' = foldl (\map (f, ints) -> 
+                             foldl (\map int -> 
+                                        Map.insert int (f : Map.findWithDefault [] int map) map)
+                             map ints)
+                  Map.empty bindings
+  forM_ (Map.toList bindings') $ \(interrupt, fs) -> do
+                   let c_pin = interrupt
+                   let stms = map (\f -> [$cstm|$id:f();|]) fs
+                   let interruptCP = "interrupt" ++ show interrupt
+                   addCFundef [$cedecl|
+                               void $id:interruptCP (void) {
+                                 $stms:stms
+                               }|]
+                   addCInitStm [$cstm|pinMode($int:c_pin, INPUT);|]
+                   addCInitStm [$cstm|PCattachInterrupt($int:c_pin, $id:interruptCP, CHANGE);|]
 
 finalizeADCs :: MonadFladuino m => m ()
 finalizeADCs = do

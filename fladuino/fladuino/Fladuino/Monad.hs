@@ -96,8 +96,8 @@ data FladuinoEnv m = FladuinoEnv
 
     ,  f_devices :: [DRef m]
 
-    ,  f_events            :: [ERef m]
-    ,  f_event_connections :: [(ERef m, [(SCode m, H.Var)])]
+    ,  f_events            :: [ERep m]
+    ,  f_event_connections :: [(ERep m, [(SCode m, H.Var)])]
 
     ,  f_adcs         :: Int
     ,  f_adc_getdata  :: Map.Map Int Exp
@@ -193,6 +193,17 @@ data ERef m = forall e t. (Event e t) => ERef (e, H.Var)
 
 instance Eq (ERef m) where
     ERef (e1, _) == ERef (e2, _) = show e1 == show e2
+
+data ERep m = ERep
+    { e_value      :: Maybe H.Var
+    , e_predicate  :: Maybe H.Var
+    , e_type       :: H.Type
+    , e_interrupts :: [Integer]
+    , e_id         :: String
+    }
+
+instance Eq (ERep m) where
+    e1 == e2 = e_id e1 == e_id e2
 
 data SRep m  =  SConst NCode (SCode m)
              |  SMap NCode (SCode m)
@@ -397,11 +408,11 @@ class (MonadCompiler m,
             Just device -> return ()
             Nothing ->     m
 
-    lookupEvent :: forall t e. (Event e t) => e -> m (Maybe (ERef m))
+    lookupEvent :: forall t e. (Event e t) => e -> m (Maybe (ERep m))
     lookupEvent event = do 
       events <- getsFladuinoEnv f_events 
-      case find (\(ERef (e, _)) -> show event == show e) events of
-        Just eref  -> return $ Just eref
+      case find (\(ERep { e_id = id}) -> show event == id) events of
+        Just erep  -> return $ Just erep
         Nothing -> return Nothing
 
     useChannel :: FlowChannel -> F.Type -> m ()
@@ -521,6 +532,7 @@ class (Eq a) => Device a where
     uniqueId = deviceClass
 
 class (Eq e, Show e, Reify t) => Event e t | e -> t where
+    interruptPins :: e -> [Integer]
 
 eventValueType :: forall e t. (Event e t) => e -> H.Type
 eventValueType _ = reify (undefined :: t)
