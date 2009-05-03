@@ -85,7 +85,7 @@ statevar :: Device d => MonadFladuino m => d -> String -> m String
 statevar d s = do
   devices <- getsFladuinoEnv f_devices
   case findIndex (\(DRef d2) -> uniqueId d2 == uniqueId d) devices of
-    Just n -> return $ "device_" ++ (show n) ++ s
+    Just n -> return $ "device_" ++ (uniqueId d) ++ s
     Nothing -> return $ error $ "Unknown device " ++ uniqueId d ++ " encountered."
 
 
