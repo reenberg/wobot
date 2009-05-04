@@ -139,7 +139,6 @@ genStreams ss = do
     genC Set.empty scodes'
     finalizeDevices
     finalizeTimers
-    --finalizeInterrupts
     finalizeEvents
 --    finalizeADCs
     finalizeFlows
@@ -289,57 +288,6 @@ void timer2_interrupt_handler (void)
       where
         timerCP = "timer" ++ show period
         counterCP = timerCP ++ "_counter"
-
-
-finalizeInterrupts :: forall m . MonadFladuino m
-               => m ()
-finalizeInterrupts = do
-    interrupts <- getsFladuinoEnv $ Map.toList . f_interrupts
-    when (interrupts /= []) $ do 
-                   addCInclude "common/PCINT.h"
-    
-    counterCode <- forM interrupts $ \(pin, interruptID) ->
-        finalizeInterrupt pin interruptID
-    let (funcs, initStms) = unzip counterCode
-    let funcs' = concat funcs
-    let stms = concat initStms
-    mapM_ addCFundef funcs'
-    mapM_ addCInitStm stms
-
---     addCFundef [$cedecl|
--- void interrupt2_interrupt_handler (void)
--- {
---   $decls:counterDefs
---   $stms:stms
--- }
--- |]
-  where
-    finalizeInterrupt :: Int -> String -> m ([Definition], [Stm])
-    finalizeInterrupt pin _ = do
-        let c_pin = toInteger pin
-        vs <- getsFladuinoEnv $ \s ->
-            Map.findWithDefault [] pin (f_interrupt_connections s)
-        stms <- forM vs $ \(_, v) -> do
-                e <- hcall v $ ToC.CLowered unitGTy [$cexp|NULL|]
-                return $ Exp (Just e) internalLoc
-        return ([[$cedecl|
-                  void $id:interruptCP_switch (void) {
-                      static int $id:interruptCP_on = 0;
-                      $id:interruptCP_on = 1 - $id:interruptCP_on;
-                      queue_funcall(&$id:interruptCP);
-                  }|],
-
-                 [$cedecl|
-                  void $id:interruptCP (void) {
-                      $stms:stms
-                  }|]], 
-                [[$cstm|pinMode($int:c_pin, INPUT);|],
-                 [$cstm|PCattachInterrupt($int:c_pin, $id:interruptCP_switch, CHANGE);|]])
-            where
-              interruptCP = "interrupt" ++ show pin
-              interruptCP_switch = interruptCP ++ "_switch"
-              interruptCP_on = interruptCP ++ "_on"
-              counterCP = interruptCP ++ "_counter"
 
 finalizeEvents :: forall m. MonadFladuino m
                => m ()

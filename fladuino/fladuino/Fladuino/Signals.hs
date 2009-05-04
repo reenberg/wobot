@@ -412,26 +412,6 @@ clock period = S $ do
         v_in  = varIn this ""
         v_out = s_vout this
 
-
-externalInterrupt :: Int -> S ()
-externalInterrupt pin = S $ do
-    addStream  "external_interrupt"
-               unitTy
-               (SExternalInterrupt pin)
-               genHs
-               (const (return ())) $ \this -> do
-    addInterrupt pin
-    connectInterrupt pin this (varIn this "")
-  where
-    genHs :: SCode m -> FladuinoM ()
-    genHs this = do
-        addDecls [$decls|$var:v_in :: () -> ()|]
-        addDecls [$decls|$var:v_in x = $var:v_out ()|]
-      where
-        v_in  = varIn this ""
-        v_out = s_vout this
-
-
 adc :: Integer -> S () -> S Integer
 adc pin from = S $ do
     sfrom   <- unS from
