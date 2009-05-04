@@ -1,3 +1,4 @@
+
 \documentclass[a4paper,oneside, draft]{memoir}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
@@ -114,6 +115,9 @@ Troels Henriksen (athas@sigkill.dk)}
 
 \chapter{Small guide to Arduino and electronics}
 
+\fixme{We should update the $\backslash$ texttt to uses the listings
+  inline formatting instead when ever c code is listed.}
+
 Description of Arduino from the official
 website\footnote{\url{http://www.arduino.cc/} downloaded the 28. of April 2009 at 15:16}:
 \begin{quotation}
@@ -213,9 +217,10 @@ A description of PWM from the Arduino website follows:
   period. This duration or period is the inverse of the PWM
   frequency. In other words, with Arduino's PWM frequency at about
   500Hz, the green lines would measure 2 milliseconds each. A call to
-  analogWrite() is on a scale of 0 - 255, such that analogWrite(255)
-  requests a 100\% duty cycle (always on), and analogWrite(127) is a
-  50\% duty cycle (on half the time) for example.
+  \texttt{analogWrite()} is on a scale of 0 - 255, such that
+  \texttt{analogWrite(255)} requests a 100\% duty cycle (always on),
+  and \texttt{analogWrite(127)} is a 50\% duty cycle (on half the
+  time) for example.
 
   
   \begin{figure}[h!]
@@ -288,9 +293,20 @@ datasheet, section 12.7 ``Modes of Operation''.
 
 \subsection{PWM generation}
 
-PWM is generated from these three timers. 
-
-\fixme{info located at http://usethearduino.blogspot.com/}
+PWM is generated from these three timers. Pin 5 and 6 are connected to
+timer 0, 9 and 10 to timer 1 and pin 3 and 11 to timer 2. This means
+that the frequency of the PWM signal is controlled by the speed of
+these counters which again is determined by the prescale. When an
+\texttt{analogWrite(pinnumber, value)} is executed, the value is
+compared against a value in a 8-bit counter (one associated to each
+timer). When the counter is less than the specified value it outputs
+\texttt{HIGH} on \textit{pinnumber} and \texttt{LOW} otherwise. This
+generates a square wave with a duty cycle of 50\% since it is
+\texttt{HIGH} on counts $0 \ldots 127$ and \texttt{LOW} on counts $128
+\ldots 255$. Since Arduino uses timer 0 for the various time related
+functions, the prescale on this timer can't be changed unless this
+feature are not to be used. Also because of this the duty cycle of pin
+5 and 6 is not exactly the same as the other 4 pins.
 
 \fixme{Interference problems with the PWM output pins.}  
 
@@ -384,6 +400,6 @@ during code generation.  The utility of this division is that the
 implementation of a dataflow operator does not feature tedious
 duplication of the value propagation machinery, yet as it is not
 required that $o\_out()$ is called at all, each dataflow operator can
-still make it own choice whether to propagate a value or not.
+still make its own choice whether to propagate a value or not.
 
 \end{document}
