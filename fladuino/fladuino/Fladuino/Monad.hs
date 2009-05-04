@@ -355,18 +355,11 @@ class (MonadCompiler m,
               }
 
     addDevice :: Device d => d -> m ()
-    addDevice d = once $ do
-                    modifyFladuinoEnv $ \s -> 
-                        s { f_devices = (DRef d) : (f_devices s) }
-                    return ()
-        where
-
-        once :: MonadFladuino m => m () -> m ()
-        once m = do
-          devices <- getsFladuinoEnv f_devices
-          case find (\(DRef d2) -> uniqueId d2 == uniqueId d) devices of
-            Just device -> return ()
-            Nothing ->     m
+    addDevice d = do devices <- getsFladuinoEnv f_devices
+                     when (all (\(DRef d2) -> uniqueId d2 /= uniqueId d) devices) $ do
+                       modifyFladuinoEnv $ \s -> 
+                           s { f_devices = (DRef d) : (f_devices s) }
+                     return ()
 
     useChannel :: FlowChannel -> F.Type -> m ()
     useChannel chan tau = do
