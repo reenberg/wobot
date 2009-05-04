@@ -69,8 +69,13 @@ import Fladuino.LiftN
 import Fladuino.Monad
 import Fladuino.Reify
 
+-- Library of signal combinator functions 
+
+-- | Signal type. The type-parameter a represents the output of the signal.
 newtype S a = S { unS :: FladuinoM (SCode FladuinoM) }
 
+-- | Takes a constant value (k) and returns this value every time it
+-- | receives any value on it's input signal
 sconst :: forall a b eta . (Reify b, LiftN eta a)
        => eta
        -> S b
@@ -96,6 +101,7 @@ sconst k from = S $ do
         v_out   = s_vout this
         v_const = n_var nconst
 
+-- | Calls a function on every value received on it's input
 smap :: forall eta a b . (Reify a, Reify b, LiftN eta (a -> b))
      => eta
      -> S a
@@ -123,12 +129,15 @@ smap f a = S $ do
         v_out = s_vout this
         v_f   = n_var nf
 
+-- | Evaluates some signal computation only for it's sideeffects
 strace :: (S a -> S ()) -> S a -> S a
 strace f s_from = S $ do
     sfrom  <-  unS s_from
     _      <-  unS (f s_from)
     return sfrom
 
+-- | Takes a predicate and removes every value on the input signal
+-- | that doesn't satisfy the predicate.
 sfilter :: forall a eta . (Reify a, LiftN eta (a -> Bool))
         => eta
         -> S a
@@ -156,6 +165,8 @@ sfilter f a = S $ do
         v_out = s_vout this
         v_f   = n_var nf
 
+-- | Combines two input signals so that every time a value is received
+-- | on either of the inputs the value is sent out on it's output-signal.
 smerge :: forall a . Reify a
        => S a
        -> S a
@@ -795,3 +806,21 @@ infixl 5 >>>
 
 infixl 6 &&&
 a &&& b = szip a b
+
+-- | Maps any value to unit (useful to e.g. connect something that doesnt return unit with "toggle")
+toUnit :: forall a. (Reify a, LiftN (N a) a)  => S a -> S ()
+toUnit = sconst [$exp|()|]
+
+-- | Only lets true values pass through
+edge :: S Bool -> S ()
+edge = toUnit . (sfilter ((liftN [$exp|id|]) :: N (Bool -> Bool)))
+
+-- | Filters all "Nothing"-values and unpacks "Just"-values
+fromJust :: forall a. (Reify a) => S (Maybe a) -> S a
+fromJust = smap rmJust . sfilter isJust
+    where 
+      isJust :: Reify a => N (Maybe a -> Bool)
+      isJust = liftN [$decls|f (Just x) = True; f Nothing = False|]
+
+      rmJust :: Reify a => N (Maybe a -> a)
+      rmJust = liftN [$decls|f (Just x) = x|]
