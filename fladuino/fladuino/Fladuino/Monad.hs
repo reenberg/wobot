@@ -91,9 +91,6 @@ data FladuinoEnv m = FladuinoEnv
     ,  f_timers            :: Map.Map Int String
     ,  f_timer_connections :: Map.Map Int [(SCode m, H.Var)]
 
-    , f_interrupts :: Map.Map Int String
-    , f_interrupt_connections :: Map.Map Int [(SCode m, H.Var)]
-
     ,  f_devices :: [DRef m]
 
     ,  f_events            :: [ERep m]
@@ -125,9 +122,6 @@ emptyFladuinoEnv = FladuinoEnv
 
     ,  f_timers = Map.empty
     ,  f_timer_connections = Map.empty
-
-    ,  f_interrupts = Map.empty
-    ,  f_interrupt_connections = Map.empty
 
     ,  f_devices = []
 
@@ -359,35 +353,6 @@ class (MonadCompiler m,
                       Map.insert period ((stream, v) : connections)
                                  (f_timer_connections s)
               }
-
-    addInterrupt :: Int -> m String 
-    addInterrupt pin = once $ do
-        modifyFladuinoEnv $ \s ->
-            s { f_interrupts = Map.insert pin interruptID (f_interrupts s) }
-        return interruptID
-      where
-        interruptID = "Interrupt" ++ show pin
-          
-        once :: MonadFladuino m => m String -> m String
-        once m = do
-            maybe_interrupt <- getsFladuinoEnv $ \s -> Map.lookup pin (f_interrupts s)
-            case maybe_interrupt of
-              Just interrupt -> return interrupt
-              Nothing ->     m
-
-
-    connectInterrupt :: Int -> SCode m -> H.Var -> m ()
-    connectInterrupt pin stream v = do
-        liveVar v
-        modifyFladuinoEnv $ \s ->
-            s { f_interrupt_connections =
-                    let connections = Map.findWithDefault []
-                                      pin (f_interrupt_connections s)
-                    in
-                      Map.insert pin ((stream, v) : connections)
-                                 (f_interrupt_connections s)
-              }
-    
 
     addDevice :: Device d => d -> m ()
     addDevice d = once $ do

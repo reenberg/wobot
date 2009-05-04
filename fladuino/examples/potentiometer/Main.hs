@@ -9,7 +9,7 @@ import qualified Language.Hs.Syntax
 import Language.Hs.Quote
 
 import Fladuino
-import Fladuino.Device
+import Fladuino.Devices
 
 main :: IO ()
 main =
