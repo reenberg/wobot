@@ -476,14 +476,15 @@ ident s suffix = s_name s ++ show (s_id s) ++ "_c" ++ suffix
 -- This complies with a c identifier --
 cIdent :: String -> String
 cIdent s =
-  id <- map (\c -> case c of
-                     ' ' -> "_"
-                     '(' -> "L"
-                     ')' -> "R"
+  let id = map (\c -> case c of
+                     ' ' -> '_'
+                     '(' -> 'L'
+                     ')' -> 'R'
                      c -> c) s
-  case Char.isDigit $ head s of
-    True -> "_" ++ id
-    False -> id
+  in
+    case Char.isDigit $ head s of
+      True -> "_" ++ id
+      False -> id
 
 class (Eq a) => Device a where
     setupDevice :: MonadFladuino m => a -> m ()
