@@ -213,6 +213,36 @@ It is worth nothing that a value need not contain any information
 apart from its existence; \texttt{()} is perfectly valid as a signal.
 
 
+\section{Framework for specifying peripheral drivers}
+Arduino is a flexible system for general robot development with no
+specific application in mind. Arduino-boards can therefore be
+connected to large amount of different peripherals, all with their
+specific functionality and programming interface. A goal of our
+project has therefore been to facilitate Fladuino driver development
+for external devices. As an example we have \fixme{not really done
+  yet} written a simple framework for programming the Pololu 3pi robot
+and the peripherals connected to it (electromotors, sensors, buttons, etc.).
+
+Defining the driver for each external component consist of a general
+device specification, a set of functions operating on the device and
+eventually some event specifications if the device can generate
+some notion of events.
+
+\fixme{find a good example to add here}
+
+\subsection{Devices}
+A device is any form of peripheral that can be connected to the
+Arduino robot, e.g. buttons, electromotors and potentiometers. A
+description of a device consists of instructions on how to initialize
+such a device and a way of uniquely identifying a device, so we can
+have a way of referring to the specific device. If the device is used
+in more than one place, the unique identifier is also used to avoid
+adding the initialization code twice.
+
+\subsection{Events}
+Some devices can generate events. The simplest example is the
+push button which generates events both when pushed and released.
+...
 
 \bibliographystyle{plain}
 \bibliography{rapport}
