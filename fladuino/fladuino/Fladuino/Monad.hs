@@ -479,7 +479,7 @@ ident s ""     = s_name s ++ show (s_id s) ++ "_c"
 ident s suffix = s_name s ++ show (s_id s) ++ "_c" ++ suffix
 
 class (Eq a) => Device a where
-    setup :: MonadFladuino m => a -> m ()
+    setupDevice :: MonadFladuino m => a -> m ()
     deviceClass :: a -> String
     uniqueId :: a -> String
     uniqueId = deviceClass

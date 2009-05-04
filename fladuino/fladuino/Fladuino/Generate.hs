@@ -243,7 +243,7 @@ finalizeDevices :: forall m . MonadFladuino m
 finalizeDevices = do
   devices <- getsFladuinoEnv f_devices
   forM_ devices $ \(DRef d) -> do
-                    setup d
+                    setupDevice d
   return ()
 
 finalizeTimers :: forall m . MonadFladuino m

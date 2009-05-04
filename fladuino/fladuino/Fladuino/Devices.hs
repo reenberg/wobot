@@ -95,7 +95,7 @@ data AnalogInputPin = AnalogInputPin Integer
            deriving Eq
 
 instance Device DigitalOutputPin where
-    setup d@(DigitalOutputPin pin initstate) = 
+    setupDevice d@(DigitalOutputPin pin initstate) = 
         do 
           sv <- statevar d "state"
           addCDecldef [$cedecl|unsigned char $id:sv;|]
@@ -108,7 +108,7 @@ instance Device DigitalOutputPin where
     uniqueId d@(DigitalOutputPin pin initstate) = deviceClass d ++ (show pin)
 
 instance Device AnalogOutputPin where
-    setup d@(AnalogOutputPin pin initstate) = 
+    setupDevice d@(AnalogOutputPin pin initstate) = 
         do 
           addCInitStm [$cstm|pinMode($int:pin, OUTPUT);|]
           addCInitStm [$cstm|analogWrite($int:pin, $int:initstate);|]
@@ -247,7 +247,7 @@ data Potentiometer = Potentiometer Integer
                      deriving Eq
 
 instance Device Potentiometer where
-    setup _ = return ()
+    setupDevice _ = return ()
     deviceClass _ = "potentiometer"
     uniqueId d@(Potentiometer pin) = deviceClass d ++ (show pin)
 
@@ -269,7 +269,7 @@ data PushButton = PushButton Integer
                   deriving (Eq, Show)
 
 instance Device PushButton where
-    setup d@(PushButton pin) = do addCInitStm [$cstm|pinMode($int:pin, INPUT);|]
+    setupDevice d@(PushButton pin) = do addCInitStm [$cstm|pinMode($int:pin, INPUT);|]
     deviceClass _ = "pushbutton" 
     uniqueId d@(PushButton pin) = deviceClass d ++ (show pin)
 
