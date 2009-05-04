@@ -88,6 +88,23 @@ statevar d s = do
     Just n -> return $ "device_" ++ (uniqueId d) ++ s
     Nothing -> return $ error $ "Unknown device " ++ uniqueId d ++ " encountered."
 
+instance Show ERep where
+    show (ERep { e_id = eid }) = show $ map (\c -> case c of
+                                                     ' ' -> '_'
+                                                     '(' -> 'L'
+                                                     ')' -> 'R'
+                                                     '0' -> "Zero"
+                                                     '1' -> "One"
+                                                     '2' -> "Two"
+                                                     '3' -> "Three"
+                                                     '4' -> "Four"
+                                                     '5' -> "Five"
+                                                     '6' -> "Six"
+                                                     '7' -> "Seven"
+                                                     '8' -> "Eight"
+                                                     '9' -> "Nine"
+                                                     c -> c) eid
+                      
 class (Eq e, Show e, Reify t) => Event e t | e -> t where
     interruptPins :: e -> [Integer]
     setupEvent :: e -> FladuinoM (ERep FladuinoM)
