@@ -72,6 +72,8 @@ import qualified Language.F as F
 import Text.PrettyPrint.Mainland
 import qualified Transform.F.ToC as ToC
 
+import Char
+
 import Fladuino.Reify
 
 data FladuinoEnv m = FladuinoEnv
@@ -480,7 +482,7 @@ ident s suffix = s_name s ++ show (s_id s) ++ "_c" ++ suffix
 
 -- This complies with a c identifier --
 cIdent :: String -> String
-cIdent s = do
+cIdent s =
   id <- map (\c -> case c of
                      ' ' -> "_"
                      '(' -> "L"

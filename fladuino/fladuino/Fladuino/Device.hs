@@ -88,15 +88,7 @@ statevar d s = do
   case findIndex (\(DRef d2) -> uniqueId d2 == uniqueId d) devices of
     Just n -> return $ "device_" ++ (uniqueId d) ++ s
     Nothing -> return $ error $ "Unknown device " ++ uniqueId d ++ " encountered."
-
-erepId :: String -> String
-erepId s = do
-  "_" ++ map (\c -> case c of
-                      ' ' -> "_"
-                      '(' -> "L"
-                      ')' -> "R"
-                      c -> c) s
-      
+    
                       
 class (Eq e, Show e, Reify t) => Event e t | e -> t where
     interruptPins :: e -> [Integer]
