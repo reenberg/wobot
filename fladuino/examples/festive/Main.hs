@@ -13,7 +13,7 @@ import Control.Monad.CGen
 import Text.PrettyPrint.Mainland
 
 import Fladuino
-import Fladuino.Device
+import Fladuino.Devices
 
 main :: IO ()
 main =

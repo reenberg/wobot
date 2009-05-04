@@ -52,6 +52,7 @@ Library
     Fladuino.Driver
     Fladuino.Exceptions
     Fladuino.Device
+    Fladuino.Devices
     Fladuino.Generate
     Fladuino.LiftN
     Fladuino.Monad
