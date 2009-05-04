@@ -85,7 +85,7 @@ statevar :: Device d => MonadFladuino m => d -> String -> m String
 statevar d s = do
   devices <- getsFladuinoEnv f_devices
   case findIndex (\(DRef d2) -> uniqueId d2 == uniqueId d) devices of
-    Just n -> return $ "device_" ++ (show n) ++ s
+    Just n -> return $ "device_" ++ (uniqueId d) ++ s
     Nothing -> return $ error $ "Unknown device " ++ uniqueId d ++ " encountered."
 
 
@@ -128,7 +128,7 @@ modDev name d f a = S $ do
     addDevice d
     addStream name
               unitTy
-              (DeviceWrite sa $ uniqueId d)
+              (DeviceWrite sa $ uniqueId d ++ "_" ++ name)
               genHs
               genC $ \this -> do
     connect sa this tau (varIn this "")
@@ -260,19 +260,62 @@ instance Device Potentiometer where
 instance AnalogInputDevice Potentiometer where
     genReadCode (Potentiometer pin) resultvar = [[$cstm|$id:resultvar = analogRead($int:pin);|]]
 
-data TestEvent = TestEvent Integer
-                 deriving (Eq, Show)
+class (Eq e, Show e, Reify t) => Event e t | e -> t where
+    interruptPins :: e -> [Integer]
+    setupEvent :: e -> FladuinoM (ERep FladuinoM)
 
-instance Event TestEvent Integer where
+eventValueType :: forall e t. (Event e t) => e -> H.Type
+eventValueType _ = reify (undefined :: t)
 
-onEvent :: forall e t. (Reify t, Event e Integer) => e -> S t
+mkEvent :: forall e t. (Event e t) => e -> Maybe H.Var -> Maybe H.Var -> ERep FladuinoM
+mkEvent e val pred = ERep { e_value = val
+                          , e_predicate = pred
+                          , e_id = show e
+                          , e_interrupts = interruptPins e
+                          , e_type = reify (undefined :: t) }
+
+lookupEvent :: forall t e m. (Event e t, MonadFladuino m) => e -> m (Maybe (ERep m))
+lookupEvent event = do 
+  events <- getsFladuinoEnv f_events 
+  case find (\(ERep { e_id = id}) -> show event == id) events of
+    Just erep  -> return $ Just erep
+    Nothing -> return Nothing
+
+connectEvent :: forall t e. (Event e t) => e -> SCode FladuinoM -> H.Var -> FladuinoM ()
+connectEvent event stream v = do
+  liveVar v
+  eref <- lookupEvent event
+  case eref of
+    Just eref -> modifyFladuinoEnv $ \s ->
+                              s { f_event_connections = update (eref, (stream, v)) (f_event_connections s) }
+    Nothing -> do addEvent event
+                  connectEvent event stream v
+    where
+      update :: Eq a => (a, b) -> [(a,[b])] -> [(a,[b])]
+      update (key, value) [] = [(key, [value])]
+      update (key, value) ((key2, values):xs)
+          | (key == key2) = (key, value:values):xs
+          | otherwise = (key2, values) : update (key, value) xs
+
+      addEvent event = do erep <- setupEvent event
+                          let erep' = erep { e_type = eventValueType event }
+                          modifyFladuinoEnv $ \s ->
+                              s { f_events = erep' : (f_events s) }
+                          liveVar v
+
+data InterruptEvent = InterruptEvent Integer
+                    deriving (Eq, Show)
+instance Event InterruptEvent () where
+    interruptPins (InterruptEvent n) = [n]
+    setupEvent e = return $ mkEvent e Nothing Nothing
+
+onEvent :: forall e t. (Reify t, Event e t) => e -> S t
 onEvent event = S $ do
     addStream  "onEvent"
                tau_t
                (OnEvent $ show event)
                gen
                (const (return ())) $ \this -> do
-    addEvent event
     connectEvent event this (varIn this "")
   where
     tau_t :: H.Type
@@ -280,8 +323,8 @@ onEvent event = S $ do
 
     gen :: SCode m -> FladuinoM ()
     gen this = do
-        addDecls [$decls|$var:v_in :: () -> ()|]
-        addDecls [$decls|$var:v_in x = $var:v_out ()|]
+        addDecls [$decls|$var:v_in :: $ty:tau_t -> ()|]
+        addDecls [$decls|$var:v_in x = $var:v_out x|]
       where
         v_in  = varIn this ""
         v_out = s_vout this

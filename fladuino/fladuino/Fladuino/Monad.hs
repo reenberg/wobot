@@ -72,6 +72,8 @@ import qualified Language.F as F
 import Text.PrettyPrint.Mainland
 import qualified Transform.F.ToC as ToC
 
+import Fladuino.Reify
+
 data FladuinoEnv m = FladuinoEnv
     {  f_fdecls      :: [F.Decl]
     ,  f_hstopdecls  :: [H.Decl]
@@ -94,8 +96,8 @@ data FladuinoEnv m = FladuinoEnv
 
     ,  f_devices :: [DRef m]
 
-    ,  f_events            :: [ERef m]
-    ,  f_event_connections :: [(ERef m, [(SCode m, H.Var)])]
+    ,  f_events            :: [ERep m]
+    ,  f_event_connections :: [(ERep m, [(SCode m, H.Var)])]
 
     ,  f_adcs         :: Int
     ,  f_adc_getdata  :: Map.Map Int Exp
@@ -187,10 +189,16 @@ data DRef m = forall a. (Device a) => DRef a
 instance Eq (DRef m) where
     DRef d1 == DRef d2 = uniqueId d1 == uniqueId d2
 
-data ERef m = forall e t. (Event e t) => ERef e
+data ERep m = ERep
+    { e_value      :: Maybe H.Var
+    , e_predicate  :: Maybe H.Var
+    , e_type       :: H.Type
+    , e_interrupts :: [Integer]
+    , e_id         :: String
+    }
 
-instance Eq (ERef m) where
-    ERef e1 == ERef e2 = show e1 == show e2
+instance Eq (ERep m) where
+    e1 == e2 = e_id e1 == e_id e2
 
 data SRep m  =  SConst NCode (SCode m)
              |  SMap NCode (SCode m)
@@ -395,32 +403,6 @@ class (MonadCompiler m,
             Just device -> return ()
             Nothing ->     m
 
-    addEvent :: (Event e t) => e -> m ()
-    addEvent event = once $ do
-                       modifyFladuinoEnv $ \s ->
-                           s { f_events = (ERef event) : (f_events s) }
-                       return ()
-        where
-        once :: MonadFladuino m => m () -> m ()
-        once m = do
-            events <- getsFladuinoEnv f_events
-            case elem (ERef event) events of
-              True  -> return ()
-              False -> m
-
-    connectEvent :: (Event e t) => e -> SCode m -> H.Var -> m ()
-    connectEvent event stream v = do
-        liveVar v
-        modifyFladuinoEnv $ \s ->
-            s { f_event_connections = update (ERef event, (stream, v)) (f_event_connections s) }
-        where
-          update :: Eq a => (a, b) -> [(a,[b])] -> [(a,[b])]
-          update (key, value) [] = [(key, [value])]
-          update (key, value) ((key2, values):xs)
-              | (key == key2) = (key, value:values):xs
-              | otherwise = (key2, values) : update (key, value) xs
-                                           
-
     useChannel :: FlowChannel -> F.Type -> m ()
     useChannel chan tau = do
         tau_chan <- getsFladuinoEnv $ \s ->
@@ -536,5 +518,3 @@ class (Eq a) => Device a where
     deviceClass :: a -> String
     uniqueId :: a -> String
     uniqueId = deviceClass
-
-class (Eq e, Show e) => Event e t | e -> t where
