@@ -376,23 +376,37 @@ sections that can be executed without blocking
 A set of nodes connected by a set of directed graph edges make up the
 entirety of the dataflow graph.  We shall adopt the terminology of
 Flask, and refer to nodes as \textit{dataflow operators} and the
-directed edges as \textit{wires} in the following.  Some dataflow
-operators have no predecessor and exist solely as entry points for
-data (they can be triggered by outside events, such as device or timer
-interrupts), while others have no successors and function as data
-sinks.  It is required that the graph is acyclic, something that is
-enforced by every operator being uniquely identified by (among other
-things) its predecessor(s).
+directed edges as \textit{wires} in the following.  Each wire is
+associated with type information regarding the values that will be
+passed along it.  Some dataflow operators have no predecessor and
+exist solely as entry points for data (they can be triggered by
+outside events, such as device or timer interrupts), while others have
+no successors and function as data sinks.  It is required that the
+graph is acyclic, something that is enforced by every operator being
+uniquely identified by (among other things) its predecessor(s).  A
+stream operator can have multiple distinct input, but only a single
+output, though this output can be split so as to send the same output
+value to any number of successors.
 
-For every operator $o$ in the dataflow graph, two unary functions will
-be generated: $o\_in()$ and $o\_out()$.  Whenever a value $v$ arrives
-at $o$, this will be implemented by a call $o\_in(v)$.  Depending on
-the specific semantics of $o$, a value $v'\equiv f(v)$ (where $f()$
-represents the computation done by $o$, the result may not even depend
-on $v$ at all) may be propagated to the successors of $o$.  In this
-case, $o\_in(v)$ will call $o\_out(v')$, the implementation of which
-will feature the calls $\forall s \in S(o). s\_in(v')$, where $S(o)$
-is the set of all successors of $o$.
+For every operator $o$ in the dataflow graph, a set of unary
+functions $o\_in_n()$ and a unary function $o\_out()$ will be
+generated.  The arrival of a value $v$ at $o$ will be implemented by a
+call $o\_in_n(v)$, where the exact choice depends on the wiring of the
+graph.  In the typical case, even when several wires leads to a single
+stream operator, there will be only a single such $o\_in_n()$
+function\footnote{In fact, multiple ``in'' functions are only
+  necessary for operators such as \texttt{szip}, which works by
+  waiting until it has received two values $x, y$ from its two direct
+  predecessors, after which it sends them along to its successors as
+  the tuple $(x,y)$ --- in this case, the two functions will need
+  different types and semantics, as there it is not required that $x$
+  and $y$ have the same type.}.  Depending on the specific semantics
+of $o$, a value $v'\equiv f(v)$ (where $f()$ represents the
+computation done by $o$, the result may not even depend on $v$ at all)
+may be propagated to the successors of $o$.  In this case,
+$o\_in_n(v)$ will call $o\_out(v')$, the implementation of which will
+feature the calls $\forall s \in S(o). s\_in(v')$, where $S(o)$ is the
+set of all successors of $o$.
 
 $o\_in()$ is generated directly by the implementation of the specific
 dataflow operator, but $o\_out()$ is automatically created by Fladuino
@@ -401,5 +415,8 @@ implementation of a dataflow operator does not feature tedious
 duplication of the value propagation machinery, yet as it is not
 required that $o\_out()$ is called at all, each dataflow operator can
 still make its own choice whether to propagate a value or not.
+
+It is worth nothing that a value need not contain any information
+apart from its existence; \texttt{()} is perfectly valid as a signal.
 
 \end{document}
