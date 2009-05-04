@@ -242,6 +242,7 @@ void $id:c_v_in($params:params)
           c_v_in = show v_in
           v_out = s_vout this
 
+-- Potentiometer device --
 data Potentiometer = Potentiometer Integer
                      deriving Eq
 
@@ -253,8 +254,51 @@ instance Device Potentiometer where
 instance AnalogInputDevice Potentiometer where
     genReadCode (Potentiometer pin) resultvar = [[$cstm|$id:resultvar = analogRead($int:pin);|]]
 
+
+-- Simple Interrupt Event --
 data InterruptEvent = InterruptEvent Integer
                     deriving (Eq, Show)
 instance Event InterruptEvent () where
     interruptPins (InterruptEvent n) = [n]
     setupEvent e = return $ mkEvent e Nothing Nothing
+
+
+
+-- Button device and Events --
+data PushButton = PushButton Integer
+                  deriving (Eq, Show)
+
+instance Device PushButton where
+    setup d@(PushButton pin) = do addCInitStm [$cstm|pinMode($int:pin, INPUT);|]
+    deviceClass _ = "pushbutton" 
+    uniqueId d@(PushButton pin) = deviceClass d ++ (show pin)
+
+data PushButtonPressEvent = PushButtonPressEvent PushButton
+                            deriving (Eq, Show)
+
+instance Event PushButtonPressEvent () where
+    setupEvent e@(PushButtonPressEvent (d@(PushButton pin))) = 
+                                            do addDevice d
+                                               pv <- statevar d "press_predicate" 
+                                               let v = H.Var (mkName pv)
+                                               addCImport pv [$ty|() -> Bool|] [$cexp|$id:pv|]
+                                               addCFundef [$cedecl|int $id:pv () {
+                                                                     return (digitalRead($int:pin) == HIGH);
+                                                                   }|]
+                                               return $ mkEvent e Nothing (Just v)
+    interruptPins (PushButtonPressEvent (PushButton pin)) = [pin]
+
+data PushButtonReleaseEvent = PushButtonReleaseEvent PushButton
+                              deriving (Eq, Show)
+
+instance Event PushButtonReleaseEvent () where
+    setupEvent e@(PushButtonReleaseEvent (d@(PushButton pin))) = 
+                                              do addDevice d 
+                                                 pv <- statevar d "rel_predicate" 
+                                                 let v = H.Var (mkName pv)
+                                                 addCImport pv [$ty|() -> Bool|] [$cexp|$id:pv|]
+                                                 addCFundef [$cedecl|int $id:pv () {
+                                                                       return (digitalRead($int:pin) == LOW);
+                                                                     }|]
+                                                 return $ mkEvent e Nothing (Just v)
+    interruptPins (PushButtonReleaseEvent (PushButton pin)) = [pin]
