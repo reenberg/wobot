@@ -22,7 +22,7 @@ import Fladuino.Devices
 main :: IO ()
 main =
     defaultMain $
-    genStreams ((map unS . concat . map (\s -> map (\d -> s >>> d) (map displayBit [1..4]))) [s1, s2])
+    genStreams (map unS (map (\n -> s >>> displayBit n) [1..4]))
         where
           modNum :: S Integer -> S Integer
           modNum = sintegrate zero int
@@ -34,10 +34,11 @@ main =
                 int = liftN [$decls|f (n, x) = (x + n, x + n)|]
 
           ifBitOn :: Integer -> S Integer -> S Integer
-          ifBitOn n = sfilter [$decls|p (x) = True|]
+          ifBitOn n = sfilter [$decls|p (x) = x == $int:n|]
 
           displayBit :: Integer -> S Integer -> S ()
-          displayBit n from = from >>> ifBitOn n >>> toUnit >>> turnOn (diode (4+n) False)
+          displayBit n from = from >>> ifBitOn n >>> turnOn (diode (4+n) False)
 
-          s1 = onEvent (PushButtonPressEvent $ PushButton 2) >>> sconst [$exp|1|] >>> modNum
-          s2 = onEvent (PushButtonReleaseEvent $ PushButton 3) >>> sconst [$exp|-1|] >>> modNum
+          s1 = onEvent (PushButtonPressEvent $ PushButton 2) >>> sconst [$exp|1|]
+          s2 = onEvent (PushButtonReleaseEvent $ PushButton 3) >>> sconst [$exp|-1|]
+          s = smerge s1 s2 >>> modNum
