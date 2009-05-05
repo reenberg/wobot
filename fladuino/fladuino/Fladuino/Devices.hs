@@ -147,7 +147,7 @@ modDev name d f a = S $ do
           v_in   = varIn this ""
           c_v_in = show v_in
 
-toggle :: forall a . (Reify a) => DigitalOutputPin -> S a -> S ()
+toggle :: DigitalOutputPin -> S () -> S ()
 toggle pin = modDev "toggle" pin $ \(DigitalOutputPin pin _ ) c_v_in sv _ ->
              [$cedecl|void $id:c_v_in()
                                { 
@@ -156,7 +156,7 @@ toggle pin = modDev "toggle" pin $ \(DigitalOutputPin pin _ ) c_v_in sv _ ->
                                        digitalWrite($int:pin, $id:sv);
                                }|]
 
-turnOn :: forall a . (Reify a) => DigitalOutputPin -> S a -> S ()
+turnOn :: DigitalOutputPin -> S () -> S ()
 turnOn pin = modDev "turnOn" pin $ \(DigitalOutputPin pin _ ) c_v_in sv _ ->
              [$cedecl|void $id:c_v_in()
                                { 
@@ -164,7 +164,7 @@ turnOn pin = modDev "turnOn" pin $ \(DigitalOutputPin pin _ ) c_v_in sv _ ->
                                        digitalWrite($int:pin, $id:sv);
                                }|]
 
-turnOff :: forall a . (Reify a) => DigitalOutputPin -> S a -> S ()
+turnOff :: DigitalOutputPin -> S () -> S ()
 turnOff pin = modDev "turnOff" pin $ \(DigitalOutputPin pin _ ) c_v_in sv _ ->
              [$cedecl|void $id:c_v_in()
                                { 

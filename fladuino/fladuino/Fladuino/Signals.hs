@@ -789,7 +789,24 @@ a &&& b = szip a b
 
 -- | Maps any value to unit (useful to e.g. connect something that doesnt return unit with "toggle")
 toUnit :: forall a. (Reify a, LiftN (N a) a)  => S a -> S ()
-toUnit = sconst [$exp|()|]
+toUnit from = S $ do
+    sfrom  <- unS from
+    addStream "toUnit"
+              unitTy
+              (GenericSRep sfrom "hello thar")
+              gen
+              (const (return ())) $ \this -> do
+    connect sfrom this tau_a (varIn this "")
+  where
+    tau_a :: H.Type
+    tau_a = reify (undefined :: a)
+
+    gen :: SCode m -> FladuinoM ()
+    gen this =
+        addDecls [$decls|$var:v_in _ = $var:v_out ()|]
+      where
+        v_in    = varIn this ""
+        v_out   = s_vout this
 
 -- | Only lets true values pass through
 edge :: S Bool -> S ()
