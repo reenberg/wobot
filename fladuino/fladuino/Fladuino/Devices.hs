@@ -147,26 +147,26 @@ modDev name d f a = S $ do
           v_in   = varIn this ""
           c_v_in = show v_in
 
-toggle :: DigitalOutputPin -> S () -> S ()
-toggle pin = modDev "toggle" pin $ \(DigitalOutputPin pin _ ) c_v_in sv _ ->
-             [$cedecl|void $id:c_v_in()
+toggle :: forall a. (Reify a) => DigitalOutputPin -> S a -> S ()
+toggle pin = modDev "toggle" pin $ \(DigitalOutputPin pin _ ) c_v_in sv (params, e) ->
+             [$cedecl|void $id:c_v_in($params:params)
                                { 
                                        if ($id:sv == HIGH) $id:sv = LOW;
                                        else $id:sv = HIGH;
                                        digitalWrite($int:pin, $id:sv);
                                }|]
 
-turnOn :: DigitalOutputPin -> S () -> S ()
-turnOn pin = modDev "turnOn" pin $ \(DigitalOutputPin pin _ ) c_v_in sv _ ->
-             [$cedecl|void $id:c_v_in()
+turnOn :: forall a. (Reify a) => DigitalOutputPin -> S a -> S ()
+turnOn pin = modDev "turnOn" pin $ \(DigitalOutputPin pin _ ) c_v_in sv (params, e) ->
+             [$cedecl|void $id:c_v_in($params:params)
                                { 
                                        $id:sv = HIGH;
                                        digitalWrite($int:pin, $id:sv);
                                }|]
 
-turnOff :: DigitalOutputPin -> S () -> S ()
-turnOff pin = modDev "turnOff" pin $ \(DigitalOutputPin pin _ ) c_v_in sv _ ->
-             [$cedecl|void $id:c_v_in()
+turnOff :: forall a. (Reify a) => DigitalOutputPin -> S a -> S ()
+turnOff pin = modDev "turnOff" pin $ \(DigitalOutputPin pin _ ) c_v_in sv (params, e) ->
+             [$cedecl|void $id:c_v_in($params:params)
                                { 
                                        $id:sv = LOW;
                                        digitalWrite($int:pin, $id:sv);
