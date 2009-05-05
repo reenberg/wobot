@@ -60,3 +60,6 @@ snd :: (a, b) -> b
 snd (_, x) = x
 
 seq :: a -> b -> b
+
+not True = False
+not False = True
