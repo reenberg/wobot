@@ -119,8 +119,11 @@ genStreams ss = do
     basename <- return (maybe "Fladuino" id) `ap` optVal output
     scodes <- sequence ss
     timer_connections   <- getsFladuinoEnv f_timer_connections
+    event_connections   <- getsFladuinoEnv f_event_connections
     channel_connections <- getsFladuinoEnv f_channel_connections
     let scodes' = scodes ++ [scode | (_, conns) <- Map.toList timer_connections,
+                                     (scode, _) <- conns]
+                         ++ [scode | (_, conns) <- event_connections,
                                      (scode, _) <- conns]
                          ++ [scode | (_, conns) <- Map.toList channel_connections,
                                      (scode, _) <- conns]
