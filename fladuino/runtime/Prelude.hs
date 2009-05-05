@@ -63,3 +63,5 @@ seq :: a -> b -> b
 
 not True = False
 not False = True
+
+id x = x
