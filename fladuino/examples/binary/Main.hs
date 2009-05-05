@@ -42,7 +42,7 @@ main =
           ifBitOn n = sfilter [$exp|\p -> isBitSet(p, $int:n)|]
 
           ifBitOff :: Integer -> S Integer -> S Integer
-          ifBitOff n = sfilter [$exp|\p -> isBitSet(p, $int:n)|]
+          ifBitOff n = sfilter [$exp|\p -> not (isBitSet(p, $int:n))|]
 
           maybeTurnOn :: Integer -> S Integer -> S ()
           maybeTurnOn n from = from >>> ifBitOn n >>> turnOn (diode (5+n) False)
