@@ -23,12 +23,11 @@ main :: IO ()
 main =
     defaultMain $ do
     addCInclude "math.h"
-    addCImport "pow" [$ty|(Integer, Integer) -> Integer|] [$cexp|pow|]
     addCImport "isBitSet" [$ty|(Integer, Integer) -> Bool|] [$cexp|isBitSet|]
     addCFundef [$cedecl|int isBitSet(int x, int bit) {
-                                  return (x & bit);
+                                  return (x & (1 << bit));
                                 }|]
-    genStreams (map unS (map (\n -> s >>> displayBit n) [1..4]))
+    genStreams (map unS (map (\n -> s >>> displayBit n) [0..3]))
         where
           modNum :: S Integer -> S Integer
           modNum = sintegrate zero int
@@ -40,13 +39,13 @@ main =
                 int = liftN [$decls|f (n, x) = (x + n, x + n)|]
 
           ifBitOn :: Integer -> S Integer -> S Integer
-          ifBitOn n = sfilter [$exp|\p -> isBitSet(p, pow($int:n , 2))|]
+          ifBitOn n = sfilter [$exp|\p -> isBitSet(p, $int:n)|]
 
           maybeTurnOn :: Integer -> S Integer -> S ()
-          maybeTurnOn n from = from >>> ifBitOn n >>> turnOn (diode (4+n) False)
+          maybeTurnOn n from = from >>> ifBitOn n >>> turnOn (diode (5+n) False)
 
           displayBit :: Integer -> S Integer -> S ()
-          displayBit n from = from >>> strace (maybeTurnOn n) >>> turnOff (diode (4+n) False)
+          displayBit n from = from >>> strace (maybeTurnOn n) >>> turnOff (diode (5+n) False)
 
           s1 = onEvent (PushButtonPressEvent $ PushButton 2) >>> sconst [$exp|1|]
           s2 = onEvent (PushButtonReleaseEvent $ PushButton 3) >>> sconst [$exp|-1|]
