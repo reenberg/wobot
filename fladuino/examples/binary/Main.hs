@@ -28,7 +28,7 @@ main =
     addCFundef [$cedecl|int isBitSet(int x, int bit) {
                                   return (x & bit);
                                 }|]
-    genStreams (map unS (map (\n -> s >>> displayBit n) [1..4]))
+    genStreams ((map unS . concat) $ map (\n -> [s >>> maybeTurnOn n, s >>> maybeTurnOff n]) [1..4])
         where
           modNum :: S Integer -> S Integer
           modNum = sintegrate zero int
@@ -42,11 +42,17 @@ main =
           ifBitOn :: Integer -> S Integer -> S Integer
           ifBitOn n = sfilter [$exp|\p -> isBitSet(p, pow($int:n , 2))|]
 
+          ifBitOff :: Integer -> S Integer -> S Integer
+          ifBitOff n = sfilter [$exp|\p -> isBitSet(p, pow($int:n , 2))|]
+
           maybeTurnOn :: Integer -> S Integer -> S ()
           maybeTurnOn n from = from >>> ifBitOn n >>> turnOn (diode (4+n) False)
 
+          maybeTurnOff :: Integer -> S Integer -> S ()
+          maybeTurnOff n from = from >>> ifBitOff n >>> turnOff (diode (4+n) False)
+
           displayBit :: Integer -> S Integer -> S ()
-          displayBit n from = from >>> strace (maybeTurnOn n) >>> turnOff (diode (4+n) False)
+          displayBit n from = from >>> (maybeTurnOn n)
 
           s1 = onEvent (PushButtonPressEvent $ PushButton 2) >>> sconst [$exp|1|]
           s2 = onEvent (PushButtonReleaseEvent $ PushButton 3) >>> sconst [$exp|-1|]
