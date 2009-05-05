@@ -45,10 +45,10 @@ streamsForCounter n = concat $ map (\n -> [clocked >>> maybeTurnOn n, clocked >>
       bitStatus i = smap [$exp|\p -> isBitSet(p, $int:i)|]
 
       maybeTurnOn :: Integer -> S Integer -> S ()
-      maybeTurnOn i from = from >>> bitStatus i >>> sfilter [$exp|id|] >>> turnOn (diode (n+1+i) False)
+      maybeTurnOn i from = from >>> bitStatus i >>> sfilter [$exp|id|] >>> turnOn (diode (5+i) False)
 
       maybeTurnOff :: Integer -> S Integer -> S ()
-      maybeTurnOff i from = from >>> bitStatus i >>> sfilter [$exp|(\v -> not v)|] >>> turnOff (diode (n+1+i) False)
+      maybeTurnOff i from = from >>> bitStatus i >>> sfilter [$exp|(\v -> not v)|] >>> turnOff (diode (5+i) False)
 
       s1 = onEvent (PushButtonPressEvent $ PushButton 2) >>> sconst [$exp|1|]
       s2 = onEvent (PushButtonReleaseEvent $ PushButton 3) >>> sconst [$exp|-1|]
