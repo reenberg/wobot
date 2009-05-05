@@ -27,7 +27,7 @@ main =
     addCFundef [$cedecl|int isBitSet(int x, int bit) {
                                   return (x & (1 << bit));
                                 }|]
-    genStreams ((map unS . concat) $ map (\n -> [s >>> maybeTurnOn n, s >>> maybeTurnOff n]) [0..3])
+    genStreams ((map unS . concat) $ map (\n -> [clocked >>> maybeTurnOn n, clocked >>> maybeTurnOff n]) [0..3])
         where
           modNum :: S Integer -> S Integer
           modNum = sintegrate zero int
@@ -56,3 +56,5 @@ main =
           s1 = onEvent (PushButtonPressEvent $ PushButton 2) >>> sconst [$exp|1|]
           s2 = onEvent (PushButtonReleaseEvent $ PushButton 3) >>> sconst [$exp|-1|]
           s = smerge s1 s2 >>> modNum
+          clocked = clock 100 >>> sconst [$exp|1|] >>> modNum
+          
