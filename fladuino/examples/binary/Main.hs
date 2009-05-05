@@ -55,6 +55,6 @@ main =
 
           s1 = onEvent (PushButtonPressEvent $ PushButton 2) >>> sconst [$exp|1|]
           s2 = onEvent (PushButtonReleaseEvent $ PushButton 3) >>> sconst [$exp|-1|]
-          s = smerge s1 s2 >>> modNum
-          clocked = clock 100 >>> sconst [$exp|1|] >>> modNum
+          s = smerge s1 s2
+          clocked = smerge s (clock 20 >>> sconst [$exp|1|]) >>> modNum
           
