@@ -306,11 +306,7 @@ finalizeEvents = do
          stms <- forM binding $ \(_, v) -> do
                    e <- hcall v $ ToC.CLowered (tauf_v) [$cexp|$exp:e_params|]
                    return $ Exp (Just e) internalLoc
-         let eventCP = map (\c -> case c of
-                                    ' ' -> '_'
-                                    '(' -> 'L'
-                                    ')' -> 'R'
-                                    c -> c) $ e_id erep
+         let eventCP = cIdent $ e_id erep
          let eventCheckCP = eventCP ++ "_check"
          
          predcall <- case e_predicate erep of
