@@ -1,5 +1,4 @@
-# Flask is one dir up from this one.
-FLASK=./../../../kode/
+FLASK=./../../../fladuino/
 
 FLASK_RUNTIME=$(FLASK)/runtime
 FLASK_PRELUDE=$(FLASK_RUNTIME)/Prelude.hs
