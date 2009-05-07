@@ -21,9 +21,9 @@ main =
     genStreams $ map unS [s1, s2, s3]
     where
       output = diode 10 False
-      s1 = clock 500 >>> (toggle $ diode 8 True)
+      s1 = clock 500 >>> (toggle $ diode 9 True)
       s2 = clock 500 >>> (toggle $ diode 10 False)
-      s3 = clock 1 >>> vary >>> (setValue $ AnalogOutputPin 7 0)
+      s3 = clock 1 >>> vary >>> (setValue $ AnalogOutputPin 8 0)
 
       vary :: forall a . Reify a => S a -> S Integer
       vary =  sintegrate zero int
