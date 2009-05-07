@@ -22,8 +22,8 @@ main =
     where
       output = diode 10 False
       s1 = clock 500 >>> (toggle $ diode 8 True)
-      s2 = clock 500 >>> (toggle $ diode 9 False)
-      s3 = clock 1 >>> vary >>> (setValue $ AnalogOutputPin 10 0)
+      s2 = clock 500 >>> (toggle $ diode 10 False)
+      s3 = clock 1 >>> vary >>> (setValue $ AnalogOutputPin 7 0)
 
       vary :: forall a . Reify a => S a -> S Integer
       vary =  sintegrate zero int
