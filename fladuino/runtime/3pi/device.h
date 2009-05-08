@@ -7,7 +7,9 @@
 // and ORANGUTAN_X2.  Uncomment only one of the following three
 // lines:
 
+#ifdef __AVR_ATmega168__
 #define ORANGUTAN
+#endif
 // #define BABY_ORANGUTAN
 // #define ORANGUTAN_X2
 
