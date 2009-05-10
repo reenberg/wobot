@@ -1,5 +1,4 @@
 
-include ../common.mk
 
 TARGET = external-interrupt2
 INSTALL_DIR = ../../../arduino-dist

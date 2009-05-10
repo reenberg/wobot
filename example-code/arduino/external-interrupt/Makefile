@@ -1,6 +1,4 @@
 
-include ../common.mk
-
 TARGET = external-interrrupt
 INSTALL_DIR = ../../../arduino-dist
 PORT = /dev/ttyUSB0

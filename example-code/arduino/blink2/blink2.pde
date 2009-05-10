@@ -1,6 +1,6 @@
 #include <avr/interrupt.h>
 #include <avr/io.h>
-#include <common/timersupport.h>
+#include <../../../fladuino/runtime/common/timersupport.h>
 
 #define LED1 13
 #define LED2 12

@@ -1,5 +1,3 @@
-#include <avr/interrupt.h>
-#include <avr/io.h>
 
 #define LED1 13
 #define RESET 7
@@ -31,5 +29,9 @@ void loop() {
 
      digitalWrite(LED1, HIGH);
      delay(1000);
+     digitalWrite(LED1, LOW);
+     delay(1500);
+
+     Serial.println("Hello world");
 
 }

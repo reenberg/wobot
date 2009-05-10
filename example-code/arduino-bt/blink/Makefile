@@ -1,5 +1,3 @@
-include ../common.mk
-
 TARGET = blink
 INSTALL_DIR = ../../../arduino-dist
 PORT = /dev/rfcomm0
@@ -71,7 +69,7 @@ OBJDUMP = $(AVR_TOOLS_PATH)/avr-objdump
 AR  = $(AVR_TOOLS_PATH)/avr-ar
 SIZE = $(AVR_TOOLS_PATH)/avr-size
 NM = $(AVR_TOOLS_PATH)/avr-nm
-AVRDUDE = $(AVR_TOOLS_PATH)/avrdude
+AVRDUDE = $(INSTALL_DIR)/hardware/tools/avrdude
 REMOVE = rm -f
 MV = mv -f
 
