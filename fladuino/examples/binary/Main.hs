@@ -53,4 +53,20 @@ streamsForCounter n sp = [ clocked >>> s n | s <- [maybeTurnOn, maybeTurnOff], n
       s1 = onEvent (PushButtonPressEvent $ PushButton 10) >>> sconst [$exp|1|]
       s2 = onEvent (PushButtonPressEvent $ PushButton 11) >>> sconst [$exp|-1|]
       s = smerge s1 s2
-      clocked = smerge s (clock 1000 >>> sconst [$exp|1|]) >>> modNum
+      clocked = smerge s (clock 1 >>> (valueOf $ Potentiometer 0) >>> smap [$exp|(/5)|] >>> clockSkip >>> sconst [$exp|1|]) >>> modNum
+
+
+-- | Slows down the clock based on the input stream. The input stream
+-- | indicates how many clock cycles to skip.
+clockSkip :: S Integer -> S Integer
+clockSkip from = from 
+                 >>> sintegrate start count
+                 >>> sfilter predicate
+    where
+      start :: N Integer
+      start = liftN [$exp|0|]
+      count :: N ((Integer, Integer) -> (Integer, Integer))
+      count = liftN [$exp|\(x, s) -> if s > x then (0, 0) 
+                                     else (s+1, s+1)|]
+      predicate :: N (Integer -> Bool)
+      predicate = liftN [$exp|\s -> s == 0|]
