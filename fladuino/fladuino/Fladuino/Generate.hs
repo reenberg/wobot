@@ -110,12 +110,17 @@ putDoc filepath doc = do
     liftIO $ hPutStr h $ pretty 80 doc
     liftIO $ hClose h
 
+defaultPlatform = duemilanove
+
+genStreamForPlatform :: Platform -> S a -> FladuinoM ()
+genStreamForPlatform p s = genStreamsForPlatform p [unS s]
+
 genStream :: S a -> FladuinoM ()
 genStream s = genStreams [unS s]
 
-genStreams :: [FladuinoM (SCode FladuinoM)]
-           -> FladuinoM ()
-genStreams ss = do
+genStreamsForPlatform :: Platform -> [FladuinoM (SCode FladuinoM)]
+                       -> FladuinoM ()
+genStreamsForPlatform p ss = do
     basename <- return (maybe "Fladuino" id) `ap` optVal output
     scodes <- sequence ss
     timer_connections   <- getsFladuinoEnv f_timer_connections
@@ -140,7 +145,7 @@ genStreams ss = do
     fdecls' <- optimizeF basename (Set.toList live) (f_fdecls env ++ fdecls)
     ToC.transDecls fdecls'
     genC Set.empty scodes'
-    finalizeDevices
+    finalizeDevices p
     finalizeTimers
     finalizeEvents
 --    finalizeADCs
@@ -241,13 +246,28 @@ void loop()
     unitE :: H.Exp
     unitE = H.conE (H.TupleCon 0)
 
+genStreams :: [FladuinoM (SCode FladuinoM)]
+           -> FladuinoM ()
+genStreams = genStreamsForPlatform defaultPlatform
+
+finalizeConfig :: forall m . MonadFladuino m
+                  => PConf -> m ()
+finalizeConfig (PConf _ usages) = forM_ usages applyUsage
+    where applyUsage (DPinUsage pin _ (OutputDPin initstate)) = do
+            addCInitStm [$cstm|pinMode($int:pin, OUTPUT);|]
+            let val = if initstate then "HIGH" else "LOW"
+            addCInitStm [$cstm|digitalWrite($int:pin, $id:val);|]
+          applyUsage (DPinUsage pin _ InputDPin) = do
+            addCInitStm [$cstm|pinMode($int:pin, INPUT);|]
+          applyUsage _ = return ()
+
 finalizeDevices :: forall m . MonadFladuino m
-               => m ()
-finalizeDevices = do
+                   => Platform -> m ()
+finalizeDevices p = do
   devices <- getsFladuinoEnv f_devices
-  forM_ devices $ \(DRef d) -> do
-                    setupDevice d
-  return ()
+  config <- foldM extendConfiguration (startConf p) (map (\(DRef d) -> usages d) devices)
+  finalizeConfig config
+  mapM_ (\(DRef d) -> setupDevice d) devices
 
 finalizeTimers :: forall m . MonadFladuino m
                => m ()
