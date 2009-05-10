@@ -1,14 +1,6 @@
-#include <common/PCINT.h>
+#include <../../../fladuino/runtime/common/PCINT.h>
 
-SIGNAL(PCINT0_vect) {
-  PCint(0);
-}
-SIGNAL(PCINT1_vect) {
-  PCint(1);
-}
-SIGNAL(PCINT2_vect) {
-  PCint(2);
-}
+
 
 volatile long ticktocks = 0;
 long i = 0;

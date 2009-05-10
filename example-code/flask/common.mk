@@ -1,49 +1,70 @@
-# Arduino 0011 Makefile
-# Arduino adaptation by mellis, eighthave, oli.keller
-#
-# This makefile allows you to build sketches from the command line
-# without the Arduino environment (or Java).
-#
-# Detailed instructions for using the makefile:
-#
-#  1. Copy this file into the folder with your sketch. There should be a
-#     file with the extension .pde (e.g. foo.pde)
-#
-#  2. Below, modify the line containing "TARGET" to refer to the name of
-#     of your program's file without an extension (e.g. TARGET = foo).
-#
-#  3. Modify the line containg "INSTALL_DIR" to point to the directory that
-#     contains the Arduino installation (for example, under Mac OS X, this
-#     might be /Applications/arduino-0011).
-#
-#  4. Modify the line containing "PORT" to refer to the filename
-#     representing the USB or serial connection to your Arduino board
-#     (e.g. PORT = /dev/tty.USB0).  If the exact name of this file
-#     changes, you can use * as a wildcard (e.g. PORT = /dev/tty.USB*).
-#
-#  5. Set the line containing "MCU" to match your board's processor. 
-#     Older one's are atmega8 based, newer ones like Arduino Mini, Bluetooth
-#     or Diecimila have the atmega168.  If you're using a LilyPad Arduino,
-#     change F_CPU to 8000000.
-#
-#  6. At the command line, change to the directory containing your
-#     program's file and the makefile.
-#
-#  7. Type "make" and press enter to compile/verify your program.
-#
-#  8. Type "make upload", reset your Arduino board, and press enter to
-#     upload your program to the Arduino board.
-#
-# $Id$
+# The user must specify paths to Fladuino and Arduino.
+FLADUINO_DIR= ../../../fladuino
+ARDUINO_DIR = ../../../arduino-dist
 
-include ../common.mk
 
-TARGET = $(notdir $(CURDIR))
-INSTALL_DIR = ../../../arduino-dist
-PORT = /dev/ttyUSB0
+## 
+# Default setting
+##
+
+# Default to the name of the current directory for the program name.
+ifndef PROGNAME
+PROGNAME = $(notdir $(CURDIR))
+endif
+
+# If no device has been specified, default to Duemilanove.
+ifndef PLATFORM
+PLATFORM = duemilanove
+endif
+
+ifndef UPLOAD_RATE
 UPLOAD_RATE = 57600
-AVRDUDE_PROGRAMMER = stk500v1
+endif
+
+ifndef PORT
+PORT = /dev/ttyUSB0
+endif
+
+## 
+# Overwrite defualt settings if the chosen platform requires so.
+##
+
+ifeq ($(PLATFORM), duemilanove)
 MCU = atmega328p
+endif
+ifeq ($(PLATFORM), 3pi)
+MCU = atmega168
+endif
+ifeq ($(PLATFORM), bt)
+MCU = atmega168
+UPLOAD_RATE = 115200
+PORT = /dev/rfcom0
+endif
+ifeq ($(PLATFORM), mega)
+MCU = atmega1280
+endif
+
+FLADUINO_RUNTIME=$(FLADUINO_DIR)/runtime
+FLADUINO_PRELUDE=$(FLADUINO_RUNTIME)/Prelude.hs
+
+include $(MAKERULES)
+
+all: fladuinoall arduinoall
+clean: fladuinoclean arduinoclean
+
+# Fladuino part of the compilation.
+fladuinoclean:
+	rm -rf obj fladuinogen *.dump.* $(PROGNAME).pde
+
+fladuinoall: Main.hs
+	mkdir -p obj
+	ghc --make -odir obj -hidir obj -o fladuinogen -W \
+	    $<
+	./fladuinogen $(FLADUINO_FLAGS) --prelude $(FLADUINO_PRELUDE) -o $(PROGNAME)
+
+TARGET = $(PROGNAME)
+INSTALL_DIR = $(ARDUINO_DIR)
+AVRDUDE_PROGRAMMER = stk500v1
 F_CPU = 16000000
 
 ############################################################################
@@ -74,7 +95,7 @@ CDEFS = -DF_CPU=$(F_CPU)
 CXXDEFS = -DF_CPU=$(F_CPU)
 
 # Place -I options here
-CINCS = -I$(ARDUINO)
+CINCS = -I$(ARDUINO) -I$(FLADUINO_RUNTIME)
 CXXINCS = -I$(ARDUINO)
 
 # Compiler flag to set the C Standard level.
@@ -97,7 +118,7 @@ LDFLAGS = -lm
 # Programming support using avrdude. Settings and variables.
 AVRDUDE_PORT = $(PORT)
 AVRDUDE_WRITE_FLASH = -U flash:w:applet/$(TARGET).hex
-AVRDUDE_FLAGS = -V -F -C $(INSTALL_DIR)/hardware/tools/avr/etc/avrdude.conf \
+AVRDUDE_FLAGS = -v -D -C $(INSTALL_DIR)/hardware/tools/avrdude.conf \
 -p $(MCU) -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER) \
 -b $(UPLOAD_RATE)
 
@@ -127,7 +148,7 @@ ALL_ASFLAGS = -mmcu=$(MCU) -I. -x assembler-with-cpp $(ASFLAGS)
 
 
 # Default target.
-all: applet_files build sizeafter
+arduinoall: applet_files build sizeafter
 
 build: elf hex 
 
@@ -225,23 +246,25 @@ applet/core.a: $(OBJ)
 .S.o:
 	$(CC) -c $(ALL_ASFLAGS) $< -o $@
 
+# Automatic dependencies
+%.d: %.c
+	$(CC) -M $(ALL_CFLAGS) $< | sed "s;$(notdir $*).o:;$*.o $*.d:;" > $@
+
+%.d: %.cpp
+	$(CXX) -M $(ALL_CXXFLAGS) $< | sed "s;$(notdir $*).o:;$*.o $*.d:;" > $@
+
 
 
 # Target: clean project.
-clean:
+arduinoclean:
 	$(REMOVE) applet/$(TARGET).hex applet/$(TARGET).eep applet/$(TARGET).cof applet/$(TARGET).elf \
 	applet/$(TARGET).map applet/$(TARGET).sym applet/$(TARGET).lss applet/core.a \
 	$(OBJ) $(LST) $(SRC:.c=.s) $(SRC:.c=.d) $(CXXSRC:.cpp=.s) $(CXXSRC:.cpp=.d)
 
-depend:
-	if grep '^# DO NOT DELETE' $(MAKEFILE) >/dev/null; \
-	then \
-		sed -e '/^# DO NOT DELETE/,$$d' $(MAKEFILE) > \
-			$(MAKEFILE).$$$$ && \
-		$(MV) $(MAKEFILE).$$$$ $(MAKEFILE); \
-	fi
-	echo '# DO NOT DELETE THIS LINE -- make depend depends on it.' \
-		>> $(MAKEFILE); \
-	$(CC) -M -mmcu=$(MCU) $(CDEFS) $(CINCS) $(SRC) $(ASRC) >> $(MAKEFILE)
 
-.PHONY:	all build elf hex eep lss sym program coff extcoff clean depend applet_files sizebefore sizeafter
+.PHONY:	all arduinoall fladuinoall build elf hex eep lss sym program coff extcoff clean arduinoclean fladuinoclean applet_files sizebefore sizeafter
+
+
+# Include autogenerated dependency files (.d)
+include $(SRC:.c=.d)
+include $(CXXSRC:.cpp=.d)

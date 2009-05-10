@@ -34,8 +34,6 @@
 #
 # $Id$
 
-include ../common.mk
-
 TARGET = $(notdir $(CURDIR))
 INSTALL_DIR = ../../../arduino-dist
 PORT = /dev/ttyUSB0
