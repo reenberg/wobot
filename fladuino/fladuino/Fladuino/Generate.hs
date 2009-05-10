@@ -253,14 +253,14 @@ genStreams = genStreamsForPlatform defaultPlatform
 finalizeConfig :: forall m . MonadFladuino m
                   => PConf -> m ()
 finalizeConfig (PConf _ usages) = forM_ usages applyUsage
-    where applyUsage (DPinUsage pin _ (OutputDPin initstate)) = do
+    where applyUsage (DPinUsage pin _ (DigitalOutput initstate)) = do
             addCInitStm [$cstm|pinMode($int:pin, OUTPUT);|]
             let val = if initstate then "HIGH" else "LOW"
             addCInitStm [$cstm|digitalWrite($int:pin, $id:val);|]
-          applyUsage (DPinUsage pin _ (OutputAPin initstate)) = do
+          applyUsage (DPinUsage pin _ (AnalogOutput initstate)) = do
             addCInitStm [$cstm|pinMode($int:pin, OUTPUT);|]
             addCInitStm [$cstm|digitalWrite($int:pin, $int:initstate);|]
-          applyUsage (DPinUsage pin _ InputDPin) = do
+          applyUsage (DPinUsage pin _ DigitalInput) = do
             addCInitStm [$cstm|pinMode($int:pin, INPUT);|]
           applyUsage _ = return ()
 

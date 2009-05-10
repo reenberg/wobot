@@ -112,15 +112,15 @@ startConf p = PConf p []
 supports :: PConf -> Usage -> Bool
 supports (PConf p _) (DPinUsage pin caps _) = isJust $ find f (p_digital_pins p)
     where f (Pin pin' caps') = pin == pin' && null (caps \\ caps')
-supports (PConf p _) (APinUsage pin caps _) = isJust $ find f (p_analog_pins p)
+supports (PConf p _) (APinUsage pin caps) = isJust $ find f (p_analog_pins p)
     where f (Pin pin' caps') = pin == pin' && null (caps \\ caps')
 
 conflicts :: PConf -> Usage -> Bool
 conflicts (PConf _ us) (DPinUsage pin _ _) = isJust $ find f us
     where f (DPinUsage pin' _ _) = pin == pin'
           f _ = False
-conflicts (PConf _ us) (APinUsage pin _ _) = isJust $ find f us
-    where f (APinUsage pin' _ _) = pin == pin'
+conflicts (PConf _ us) (APinUsage pin _) = isJust $ find f us
+    where f (APinUsage pin' _) = pin == pin'
           f _ = False
 conflicts _ _ = False
 
@@ -132,7 +132,7 @@ extendConfiguration pc@(PConf p usages) (u@(DPinUsage pin caps _) : us)
     | pc `conflicts` u = fail $ "Digital pin " ++ show pin ++ " reserved twice"
     | pc `supports` u = extendConfiguration (PConf p $ u : usages) us
     | otherwise = fail $ "Cannot provide digital pin " ++ show pin ++ " with capabilities " ++ show caps
-extendConfiguration pc@(PConf p usages) (u@(APinUsage pin caps _) : us)
+extendConfiguration pc@(PConf p usages) (u@(APinUsage pin caps) : us)
     | pc `conflicts` u = fail $ "Analog pin " ++ show pin ++ " reserved twice"
     | pc `supports` u = extendConfiguration (PConf p $ u : usages) us
     | otherwise = fail $ "Cannot provide analog pin " ++ show pin ++ " with capabilities " ++ show caps

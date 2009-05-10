@@ -100,12 +100,17 @@ instance Device DigitalOutputPin where
           sv <- statevar d "state"
           addCDecldef [$cedecl|unsigned char $id:sv;|]
           addCInitStm [$cstm|$id:sv = digitalRead($int:pin);|]
-    usages (DigitalOutputPin pin initstate) = [DPinUsage pin [] (OutputDPin initstate)]
+    usages (DigitalOutputPin pin initstate) = [DPinUsage pin [] (DigitalOutput initstate)]
     deviceClass _ = "digital_output_pin"
     uniqueId d@(DigitalOutputPin pin initstate) = deviceClass d ++ (show pin)
 
+instance Device DigitalInputPin where
+    usages (DigitalInputPin pin) = [DPinUsage pin [] DigitalInput]
+    deviceClass _ = "digital_input_pin"
+    uniqueId d@(DigitalInputPin pin) = deviceClass d ++ (show pin)
+
 instance Device AnalogOutputPin where
-    usages (AnalogOutputPin pin initstate) = [DPinUsage pin ["PWM"] (OutputAPin initstate)]
+    usages (AnalogOutputPin pin initstate) = [DPinUsage pin ["PWM"] (AnalogOutput initstate)]
     deviceClass _ = "analog_output_pin"
     uniqueId d@(AnalogOutputPin pin initstate) = deviceClass d ++ (show pin)
 
@@ -241,7 +246,7 @@ data Potentiometer = Potentiometer Integer
                      deriving Eq
 
 instance Device Potentiometer where
-    usages (Potentiometer pin) = [APinUsage pin [] InputAPin]
+    usages (Potentiometer pin) = [APinUsage pin []]
     deviceClass _ = "potentiometer"
     uniqueId d@(Potentiometer pin) = deviceClass d ++ (show pin)
 
@@ -263,7 +268,7 @@ data PushButton = PushButton Integer
                   deriving (Eq, Show)
 
 instance Device PushButton where
-    usages (PushButton pin) = [DPinUsage pin ["interrupt"] InputDPin]
+    usages (PushButton pin) = [DPinUsage pin ["interrupt"] DigitalInput]
     deviceClass _ = "pushbutton" 
     uniqueId d@(PushButton pin) = deviceClass d ++ (show pin)
 
