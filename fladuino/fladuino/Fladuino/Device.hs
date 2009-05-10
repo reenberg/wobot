@@ -53,6 +53,7 @@ import Control.Monad.State
 import Control.Monad.Trans
 import Data.IORef
 import Data.List (intersperse, concat)
+import Data.Maybe
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import System.IO
@@ -81,6 +82,61 @@ import Fladuino.Signals
 import Fladuino.Reify
 
 import Fladuino.LiftN
+
+data Pin = Pin Integer [Capability]
+
+data Platform = Platform 
+    { p_digital_pins :: [Pin]
+    , p_analog_pins :: [Pin]
+    , p_capabilities :: [Capability] }
+
+emptyPlatform :: Platform
+emptyPlatform = Platform { p_digital_pins = []
+                         , p_analog_pins = []
+                         , p_capabilities = [] }
+
+duemilanove = emptyPlatform { p_digital_pins = [ Pin n $ pc n | n <- [0..13] ]
+                            , p_analog_pins = [ Pin n ["analog", "interrupt"] | n <- [0..6] ]
+                            , p_capabilities = ["Duemilanove"] }
+              where
+                pc pin | pin `elem` [3, 5, 6, 9, 10, 11] = ["PWM", "interrupt"]
+                pc _ = ["interrupt"]
+
+diecimila = duemilanove { p_capabilities = ["Diecimila"] }
+
+data PConf = PConf Platform [Usage]
+
+startConf :: Platform -> PConf
+startConf p = PConf p []
+
+supports :: PConf -> Usage -> Bool
+supports (PConf p _) (DPinUsage pin caps _) = isJust $ find f (p_digital_pins p)
+    where f (Pin pin' caps') = pin == pin' && null (caps \\ caps')
+supports (PConf p _) (APinUsage pin caps _) = isJust $ find f (p_analog_pins p)
+    where f (Pin pin' caps') = pin == pin' && null (caps \\ caps')
+
+conflicts :: PConf -> Usage -> Bool
+conflicts (PConf _ us) (DPinUsage pin _ _) = isJust $ find f us
+    where f (DPinUsage pin' _ _) = pin == pin'
+          f _ = False
+conflicts (PConf _ us) (APinUsage pin _ _) = isJust $ find f us
+    where f (APinUsage pin' _ _) = pin == pin'
+          f _ = False
+conflicts _ _ = False
+
+extendConfiguration :: MonadFladuino m => PConf -> [Usage] -> m PConf
+extendConfiguration pc@(PConf p _) (CapabilityRequired cap : us)
+    | cap `elem` p_capabilities p = extendConfiguration pc us
+    | otherwise = fail $ "Selected platform does not supply required '" ++ cap ++ " capability"
+extendConfiguration pc@(PConf p usages) (u@(DPinUsage pin caps _) : us)
+    | pc `conflicts` u = fail $ "Digital pin " ++ show pin ++ " reserved twice"
+    | pc `supports` u = extendConfiguration (PConf p $ u : usages) us
+    | otherwise = fail $ "Cannot provide digital pin " ++ show pin ++ " with capabilities " ++ show caps
+extendConfiguration pc@(PConf p usages) (u@(APinUsage pin caps _) : us)
+    | pc `conflicts` u = fail $ "Analog pin " ++ show pin ++ " reserved twice"
+    | pc `supports` u = extendConfiguration (PConf p $ u : usages) us
+    | otherwise = fail $ "Cannot provide analog pin " ++ show pin ++ " with capabilities " ++ show caps
+extendConfiguration pc [] = return pc
 
 statevar :: Device d => MonadFladuino m => d -> String -> m String
 statevar d s = do

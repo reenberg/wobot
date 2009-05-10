@@ -1,5 +1,5 @@
 
-\documentclass[a4paper,oneside, draft]{memoir}
+\documentclass[a4paper, oneside, draft]{memoir}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage[english]{babel}
@@ -13,6 +13,8 @@
 \usepackage{pdflscape} % Gør landscape-environmentet tilgængeligt
 \usepackage{fixme}     % Indsæt "fixme" noter i drafts.
 \usepackage{hyperref}  % Indsæter links (interne og eksterne) i PDF
+
+\usepackage[format=hang]{caption,subfig}
 \usepackage{graphicx}
 
 \renewcommand{\ttdefault}{pcr} % Bedre typewriter font
@@ -23,6 +25,25 @@
 %\overfullrule=5pt
 %\setsecnumdepth{part}
 \setcounter{secnumdepth}{-1} % Sæt overskriftsnummereringsdybde. Disable = -1.
+\chapterstyle{hangnum} % changes style of chapters, to look nice.
+
+\makeatletter
+\newenvironment{nonfloatingfigure}{
+  \vskip\intextsep
+  \def\@captype{figure}
+  }{
+  \vskip\intextsep
+}
+
+\newenvironment{nonfloatingtable}{
+  \vskip\intextsep
+  \def\@captype{table}
+  }{
+  \vskip\intextsep
+}
+
+\makeatother
+
 
 \newcommand{\EDSL}{EDSL (Embedded Domain Specific Language) \renewcommand{\EDSL}{ EDSL }}
 
@@ -147,9 +168,8 @@ We think that functional reactive programming using a dataflow-based
 approach looks like a good candidate for programming these systems...
 
 
-
-
 \fixme{evt. forklaring af "`reactive programming"'. Se }
+
 
 \chapter{Overview of the Fladuino system}
 
@@ -159,7 +179,7 @@ Arduino devices in a functional reactive manner.
 \section{Terminology and basic \textit{modus operandi}}
 
 As in Flask, Fladuino is implemented as a set of Haskell modules that
-providez facilities for expressing the structure and behavior of a
+provides facilities for expressing the structure and behavior of a
 \textit{dataflow graph}, connecting \textit{dataflow operators}
 through value-carrying directed graph edges (\textit{wires}).  The
 programmer writes a Haskell program, called the \textit{generator
@@ -175,6 +195,9 @@ violations of the Haskell type system can be caught at compile--time,
 and while we have attempted to structure the facilities provided by
 Fladuino such that invalid programs will contain type errors, this
 cannot be done for all error classes.
+
+\fixme{We ought to have a little description of which types of errors is caught
+  at which point. Seems a little quick to mention it but not to clarify}
 
 \section{Structural overview}
 
@@ -368,7 +391,14 @@ website\footnote{\url{http://www.arduino.cc/} downloaded the 28. of April 2009 a
   Processing, MaxMSP).
 \end{quotation}
 
-\fixme{<<Image of our Duemilanove>>}
+\begin{nonfloatingfigure}
+  \centering
+  \includegraphics[scale=0.5]{images/ArduinoDuemilanove}
+
+  \caption{Picture of a Arduino Duemilanove. Picture is taken from the Arduino
+    homepage: \url{http://arduino.cc/en/Main/ArduinoBoardDuemilanove}.}
+  
+\end{nonfloatingfigure}
 
 There are different kinds of Arduino boards. All are based on
 different ATmega processors from Atmel. The older boards used serial
@@ -376,6 +406,7 @@ communication while the newer ones are connected to the computer
 through a USB cable, but still using the same serial communication
 protocol (i.e. serial through USB). The USB cable also serves as a
 power supply.
+
 
 
 We will describe the Arduino Duemilanove board we have used, in the
@@ -454,17 +485,16 @@ A description of PWM from the Arduino website follows:
   and \texttt{analogWrite(127)} is a 50\% duty cycle (on half the
   time) for example.
 
-  
-  \begin{figure}[h!]
+  \begin{nonfloatingfigure}
     \centering
-    \includegraphics[scale=0.8]{images/pwm}
+    \includegraphics[scale=0.6]{images/pwm}
 
     \caption{How 0\%, 25\%, 50\%, 75\% and 100\% PWM is measured by a
-      oscilloscope. Where Each vertical green line indicates the duty
+      oscilloscop. Where Each vertical green line indicates the duty
       cycle}
     \label{fig:pwm}
-  \end{figure}
-
+  \end{nonfloatingfigure}
+  
   \fixme{Better figure text and figure should be non-floating. Jesper
     has a solution to this in his old Graphics report}
 
@@ -474,6 +504,7 @@ A description of PWM from the Arduino website follows:
   into a line. As the LED fades in and out, those little lines will
   grow and shrink in length. Now you are seeing the pulse width.
 \end{quotation}
+
 
 
 \section{Timer Interrupts}
