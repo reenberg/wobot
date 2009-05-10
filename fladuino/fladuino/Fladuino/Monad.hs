@@ -488,16 +488,14 @@ cIdent s =
 
 type Capability = String
 
-data DPinType = OutputDPin Bool
-              | InputDPin
-                deriving Eq
+data PinType = OutputDPin Bool
+             | InputDPin
+             | OutputAPin Integer
+             | InputAPin
+               deriving Eq
 
-data APinType = OutputAPin Integer
-              | InputAPin
-                deriving Eq
-
-data Usage = DPinUsage Integer [Capability] DPinType
-           | APinUsage Integer [Capability] APinType
+data Usage = DPinUsage Integer [Capability] PinType
+           | APinUsage Integer [Capability] PinType
            | CapabilityRequired Capability
              deriving Eq
 

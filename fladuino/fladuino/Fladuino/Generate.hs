@@ -257,6 +257,9 @@ finalizeConfig (PConf _ usages) = forM_ usages applyUsage
             addCInitStm [$cstm|pinMode($int:pin, OUTPUT);|]
             let val = if initstate then "HIGH" else "LOW"
             addCInitStm [$cstm|digitalWrite($int:pin, $id:val);|]
+          applyUsage (DPinUsage pin _ (OutputAPin initstate)) = do
+            addCInitStm [$cstm|pinMode($int:pin, OUTPUT);|]
+            addCInitStm [$cstm|digitalWrite($int:pin, $int:initstate);|]
           applyUsage (DPinUsage pin _ InputDPin) = do
             addCInitStm [$cstm|pinMode($int:pin, INPUT);|]
           applyUsage _ = return ()

@@ -105,7 +105,7 @@ instance Device DigitalOutputPin where
     uniqueId d@(DigitalOutputPin pin initstate) = deviceClass d ++ (show pin)
 
 instance Device AnalogOutputPin where
-    usages (AnalogOutputPin pin initstate) = [APinUsage pin ["PWM"] (OutputAPin initstate)]
+    usages (AnalogOutputPin pin initstate) = [DPinUsage pin ["PWM"] (OutputAPin initstate)]
     deviceClass _ = "analog_output_pin"
     uniqueId d@(AnalogOutputPin pin initstate) = deviceClass d ++ (show pin)
 
