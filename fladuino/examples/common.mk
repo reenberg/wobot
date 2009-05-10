@@ -20,6 +20,9 @@ endif
 ifeq ($(DEVICE),3pi)
 MCU = atmega168
 endif
+ifeq ($(DEVICE),mega)
+MCU = atmega1280
+endif
 
 FLADUINO_RUNTIME=$(FLADUINO_DIR)/runtime
 FLADUINO_PRELUDE=$(FLADUINO_RUNTIME)/Prelude.hs
