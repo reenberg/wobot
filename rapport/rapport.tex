@@ -130,9 +130,88 @@ industry.
 Reactive programming and the dataflow looks like a good candidate for
 programming these systems...
 
+
 \fixme{evt. forklaring af "`reactive programming"'. Se sektion 1.1 i
   "`Functional Reactive Programming for Real-Time reactive systems"'
   (Zhanyong Wan PhD thesis)}
+
+\chapter{Overview of the Fladuino system}
+
+Fladuino is a modification of Flask that can be used to program
+Arduino devices in a functional reactive manner.
+
+\section{Terminology and basic \textit{modus operandi}}
+
+As in Flask, Fladuino is implemented as a set of Haskell modules that
+providez facilities for expressing the structure and behavior of a
+\textit{dataflow graph}, connecting \textit{dataflow operators}
+through value-carrying directed graph edges (\textit{wires}).  The
+programmer writes a Haskell program, called the \textit{generator
+  program}, or just the \textit{program}.  We shall refer to the
+compilation of the program as \textit{compile--time}, and execution of
+the program as \textit{generation--time}.  At generation--time, the
+output will be a program source file suitable for further compilation
+with the Arduino tools, but these are not part of the Fladuino system.
+Generation--time may also terminate erroneously if the program
+contains static errors: in this case, an error message with a
+description of the problem will be printed.  Only errors that are
+violations of the Haskell type system can be caught at compile--time,
+and while we have attempted to structure the facilities provided by
+Fladuino such that invalid programs will contain type errors, this
+cannot be done for all error classes.
+
+\section{Structural overview}
+
+Fladuino consists of several interconnected parts combined to form a
+domain-specific language embedded in Haskell.\footnote{We do however
+  make heavy use of Glasgow Haskell language extensions, such as
+  multi--parameter typeclasses and existential types, so Fladuino will
+  not run in a standard implementation of Haskell 98.}  As in Flask,
+this takes the form of providing facilities to express the structure
+of a \textit{dataflow graph}, connecting \textit{dataflow operators}
+through directed graph edges (\textit{wires}).  Conceptually, these
+parts can be divided into the following:
+
+\begin{itemize}
+\item Haskell operators and functions used to describe the dataflow
+  graph have been defined.  It is not intended that these are
+  exclusively used to construct the program, but rather that they are
+  part of a larger Haskell program.  Since a Fladuino program is
+  highly static at run-time, the generating program should be written
+  to support easy configuration and modification.  In a very real
+  sense, the dynamic part of a Fladuino program happens at
+  compile--time.
+\item A compiler is supplied for the Haskell-like programming language
+  Red, which is used to tailor the behavior of stream operators.
+\item A module that encapsulates the hardware facilities offered by
+  the target platform and provides the ability to check whether the
+  requirements made by the users program can be fulfilled.  Arduino is
+  a highly variable hardware platform, no more than a simple
+  microcontroller connected to a basic extensible circuit board, and
+  no assumptions can be made about which electrical components the
+  user might need to control.  Therefore we provide a comprehensive
+  facility for expressing device interaction in a high-level fashion,
+  and automatically check whether any of these interactions are
+  incompatible, or violate basic hardware restrictions.  For example,
+  we might check that the program does not try to interact with a
+  pushbutton connected to a hardware pin that does not support
+  interrupts, or that the program does not express both a
+  potentiometer and diode connected to the same pin.\footnote{Of
+    course, it must be mentioned that we cannot possibly check that
+    the hardware has actually been set up in the way described by the
+    program --- we can only check for internal consistency and
+    violations of basic hardware restrictions, not whether the
+    programs model of the device actually corresponds with reality.}
+
+  Furthermore, since there are several different boards under the
+  Arduino name, all with slightly different capabilities, we permit
+  selection of the exact Arduino variant targeted by the program.
+
+  Finally, since Arduino is a fundamentally extensible platform, we
+  provide facilities for implementing \textit{drivers} for entirely
+  new devices, such that use of these is also automatically
+  sanity-checked.
+\end{itemize}
 
 \chapter{Implementation}
 
@@ -169,13 +248,11 @@ sections that can be executed without blocking
 
 \subsection{Translation of a simple dataflow graph}
 
-A set of nodes connected by a set of directed graph edges make up the
-entirety of the dataflow graph.  We shall adopt the terminology of
-Flask, and refer to nodes as \textit{dataflow operators} and the
-directed edges as \textit{wires} in the following.  Each wire is
-associated with type information regarding the values that will be
-passed along it.  Some dataflow operators have no predecessor and
-exist solely as entry points for data (they can be triggered by
+A set of nodes (dataflow operators) connected by a set of directed
+graph edges (wires) make up the entirety of the dataflow graph. Each
+wire is associated with type information regarding the values that
+will be passed along it.  Some dataflow operators have no predecessor
+and exist solely as entry points for data (they can be triggered by
 outside events, such as device or timer interrupts), while others have
 no successors and function as data sinks.  It is required that the
 graph is acyclic, something that is enforced by every operator being
