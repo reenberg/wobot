@@ -259,7 +259,7 @@ finalizeConfig (PConf _ usages) = forM_ usages applyUsage
             addCInitStm [$cstm|digitalWrite($int:pin, $id:val);|]
           applyUsage (DPinUsage pin _ (AnalogOutput initstate)) = do
             addCInitStm [$cstm|pinMode($int:pin, OUTPUT);|]
-            addCInitStm [$cstm|digitalWrite($int:pin, $int:initstate);|]
+            addCInitStm [$cstm|analogWrite($int:pin, $int:initstate);|]
           applyUsage (DPinUsage pin _ DigitalInput) = do
             addCInitStm [$cstm|pinMode($int:pin, INPUT);|]
           applyUsage _ = return ()
@@ -374,7 +374,6 @@ finalizeEvents = do
                                void $id:interruptCP (void) {
                                  $stms:stms
                                }|]
-                   addCInitStm [$cstm|pinMode($int:c_pin, INPUT);|]
                    addCInitStm [$cstm|PCattachInterrupt($int:c_pin, $id:interruptCP, CHANGE);|]
 
 finalizeADCs :: MonadFladuino m => m ()
