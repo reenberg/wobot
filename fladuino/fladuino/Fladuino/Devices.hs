@@ -261,8 +261,6 @@ instance Event InterruptEvent () where
     interruptPins (InterruptEvent n) = [n]
     setupEvent e = return $ mkEvent e Nothing Nothing
 
-
-
 -- Button device and Events --
 data PushButton = PushButton Integer
                   deriving (Eq, Show)
@@ -301,3 +299,11 @@ instance Event PushButtonReleaseEvent () where
                                                                      }|]
                                                  return $ mkEvent e Nothing (Just v)
     interruptPins (PushButtonReleaseEvent (PushButton pin)) = [pin]
+
+class (Device d) => Button d where
+    onPress   :: d -> S ()
+    onRelease :: d -> S ()
+
+instance Button PushButton where
+    onPress   = onEvent . PushButtonPressEvent
+    onRelease = onEvent . PushButtonReleaseEvent

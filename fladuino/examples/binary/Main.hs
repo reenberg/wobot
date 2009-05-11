@@ -45,15 +45,23 @@ streamsForCounter n sp = [ clocked >>> s n | s <- [maybeTurnOn, maybeTurnOff], n
       bitStatus i = smap [$exp|\p -> isBitSet(p, $int:i)|]
 
       maybeTurnOn :: Integer -> S Integer -> S ()
-      maybeTurnOn i from = from >>> bitStatus i >>> sfilter [$exp|id|] >>> turnOn (diode (sp+i) False)
+      maybeTurnOn i from = from >>> bitStatus i >>> sfilter [$exp|id|] 
+                           >>> turnOn (diode (sp+i) False)
 
       maybeTurnOff :: Integer -> S Integer -> S ()
-      maybeTurnOff i from = from >>> bitStatus i >>> sfilter [$exp|(\v -> not v)|] >>> turnOff (diode (sp+i) False)
+      maybeTurnOff i from = from >>> bitStatus i 
+                            >>> sfilter [$exp|(\v -> not v)|] 
+                            >>> turnOff (diode (sp+i) False)
 
-      s1 = onEvent (PushButtonPressEvent $ PushButton 10) >>> sconst [$exp|1|]
-      s2 = onEvent (PushButtonPressEvent $ PushButton 11) >>> sconst [$exp|-1|]
+      s1 = onPress $ PushButton 10 >>> sconst [$exp|1|]
+      s2 = onPress $ PushButton 11 >>> sconst [$exp|-1|]
       s = smerge s1 s2
-      clocked = smerge s (clock 1 >>> (valueOf $ Potentiometer 0) >>> smap [$exp|(/5)|] >>> clockSkip >>> sconst [$exp|1|]) >>> modNum
+      clocked = smerge s (clock 1 
+                          >>> (valueOf $ Potentiometer 0) 
+                          >>> smap [$exp|(/5)|] 
+                          >>> clockSkip 
+                          >>> sconst [$exp|1|]) 
+                >>> modNum
 
 
 -- | Slows down the clock based on the input stream. The input stream
