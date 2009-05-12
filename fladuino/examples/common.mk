@@ -15,7 +15,7 @@ endif
 
 # If no device has been specified, default to Duemilanove.
 ifndef PLATFORM
-PLATFORM = 3pi
+PLATFORM = duemilanove
 endif
 
 ifndef VENDOR
@@ -96,14 +96,14 @@ SRC =  $(ARDUINO)/pins_arduino.c                                                
 $(ARDUINO)/wiring.c                                                             \
 $(ARDUINO)/wiring_analog.c                                                      \
 $(ARDUINO)/wiring_digital.c                                                     \
-$(ARDUINO)/wiring_pulse.c                                                       \ 
+$(ARDUINO)/wiring_pulse.c                                                       \
 $(ARDUINO)/wiring_serial.c                                                      \
 $(ARDUINO)/wiring_shift.c                                                       \
 $(ARDUINO)/WInterrupts.c
 CXXSRC = $(ARDUINO)/HardwareSerial.cpp                                          \
 $(ARDUINO)/WMath.cpp $(ARDUINO)/Print.cpp
 else ifeq ($(VENDOR), pololu)
-SRC = $(POLOLU)/
+SRC = 
 CXXSRC = $(POLOLU)/OrangutanAnalog/OrangutanAnalog.cpp				\
 $(POLOLU)/Pololu3pi/Pololu3pi.cpp                                               \
 $(POLOLU)/OrangutanTime/OrangutanTime.cpp	                                \
