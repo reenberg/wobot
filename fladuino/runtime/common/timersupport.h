@@ -77,7 +77,7 @@ void SetupTimer1(float timeoutFrequency, void (*handler)()){
   float timerClockFreq = 16000000 / prescaler;
   unsigned int timerMax = ~0;
   
-  timer1LoadValue = timerMax - (timerClockFreq/timeoutFrequency);
+  timer1LoadValue = (timerMax - (timerClockFreq/timeoutFrequency)) + 1;
 
   TCCR1A = 0;   // Normal counting mode
 
