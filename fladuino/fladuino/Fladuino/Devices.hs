@@ -254,6 +254,19 @@ instance Device Potentiometer where
 instance AnalogInputDevice Potentiometer where
     genReadCode (Potentiometer pin) resultvar = [[$cstm|$id:resultvar = analogRead($int:pin);|]]
 
+{-
+
+instance Event PotetiometerChangeEvent () where
+    setupEvent e@(PotentiometerChangeEvent (d@(Potentiometer pin)) change) = 
+                                          do addDevice d
+                                             pv <- statevar d "change_predicate"
+                                             let v = H.var (mkName pv)
+                                             addCImport pv [$ty|() -> Bool|] [$cexp|$id:pv|]
+                                             addCFundef [$cedecl|
+                                             return $ mkEvent e Nothing (Just v)
+    interruptPins (PotentiometerChangeEvent (PushButton pin)) = [pin]                                                    
+
+-}                   
 
 -- Simple Interrupt Event --
 data InterruptEvent = InterruptEvent Integer
