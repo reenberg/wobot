@@ -1,4 +1,3 @@
-
 \documentclass[a4paper, oneside, draft]{memoir}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
@@ -47,7 +46,7 @@
 
 \newcommand{\EDSL}{EDSL (Embedded Domain Specific Language) \renewcommand{\EDSL}{ EDSL }}
 
-\title{Controlling embedded devices with funktional reactive programming}
+\title{Controlling embedded devices with functional reactive programming}
 
 \author{Martin Dybdal (dybber@dybber.dk), \\
 Jesper Reenberg (jesper.reenberg@gmail.com) \\ og
@@ -59,6 +58,7 @@ Troels Henriksen (athas@sigkill.dk)}
 
 
 \begin{document}
+
 \maketitle
 
 \begin{abstract}
@@ -79,7 +79,9 @@ Troels Henriksen (athas@sigkill.dk)}
   code is left unchanged.
 \end{abstract}
 
-\section{Disposition}
+\fixme{remove all uses of "`very"'}
+
+\chapter{Disposition}
 \begin{itemize}
 \item Abstract
 
@@ -187,6 +189,62 @@ approach looks like a good candidate for programming these systems...
 
 
 \fixme{evt. forklaring af "`reactive programming"'. Se }
+
+\chapter{Flask}
+Flask is a domain specific language embedded in Haskell for
+programming sensor networks. A fundamental thing in when learning
+Flask is understanding its compilation-strategy. The basic idea is to
+use Haskell as a metalanguage for several object languages, and
+generate a code in a sensor network language called NesC\footnote{NesC
+  is an extension to C, with some additional constructs suitable for
+  low-level sensor network programming for TinyOS.} when running the
+Haskell program. The generated NesC code can then be translated by an
+ordinary compiler NesC compiler to machine code running on the nodes
+in the sensor network.
+
+\begin{nonfloatingfigure}
+  \includegraphics{flask-design.png}
+\end{nonfloatingfigure}
+
+Thus, when you write a Flask-program, you use ordinary Haskell
+constructs to manipulate which NesC-code should ultimately be
+generated. A program is a description of the flow of data in the
+specific sensor node. A node has some sensor inputs and can output the
+values in different ways e.g. send results to other devices. So you
+specify an acyclic graph connecting its sensors (which generates
+values on request) with its outputs. Flask provides some general
+\textit{signal functions} that combined with \textit{node-level code}
+(code that is actually getting to run on the sensor-nodes) written in
+one of the object-languages, can be used to specify this
+\textit{dataflow graph}.
+
+Example dataflow graph from the Flask paper: 
+
+\begin{figure}
+  % ewma example
+\end{figure}
+
+Flask provides two object-languages: NesC and Red. Having NesC as an
+object-language, allows the user to write all programs that's
+expressible in NesC. Red is an amputated Haskell, without recursion,
+recursive datatypes, most of the standard library and curried
+functions. It allows you to write concise functions for simple tasks
+instead of having to deal with NesC. The reason for disallowing these
+things are the same as for not compiling Haskell directly to the
+sensor nodes in the first place: the Haskell runtime is too huge to
+fit in the limited memory of a sensor node.
+
+Both languages are integrated into Flask using the quasiquotation
+library \cite{...}.
+
+
+... 
+
+More on:
+  Typechecking
+  Dataflow
+
+
 
 
 \chapter{Overview of the Fladuino system}
