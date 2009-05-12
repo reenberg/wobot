@@ -1,0 +1,23 @@
+digraph G
+{
+    rankdir = LR;
+    compound=true;
+    cgen[label="NesC codegeneration"];
+    comp[label="NesC compiler"];
+    hsfile[label="Haskell sourcefile"];
+    ghc_tcheck[label="GHC typecheck"];
+    ghc_compile[label="GHC Compilation"];
+    red_tcheck[label="Red and NesC typecheck"];
+    
+    subgraph cluster_flask {
+        labeljust="l"
+        label="Flask";
+        
+        // This isn't complete, some steps are still missing and maybe
+        // we should split it up in several smaller
+        // graphs. (E.g. compile-time and generation-time)        
+        hsfile -> dataflowgraph -> ghc_tcheck -> ghc_compile -> red_tcheck -> cgen;
+    }
+
+    cgen -> comp[label="NesC code"];
+}
