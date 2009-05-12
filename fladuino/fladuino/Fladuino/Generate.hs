@@ -254,13 +254,14 @@ emptyPlatform = Platform { p_digital_pins = []
                          , p_capabilities = []
                          , p_base_setup = return () }
 
-defaultPlatform = arduinoMega
+defaultPlatform = arduinoDuemilanove
 
 arduinoDuemilanove = emptyPlatform { p_digital_pins = [ Pin n $ pc n | n <- [0..13] ]
                             , p_analog_pins = [ Pin n ["analog", "interrupt"] | n <- [0..6] ]
                             , p_capabilities = ["Duemilanove"] }
               where
-                pc pin | pin `elem` [3, 5, 6, 9, 10, 11] = ["PWM", "interrupt"]
+                -- PWM on pin 9 and 10 are disallowed because they interfere with TIMER1
+                pc pin | pin `elem` [3, 5, 6, 11] = ["PWM", "interrupt"] 
                 pc _ = ["interrupt"]
 
 arduinoDiecimila :: Platform FladuinoM
