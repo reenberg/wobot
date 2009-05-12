@@ -64,4 +64,9 @@ seq :: a -> b -> b
 not True = False
 not False = True
 
+min (x, y) = if x > y then y else x
+max (x, y) = if x > y then x else y
+
+bounded (y, x, z) = max(y, min(x, z))
+
 id x = x

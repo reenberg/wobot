@@ -486,8 +486,22 @@ cIdent s =
       True -> "_" ++ id
       False -> id
 
-class (Eq a) => Device a where
+type Capability = String
+
+data PinType = DigitalOutput Bool
+             | DigitalInput
+             | AnalogOutput Integer
+               deriving Eq
+
+data Usage = DPinUsage Integer [Capability] PinType
+           | APinUsage Integer [Capability]
+           | CapabilityRequired Capability
+             deriving Eq
+
+class (Eq a, Show a) => Device a where
     setupDevice :: MonadFladuino m => a -> m ()
-    deviceClass :: a -> String
+    setupDevice _ = return ()
+    usages :: a -> [Usage]
+    usages _ = []
     uniqueId :: a -> String
-    uniqueId = deviceClass
+    uniqueId = cIdent . show

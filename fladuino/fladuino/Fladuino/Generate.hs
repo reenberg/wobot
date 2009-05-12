@@ -110,12 +110,15 @@ putDoc filepath doc = do
     liftIO $ hPutStr h $ pretty 80 doc
     liftIO $ hClose h
 
+genStreamForPlatform :: Platform FladuinoM -> S a -> FladuinoM ()
+genStreamForPlatform p s = genStreamsForPlatform p [unS s]
+
 genStream :: S a -> FladuinoM ()
 genStream s = genStreams [unS s]
 
-genStreams :: [FladuinoM (SCode FladuinoM)]
-           -> FladuinoM ()
-genStreams ss = do
+genStreamsForPlatform :: Platform FladuinoM -> [FladuinoM (SCode FladuinoM)]
+                       -> FladuinoM ()
+genStreamsForPlatform p ss = do
     basename <- return (maybe "Fladuino" id) `ap` optVal output
     scodes <- sequence ss
     timer_connections   <- getsFladuinoEnv f_timer_connections
@@ -140,7 +143,7 @@ genStreams ss = do
     fdecls' <- optimizeF basename (Set.toList live) (f_fdecls env ++ fdecls)
     ToC.transDecls fdecls'
     genC Set.empty scodes'
-    finalizeDevices
+    finalizeDevices p
     finalizeTimers
     finalizeEvents
 --    finalizeADCs
@@ -241,31 +244,106 @@ void loop()
     unitE :: H.Exp
     unitE = H.conE (H.TupleCon 0)
 
+genStreams :: [FladuinoM (SCode FladuinoM)]
+           -> FladuinoM ()
+genStreams = genStreamsForPlatform defaultPlatform
+
+emptyPlatform :: Platform FladuinoM
+emptyPlatform = Platform { p_digital_pins = []
+                         , p_analog_pins = []
+                         , p_capabilities = []
+                         , p_base_setup = return () }
+
+defaultPlatform = arduinoMega
+
+arduinoDuemilanove = emptyPlatform { p_digital_pins = [ Pin n $ pc n | n <- [0..13] ]
+                            , p_analog_pins = [ Pin n ["analog", "interrupt"] | n <- [0..6] ]
+                            , p_capabilities = ["Duemilanove"] }
+              where
+                pc pin | pin `elem` [3, 5, 6, 9, 10, 11] = ["PWM", "interrupt"]
+                pc _ = ["interrupt"]
+
+arduinoDiecimila :: Platform FladuinoM
+arduinoDiecimila = arduinoDuemilanove { p_capabilities = ["Diecimila"] }
+
+arduinoBT :: Platform FladuinoM
+arduinoBT = emptyPlatform { p_digital_pins = [ Pin n $ pc n | n <- [0..6] ++ [7..13] ]
+                          , p_analog_pins = [ Pin n ["analog", "interrupt"] | n <- [0..6] ]
+                          , p_capabilities = ["BT"]
+                          -- This sinister magic is needed to
+                          -- initialise the Bluetooth module, and is
+                          -- allegedly very important to do, no matter
+                          -- what.
+                          , p_base_setup = do addCInitStm [$cstm|Serial.begin(115200);|]
+                                              addCInitStm [$cstm|digitalWrite(7, HIGH);|]
+                                              addCInitStm [$cstm|delay(10);|]
+                                              addCInitStm [$cstm|digitalWrite(7, LOW);|]
+                                              addCInitStm [$cstm|delay(2000);|]
+                                              addCInitStm [$cstm|Serial.println("SET BT PAGEMODE 3 2000 1");|]
+                                              addCInitStm [$cstm|Serial.println("SET BT NAME ArduinoBT");|]
+                                              addCInitStm [$cstm|Serial.println("SET BT ROLE 0 f 7d00");|]
+                                              addCInitStm [$cstm|Serial.println("SET CONTROL ECHO 0");|]
+                                              addCInitStm [$cstm|Serial.println("SET BT AUTH * 12345");|]
+                                              addCInitStm [$cstm|Serial.println("SET CONTROL ESCAPE - 00 1");|]
+                          }
+              where
+                pc pin | pin `elem` [3, 5, 6, 9, 10, 11] = ["PWM", "interrupt"]
+                pc _ = ["interrupt"]
+
+arduinoMega :: Platform FladuinoM
+arduinoMega = emptyPlatform { p_digital_pins = [ Pin n $ pc n | n <- [0..53] ]
+                            , p_analog_pins = [ Pin n ["analog"] | n <- [0..7] ] ++ 
+                                              [ Pin n ["analog", "interrupt"] | n <- [8..15] ]
+                            , p_capabilities = ["Duemilanove"] }
+              where
+                pc pin = maybeInterrupt pin ++ maybePWM pin
+                maybeInterrupt pin
+                    | pin `elem` ([1..7]++[10..13]++[50..53]) = ["interrupt"]
+                    | otherwise = []
+                maybePWM pin
+                    | pin `elem` [2..13] = ["PWM"]
+                    | otherwise = []
+
+finalizeConfig :: forall m . MonadFladuino m
+                  => PConf m -> m ()
+finalizeConfig (PConf _ usages setups) = do forM_ usages applyUsage
+                                            liftIO $ putStrLn ("number " ++ show (length setups))
+                                            sequence_ setups
+    where applyUsage (DPinUsage pin _ (DigitalOutput initstate)) = do
+            addCInitStm [$cstm|pinMode($int:pin, OUTPUT);|]
+            let val = if initstate then "HIGH" else "LOW"
+            addCInitStm [$cstm|digitalWrite($int:pin, $id:val);|]
+          applyUsage (DPinUsage pin _ (AnalogOutput initstate)) = do
+            addCInitStm [$cstm|pinMode($int:pin, OUTPUT);|]
+            addCInitStm [$cstm|analogWrite($int:pin, $int:initstate);|]
+          applyUsage (DPinUsage pin _ DigitalInput) = do
+            addCInitStm [$cstm|pinMode($int:pin, INPUT);|]
+          applyUsage _ = return ()
+
 finalizeDevices :: forall m . MonadFladuino m
-               => m ()
-finalizeDevices = do
+                   => Platform m -> m ()
+finalizeDevices p = do
   devices <- getsFladuinoEnv f_devices
-  forM_ devices $ \(DRef d) -> do
-                    setupDevice d
-  return ()
+  config <- foldM configureDevice (startConf p) devices
+  finalizeConfig config
 
 finalizeTimers :: forall m . MonadFladuino m
                => m ()
 finalizeTimers = do
     timersMap <- getsFladuinoEnv $ \s -> f_timers s
     let timers = Map.toList timersMap
-    -- We must at least have 62 interrupts each second
-    let interruptsPerSecond = max 62 (1000 / (fromIntegral . fst $ Map.findMin timersMap))
+    -- We must at least have 0.24 interrupts each second for TIMER1
+    let interruptsPerSecond = max 0.24 (1000 / (fromIntegral . fst $ Map.findMin timersMap))
     when (timers /= []) $ do 
                    addCInclude "common/timersupport.h"
-                   addCInitStm [$cstm|SetupTimer2($float:interruptsPerSecond);|]
+                   addCInitStm [$cstm|SetupTimer1($float:interruptsPerSecond, &timer_handler);|]
     counterCode <- forM timers $ \(period, timerC) ->
         finalizeTimer period timerC interruptsPerSecond
     let (funcs, counterDefs, counterStms) = unzip3 counterCode
     let stms = concat counterStms
     mapM_ addCFundef funcs
     addCFundef [$cedecl|
-void timer2_interrupt_handler (void)
+void timer_handler (void)
 {
   $decls:counterDefs
   $stms:stms
@@ -351,7 +429,6 @@ finalizeEvents = do
                                void $id:interruptCP (void) {
                                  $stms:stms
                                }|]
-                   addCInitStm [$cstm|pinMode($int:c_pin, INPUT);|]
                    addCInitStm [$cstm|PCattachInterrupt($int:c_pin, $id:interruptCP, CHANGE);|]
 
 finalizeADCs :: MonadFladuino m => m ()

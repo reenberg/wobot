@@ -142,19 +142,75 @@ supervised by Ken Friis Larsen, assistant professor at DIKU.
 
 
 \chapter{Introduction}
+Robots has been used in the industry for decades, replacing humans in
+repetitive tasks like sewing, assembling and transportation. In the
+last years smaller robots like the Roomba vacuum cleaner has been
+introduced to the consumer market, which is a sign that robots are
+getting cheaper an affordable for more tasks. We will probably see
+robots deployed in many other uses.
+
+
+Electronics is replacing more and more devices that has been
+controlled mechanically before. 
+
+
 Production cost falling => cheaper robots => more robots to be
 programmed. Fast prototyping and re-usability are important for the
 industry.
 
-...
+....
 
-Reactive programming and the dataflow looks like a good candidate for
-programming these systems...
+First we establish how the domain of reactive systems is
+identified. We've found the best description in Zhanyong Wan's PhD
+thesis "`Functional Reactive Programming for Real-Time reactive
+systems"'. \fixme{make this a latex-cite}. As he explains we can
+partition computer systems into:
+\begin{itemize}
+\item Transitional systems, that takes some data as input, does some
+  computation on it and delivers some resulting output (an example of this
+  is a compiler).
+\item Interactive systems, where the state of the program switches
+  from computation to getting more input and back (a text editor is an
+  example).
+\item Reactive systems that continuously has to respond to
+  environmental changes. Often reactive systems has to do with our
+  physical environment, either simulating it (e.g. a computer game) or
+  is required to respond to its changes (e.g. a robot).
+\end{itemize}
+
+
+
+
+
+We think that functional reactive programming using a dataflow-based
+approach looks like a good candidate for programming these systems...
+
+
+\fixme{evt. forklaring af "`reactive programming"'. Se }
+
 
 \chapter{Overview of the Fladuino system}
 
 Fladuino is a modification of Flask that can be used to program
 Arduino devices in a functional reactive manner.
+
+\section{A note on Arduino}
+
+The term ``Arduino'' is somewhat ambiguous.  It is both a registered
+trademark of the Arduino team that can be used by licensed
+manufacturers, a line of platforms based on various Atmel AVR
+microcontrollers, as well as a general term for any device that is
+mostly compatible with the official Arduino microcontroller boards.
+This paper will use the latter meaning unless otherwise is explicitly
+mentioned.
+
+Additionally, we have only had resources to test our work on the
+Arduino
+Duemilanove\footnote{\url{http://www.arduino.cc/en/Main/ArduinoBoardDuemilanove}},
+Arduino BT\footnote{\url{http://www.arduino.cc/en/Guide/ArduinoBT}},
+Arduino
+Mega\footnote{\url{http://arduino.cc/en/Main/ArduinoBoardMega}},
+and Pololu 3pi\footnote{\url{http://www.pololu.com/catalog/product/975}}.
 
 \section{Terminology and basic \textit{modus operandi}}
 
@@ -231,6 +287,63 @@ parts can be divided into the following:
   new devices, such that use of these is also automatically
   sanity-checked.
 \end{itemize}
+
+\section{Framework for specifying peripheral drivers}
+Arduino is a flexible system for general embedded development, with no
+specific application in mind.  The Arduino platform can therefore be
+connected to a diverse amount of peripheral devices, all with their
+own specific functionality and programming interface.  It is thus
+natural to support this diversity as a core concept of Fladuino; not
+(solely) as a library of drivers for various devices, but rather as a
+framework and set of tools provided to the programmer so that Fladuino
+can be extended to transparently support the devices he has need of.
+For demonstration, we have \fixme{not really done yet} written a
+framework for programming the Pololu 3pi robot and the peripherals
+connected to it (electromotors, sensors, buttons, etc.).
+
+Furthermore, Arduino is a broad term encompassing a range of
+more-or-less compatible platforms, though each of them differ slightly
+in their exact capacity.  Apart from variations in such things as
+memory size, they differ in amount and capability of their I/O pins.
+This latter diversity is what we are most concerned with in Fladuino,
+as we would like to statically check (at generation--time) the
+hardware assumptions expressed in the program.  Thus, we also provide
+a facility for describing the exact capabilities of a specific
+Arduino-based platform, and provide default descriptions of common
+Arduino--compatible such as the Arduino Duemilanove, Arduino Mega,
+Arduino BT, and Pololu 3pi.
+
+Defining the driver for each external component consist of a general
+device specification, a set of functions operating on the device and
+eventually some event specifications if the device can generate
+some notion of events.
+
+\fixme{find a good example to add here}
+
+\subsection{Platforms}
+
+A platform is defined by a list of \textit{analog pins},
+\textit{digital pins}, and free--form \textit{capabilities}, the
+latter being a set of strings describing the identity or unusual
+qualities of the platform.  For example, the platform definition for
+the Pololu 3pi robot contains a ``3pi''--capability that exists merely
+to express the fact that the platform supports the quirks of the 3pi
+robot that cannot be expressed through a list of pins.  Any device
+intended to make use of these quirks would explicitly require the
+presence of this capability.
+
+\subsection{Devices}
+A device is any form of peripheral that can be connected to the
+Arduino robot, e.g. buttons, electromotors and potentiometers.  A
+description of a device consists of instructions on how to initialize
+such a device and a way of uniquely identifying a device, so we can
+have a way of referring to the specific device.  If the device is used
+in more than one place, the unique identifier is also used to avoid
+adding the initialization code twice.
+
+\subsection{Events}
+Some devices can generate events.  The simplest example is the push
+button which generates events both when pushed and released.  ...
 
 \chapter{Implementation}
 
@@ -311,37 +424,6 @@ still make its own choice whether to propagate a value or not.
 It is worth nothing that a value need not contain any information
 apart from its existence; \texttt{()} is perfectly valid as a signal.
 
-
-\section{Framework for specifying peripheral drivers}
-Arduino is a flexible system for general robot development with no
-specific application in mind. Arduino-boards can therefore be
-connected to large amount of different peripherals, all with their
-specific functionality and programming interface. A goal of our
-project has therefore been to facilitate Fladuino driver development
-for external devices. As an example we have \fixme{not really done
-  yet} written a simple framework for programming the Pololu 3pi robot
-and the peripherals connected to it (electromotors, sensors, buttons, etc.).
-
-Defining the driver for each external component consist of a general
-device specification, a set of functions operating on the device and
-eventually some event specifications if the device can generate
-some notion of events.
-
-\fixme{find a good example to add here}
-
-\subsection{Devices}
-A device is any form of peripheral that can be connected to the
-Arduino robot, e.g. buttons, electromotors and potentiometers. A
-description of a device consists of instructions on how to initialize
-such a device and a way of uniquely identifying a device, so we can
-have a way of referring to the specific device. If the device is used
-in more than one place, the unique identifier is also used to avoid
-adding the initialization code twice.
-
-\subsection{Events}
-Some devices can generate events. The simplest example is the
-push button which generates events both when pushed and released.
-...
 
 \bibliographystyle{plain}
 \bibliography{rapport}

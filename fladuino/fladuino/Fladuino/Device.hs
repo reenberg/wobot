@@ -7,7 +7,7 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell #-}
-
+{-# LANGUAGE NoMonomorphismRestriction #-}
 
 -- Copyright (c) 2008
 --         The President and Fellows of Harvard College.
@@ -53,6 +53,7 @@ import Control.Monad.State
 import Control.Monad.Trans
 import Data.IORef
 import Data.List (intersperse, concat)
+import Data.Maybe
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import System.IO
@@ -81,6 +82,52 @@ import Fladuino.Signals
 import Fladuino.Reify
 
 import Fladuino.LiftN
+
+data Pin = Pin Integer [Capability]
+
+data MonadFladuino m => Platform m = Platform
+    { p_digital_pins :: [Pin]
+    , p_analog_pins :: [Pin]
+    , p_capabilities :: [Capability]
+    , p_base_setup :: m () }
+
+data MonadFladuino m => PConf m = PConf (Platform m) [Usage] [m ()]
+
+startConf :: MonadFladuino m => Platform m -> PConf m
+startConf p = PConf p [] [p_base_setup p]
+
+supports :: MonadFladuino m => PConf m -> Usage -> Bool
+supports (PConf p _ _) (DPinUsage pin caps _) = isJust $ find f (p_digital_pins p)
+    where f (Pin pin' caps') = pin == pin' && null (caps \\ caps')
+supports (PConf p _ _) (APinUsage pin caps) = isJust $ find f (p_analog_pins p)
+    where f (Pin pin' caps') = pin == pin' && null (caps \\ caps')
+
+conflicts :: MonadFladuino m => PConf m -> Usage -> Bool
+conflicts (PConf _ us _) (DPinUsage pin _ _) = isJust $ find f us
+    where f (DPinUsage pin' _ _) = pin == pin'
+          f _ = False
+conflicts (PConf _ us _) (APinUsage pin _) = isJust $ find f us
+    where f (APinUsage pin' _) = pin == pin'
+          f _ = False
+conflicts _ _ = False
+
+extendConfiguration :: MonadFladuino m => PConf m -> [Usage] -> m (PConf m)
+extendConfiguration pc@(PConf p _ _) (CapabilityRequired cap : us)
+    | cap `elem` p_capabilities p = extendConfiguration pc us
+    | otherwise = fail $ "Selected platform does not supply required '" ++ cap ++ " capability"
+extendConfiguration pc@(PConf p usages ss) (u@(DPinUsage pin caps _) : us)
+    | pc `conflicts` u = fail $ "Digital pin " ++ show pin ++ " reserved twice"
+    | pc `supports` u = extendConfiguration (PConf p (u : usages) ss) us
+    | otherwise = fail $ "Cannot provide digital pin " ++ show pin ++ " with capabilities " ++ show caps
+extendConfiguration pc@(PConf p usages ss) (u@(APinUsage pin caps) : us)
+    | pc `conflicts` u = fail $ "Analog pin " ++ show pin ++ " reserved twice"
+    | pc `supports` u = extendConfiguration (PConf p (u : usages) ss) us
+    | otherwise = fail $ "Cannot provide analog pin " ++ show pin ++ " with capabilities " ++ show caps
+extendConfiguration pc [] = return pc
+
+configureDevice :: (MonadFladuino m) => PConf m -> DRef m -> m (PConf m)
+configureDevice pc (DRef d) = do (PConf p u s) <- extendConfiguration pc (usages d)
+                                 return (PConf p u (setupDevice d : s))
 
 statevar :: Device d => MonadFladuino m => d -> String -> m String
 statevar d s = do

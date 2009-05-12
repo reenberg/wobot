@@ -83,37 +83,29 @@ import Fladuino.LiftN
 import Fladuino.Device
 
 data DigitalOutputPin = DigitalOutputPin Integer Bool
-           deriving Eq
+           deriving (Eq, Show)
 
 data AnalogOutputPin = AnalogOutputPin Integer Integer
-           deriving Eq
+           deriving (Eq, Show)
 
 data DigitalInputPin = DigitalInputPin Integer
-           deriving Eq
+           deriving (Eq, Show)
 
 data AnalogInputPin = AnalogInputPin Integer
-           deriving Eq
+           deriving (Eq, Show)
 
 instance Device DigitalOutputPin where
     setupDevice d@(DigitalOutputPin pin initstate) = 
-        do 
-          sv <- statevar d "state"
-          addCDecldef [$cedecl|unsigned char $id:sv;|]
-          addCInitStm [$cstm|pinMode($int:pin, OUTPUT);|]
-          addCInitStm [$cstm|$id:sv = $id:val;|]
-          addCInitStm [$cstm|digitalWrite($int:pin, $id:val);|]
-          where
-            val = if initstate then "HIGH" else "LOW"
-    deviceClass _ = "digital_output_pin"
-    uniqueId d@(DigitalOutputPin pin initstate) = deviceClass d ++ (show pin)
+        do sv <- statevar d "state"
+           addCDecldef [$cedecl|unsigned char $id:sv;|]
+           addCInitStm [$cstm|$id:sv = digitalRead($int:pin);|]
+    usages (DigitalOutputPin pin initstate) = [DPinUsage pin [] (DigitalOutput initstate)]
+
+instance Device DigitalInputPin where
+    usages (DigitalInputPin pin) = [DPinUsage pin [] DigitalInput]
 
 instance Device AnalogOutputPin where
-    setupDevice d@(AnalogOutputPin pin initstate) = 
-        do 
-          addCInitStm [$cstm|pinMode($int:pin, OUTPUT);|]
-          addCInitStm [$cstm|analogWrite($int:pin, $int:initstate);|]
-    deviceClass _ = "analog_output_pin"
-    uniqueId d@(AnalogOutputPin pin initstate) = deviceClass d ++ (show pin)
+    usages (AnalogOutputPin pin initstate) = [DPinUsage pin ["PWM"] (AnalogOutput initstate)]
 
 modDev :: forall a d. (Reify a, Device d) => String -> d -> (d -> String -> String -> ([Param], [Exp]) -> Definition) -> S a -> S ()
 modDev name d f a = S $ do
@@ -244,12 +236,10 @@ void $id:c_v_in($params:params)
 
 -- Potentiometer device --
 data Potentiometer = Potentiometer Integer
-                     deriving Eq
+                     deriving (Eq, Show)
 
 instance Device Potentiometer where
-    setupDevice _ = return ()
-    deviceClass _ = "potentiometer"
-    uniqueId d@(Potentiometer pin) = deviceClass d ++ (show pin)
+    usages (Potentiometer pin) = [APinUsage pin []]
 
 instance AnalogInputDevice Potentiometer where
     genReadCode (Potentiometer pin) resultvar = [[$cstm|$id:resultvar = analogRead($int:pin);|]]
@@ -275,16 +265,12 @@ instance Event InterruptEvent () where
     interruptPins (InterruptEvent n) = [n]
     setupEvent e = return $ mkEvent e Nothing Nothing
 
-
-
 -- Button device and Events --
 data PushButton = PushButton Integer
                   deriving (Eq, Show)
 
 instance Device PushButton where
-    setupDevice d@(PushButton pin) = do addCInitStm [$cstm|pinMode($int:pin, INPUT);|]
-    deviceClass _ = "pushbutton" 
-    uniqueId d@(PushButton pin) = deviceClass d ++ (show pin)
+    usages (PushButton pin) = [DPinUsage pin ["interrupt"] DigitalInput]
 
 data PushButtonPressEvent = PushButtonPressEvent PushButton
                             deriving (Eq, Show)
@@ -315,3 +301,11 @@ instance Event PushButtonReleaseEvent () where
                                                                      }|]
                                                  return $ mkEvent e Nothing (Just v)
     interruptPins (PushButtonReleaseEvent (PushButton pin)) = [pin]
+
+class (Device d) => Button d where
+    onPress   :: d -> S ()
+    onRelease :: d -> S ()
+
+instance Button PushButton where
+    onPress   = onEvent . PushButtonPressEvent
+    onRelease = onEvent . PushButtonReleaseEvent
