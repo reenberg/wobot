@@ -256,6 +256,7 @@ translatePlatform "diecimila" = arduinoDiecimila
 translatePlatform "mega" = arduinoMega
 translatePlatform "bt" = arduinoBT
 --translatePlatform "3pi" =
+translatePlatform p = fail "Unknown platform " ++ p
 
 emptyPlatform :: Platform FladuinoM
 emptyPlatform = Platform { p_digital_pins = []
