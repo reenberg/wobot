@@ -83,16 +83,16 @@ import Fladuino.LiftN
 import Fladuino.Device
 
 data DigitalOutputPin = DigitalOutputPin Integer Bool
-           deriving Eq
+           deriving (Eq, Show)
 
 data AnalogOutputPin = AnalogOutputPin Integer Integer
-           deriving Eq
+           deriving (Eq, Show)
 
 data DigitalInputPin = DigitalInputPin Integer
-           deriving Eq
+           deriving (Eq, Show)
 
 data AnalogInputPin = AnalogInputPin Integer
-           deriving Eq
+           deriving (Eq, Show)
 
 instance Device DigitalOutputPin where
     setupDevice d@(DigitalOutputPin pin initstate) = 
@@ -101,18 +101,12 @@ instance Device DigitalOutputPin where
           addCDecldef [$cedecl|unsigned char $id:sv;|]
           addCInitStm [$cstm|$id:sv = digitalRead($int:pin);|]
     usages (DigitalOutputPin pin initstate) = [DPinUsage pin [] (DigitalOutput initstate)]
-    deviceClass _ = "digital_output_pin"
-    uniqueId d@(DigitalOutputPin pin initstate) = deviceClass d ++ (show pin)
 
 instance Device DigitalInputPin where
     usages (DigitalInputPin pin) = [DPinUsage pin [] DigitalInput]
-    deviceClass _ = "digital_input_pin"
-    uniqueId d@(DigitalInputPin pin) = deviceClass d ++ (show pin)
 
 instance Device AnalogOutputPin where
     usages (AnalogOutputPin pin initstate) = [DPinUsage pin ["PWM"] (AnalogOutput initstate)]
-    deviceClass _ = "analog_output_pin"
-    uniqueId d@(AnalogOutputPin pin initstate) = deviceClass d ++ (show pin)
 
 modDev :: forall a d. (Reify a, Device d) => String -> d -> (d -> String -> String -> ([Param], [Exp]) -> Definition) -> S a -> S ()
 modDev name d f a = S $ do
@@ -243,12 +237,10 @@ void $id:c_v_in($params:params)
 
 -- Potentiometer device --
 data Potentiometer = Potentiometer Integer
-                     deriving Eq
+                     deriving (Eq, Show)
 
 instance Device Potentiometer where
     usages (Potentiometer pin) = [APinUsage pin []]
-    deviceClass _ = "potentiometer"
-    uniqueId d@(Potentiometer pin) = deviceClass d ++ (show pin)
 
 instance AnalogInputDevice Potentiometer where
     genReadCode (Potentiometer pin) resultvar = [[$cstm|$id:resultvar = analogRead($int:pin);|]]
@@ -267,8 +259,6 @@ data PushButton = PushButton Integer
 
 instance Device PushButton where
     usages (PushButton pin) = [DPinUsage pin ["interrupt"] DigitalInput]
-    deviceClass _ = "pushbutton" 
-    uniqueId d@(PushButton pin) = deviceClass d ++ (show pin)
 
 data PushButtonPressEvent = PushButtonPressEvent PushButton
                             deriving (Eq, Show)

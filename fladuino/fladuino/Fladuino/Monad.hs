@@ -498,11 +498,10 @@ data Usage = DPinUsage Integer [Capability] PinType
            | CapabilityRequired Capability
              deriving Eq
 
-class (Eq a) => Device a where
+class (Eq a, Show a) => Device a where
     setupDevice :: MonadFladuino m => a -> m ()
     setupDevice _ = return ()
     usages :: a -> [Usage]
     usages _ = []
-    deviceClass :: a -> String
     uniqueId :: a -> String
-    uniqueId = deviceClass
+    uniqueId = cIdent . show
