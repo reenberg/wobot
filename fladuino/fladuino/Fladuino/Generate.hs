@@ -332,18 +332,18 @@ finalizeTimers :: forall m . MonadFladuino m
 finalizeTimers = do
     timersMap <- getsFladuinoEnv $ \s -> f_timers s
     let timers = Map.toList timersMap
-    -- We must at least have 62 interrupts each second
-    let interruptsPerSecond = max 62 (1000 / (fromIntegral . fst $ Map.findMin timersMap))
+    -- We must at least have 0.24 interrupts each second for TIMER1
+    let interruptsPerSecond = max 0.24 (1000 / (fromIntegral . fst $ Map.findMin timersMap))
     when (timers /= []) $ do 
                    addCInclude "common/timersupport.h"
-                   addCInitStm [$cstm|SetupTimer2($float:interruptsPerSecond);|]
+                   addCInitStm [$cstm|SetupTimer1($float:interruptsPerSecond, &timer_handler);|]
     counterCode <- forM timers $ \(period, timerC) ->
         finalizeTimer period timerC interruptsPerSecond
     let (funcs, counterDefs, counterStms) = unzip3 counterCode
     let stms = concat counterStms
     mapM_ addCFundef funcs
     addCFundef [$cedecl|
-void timer2_interrupt_handler (void)
+void timer_handler (void)
 {
   $decls:counterDefs
   $stms:stms
