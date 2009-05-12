@@ -254,7 +254,7 @@ emptyPlatform = Platform { p_digital_pins = []
                          , p_capabilities = []
                          , p_base_setup = return () }
 
-defaultPlatform = arduinoBT
+defaultPlatform = arduinoMega
 
 arduinoDuemilanove = emptyPlatform { p_digital_pins = [ Pin n $ pc n | n <- [0..13] ]
                             , p_analog_pins = [ Pin n ["analog", "interrupt"] | n <- [0..6] ]
@@ -263,14 +263,16 @@ arduinoDuemilanove = emptyPlatform { p_digital_pins = [ Pin n $ pc n | n <- [0..
                 pc pin | pin `elem` [3, 5, 6, 9, 10, 11] = ["PWM", "interrupt"]
                 pc _ = ["interrupt"]
 
+arduinoDiecimila :: Platform FladuinoM
 arduinoDiecimila = arduinoDuemilanove { p_capabilities = ["Diecimila"] }
 
+arduinoBT :: Platform FladuinoM
 arduinoBT = emptyPlatform { p_digital_pins = [ Pin n $ pc n | n <- [0..6] ++ [7..13] ]
                           , p_analog_pins = [ Pin n ["analog", "interrupt"] | n <- [0..6] ]
                           , p_capabilities = ["BT"]
                           -- This sinister magic is needed to
                           -- initialise the Bluetooth module, and is
-                          -- allegedly very important to do no matter
+                          -- allegedly very important to do, no matter
                           -- what.
                           , p_base_setup = do addCInitStm [$cstm|Serial.begin(115200);|]
                                               addCInitStm [$cstm|digitalWrite(7, HIGH);|]
@@ -287,6 +289,20 @@ arduinoBT = emptyPlatform { p_digital_pins = [ Pin n $ pc n | n <- [0..6] ++ [7.
               where
                 pc pin | pin `elem` [3, 5, 6, 9, 10, 11] = ["PWM", "interrupt"]
                 pc _ = ["interrupt"]
+
+arduinoMega :: Platform FladuinoM
+arduinoMega = emptyPlatform { p_digital_pins = [ Pin n $ pc n | n <- [0..53] ]
+                            , p_analog_pins = [ Pin n ["analog"] | n <- [0..7] ] ++ 
+                                              [ Pin n ["analog", "interrupt"] | n <- [8..15] ]
+                            , p_capabilities = ["Duemilanove"] }
+              where
+                pc pin = maybeInterrupt pin ++ maybePWM pin
+                maybeInterrupt pin
+                    | pin `elem` ([1..7]++[10..13]++[50..53]) = ["interrupt"]
+                    | otherwise = []
+                maybePWM pin
+                    | pin `elem` [2..13] = ["PWM"]
+                    | otherwise = []
 
 finalizeConfig :: forall m . MonadFladuino m
                   => PConf m -> m ()
