@@ -142,27 +142,45 @@ supervised by Ken Friis Larsen, assistant professor at DIKU.
 
 
 \chapter{Introduction}
+Robots has been used in the industry for decades, replacing humans in
+repetitive tasks like sewing, assembling and transportation. In the
+last years smaller robots like the Roomba vacuum cleaner has been
+introduced to the consumer market, which is a sign that robots are
+getting cheaper an affordable for more tasks. We will probably see
+robots deployed in many other uses.
+
+
+Electronics is replacing more and more devices that has been
+controlled mechanically before. 
+
+
 Production cost falling => cheaper robots => more robots to be
 programmed. Fast prototyping and re-usability are important for the
 industry.
 
 ....
 
-First we establish how the domain of reactive systems is identified. A
-reactive system is a system that continuously has to respond to
-environmental changes. It is not like a transitional system that takes
-some input data, does some computation and delivers some resulting
-output (an example of this is a compiler). It isn't completely like an
-interactive system either, where the state of the program switches
-from computation to getting more input and back (a text editor is an
-example).  \fixme{is the above too heavily inspired on section 1.1 in
-  "`Functional Reactive Programming for Real-Time reactive systems"'
-  (Zhanyong Wan PhD thesis)?}
+First we establish how the domain of reactive systems is
+identified. We've found the best description in Zhanyong Wan's PhD
+thesis "`Functional Reactive Programming for Real-Time reactive
+systems"'. \fixme{make this a latex-cite}. As he explains we can
+partition computer systems into:
+\begin{itemize}
+\item Transitional systems, that takes some data as input, does some
+  computation on it and delivers some resulting output (an example of this
+  is a compiler).
+\item Interactive systems, where the state of the program switches
+  from computation to getting more input and back (a text editor is an
+  example).
+\item Reactive systems that continuously has to respond to
+  environmental changes. Often reactive systems has to do with our
+  physical environment, either simulating it (e.g. a computer game) or
+  is required to respond to its changes (e.g. a robot).
+\end{itemize}
 
-A computer game or a robot are good examples of reactive systems. In
-cases like these the state of the environment can change at all times
-throughout the runtime of the program (the player of the game can move
-e.g. move the mouse or the robot can detect a wall).
+
+
+
 
 We think that functional reactive programming using a dataflow-based
 approach looks like a good candidate for programming these systems...
