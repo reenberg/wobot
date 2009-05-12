@@ -92,14 +92,30 @@ ARDUINO = $(INSTALL_DIR)/hardware/cores/arduino
 AVR_TOOLS_PATH = /usr/bin
 
 ifeq ($(VENDOR), arduino)
-SRC =  $(ARDUINO)/pins_arduino.c $(ARDUINO)/wiring.c \
-$(ARDUINO)/wiring_analog.c $(ARDUINO)/wiring_digital.c \
-$(ARDUINO)/wiring_pulse.c $(ARDUINO)/wiring_serial.c \
-$(ARDUINO)/wiring_shift.c $(ARDUINO)/WInterrupts.c
-CXXSRC = $(ARDUINO)/HardwareSerial.cpp $(ARDUINO)/WMath.cpp $(ARDUINO)/Print.cpp
+SRC =  $(ARDUINO)/pins_arduino.c                                                \
+$(ARDUINO)/wiring.c                                                             \
+$(ARDUINO)/wiring_analog.c                                                      \
+$(ARDUINO)/wiring_digital.c                                                     \
+$(ARDUINO)/wiring_pulse.c                                                       \ 
+$(ARDUINO)/wiring_serial.c                                                      \
+$(ARDUINO)/wiring_shift.c                                                       \
+$(ARDUINO)/WInterrupts.c
+CXXSRC = $(ARDUINO)/HardwareSerial.cpp                                          \
+$(ARDUINO)/WMath.cpp $(ARDUINO)/Print.cpp
 else ifeq ($(VENDOR), pololu)
-SRC =
-CXXSRC =
+SRC = $(POLOLU)/
+CXXSRC = $(POLOLU)/OrangutanAnalog/OrangutanAnalog.cpp				\
+$(POLOLU)/Pololu3pi/Pololu3pi.cpp                                               \
+$(POLOLU)/OrangutanTime/OrangutanTime.cpp	                                \
+$(POLOLU)/OrangutanResources/OrangutanResources.cpp				\
+$(POLOLU)/OrangutanSerial/OrangutanSerial.cpp					\
+$(POLOLU)/OrangutanPushbuttons/OrangutanPushbuttons.cpp				\
+$(POLOLU)/OrangutanMotors/OrangutanMotors.cpp					\
+$(POLOLU)/OrangutanLEDs/OrangutanLEDs.cpp					\
+$(POLOLU)/PololuQTRSensors/PololuQTRSensors.cpp					\
+$(POLOLU)/OrangutanLCD/OrangutanLCD.cpp						\
+$(POLOLU)/OrangutanBuzzer/OrangutanBuzzer.cpp					\
+$(POLOLU)/PololuWheelEncoders/PololuWheelEncoders.cpp
 endif
 
 
