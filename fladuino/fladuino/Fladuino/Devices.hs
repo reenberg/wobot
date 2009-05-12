@@ -96,10 +96,9 @@ data AnalogInputPin = AnalogInputPin Integer
 
 instance Device DigitalOutputPin where
     setupDevice d@(DigitalOutputPin pin initstate) = 
-        do 
-          sv <- statevar d "state"
-          addCDecldef [$cedecl|unsigned char $id:sv;|]
-          addCInitStm [$cstm|$id:sv = digitalRead($int:pin);|]
+        do sv <- statevar d "state"
+           addCDecldef [$cedecl|unsigned char $id:sv;|]
+           addCInitStm [$cstm|$id:sv = digitalRead($int:pin);|]
     usages (DigitalOutputPin pin initstate) = [DPinUsage pin [] (DigitalOutput initstate)]
 
 instance Device DigitalInputPin where

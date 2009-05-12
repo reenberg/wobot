@@ -110,15 +110,13 @@ putDoc filepath doc = do
     liftIO $ hPutStr h $ pretty 80 doc
     liftIO $ hClose h
 
-defaultPlatform = duemilanove
-
-genStreamForPlatform :: Platform -> S a -> FladuinoM ()
+genStreamForPlatform :: Platform FladuinoM -> S a -> FladuinoM ()
 genStreamForPlatform p s = genStreamsForPlatform p [unS s]
 
 genStream :: S a -> FladuinoM ()
 genStream s = genStreams [unS s]
 
-genStreamsForPlatform :: Platform -> [FladuinoM (SCode FladuinoM)]
+genStreamsForPlatform :: Platform FladuinoM -> [FladuinoM (SCode FladuinoM)]
                        -> FladuinoM ()
 genStreamsForPlatform p ss = do
     basename <- return (maybe "Fladuino" id) `ap` optVal output
@@ -250,9 +248,51 @@ genStreams :: [FladuinoM (SCode FladuinoM)]
            -> FladuinoM ()
 genStreams = genStreamsForPlatform defaultPlatform
 
+emptyPlatform :: Platform FladuinoM
+emptyPlatform = Platform { p_digital_pins = []
+                         , p_analog_pins = []
+                         , p_capabilities = []
+                         , p_base_setup = return () }
+
+defaultPlatform = arduinoBT
+
+arduinoDuemilanove = emptyPlatform { p_digital_pins = [ Pin n $ pc n | n <- [0..13] ]
+                            , p_analog_pins = [ Pin n ["analog", "interrupt"] | n <- [0..6] ]
+                            , p_capabilities = ["Duemilanove"] }
+              where
+                pc pin | pin `elem` [3, 5, 6, 9, 10, 11] = ["PWM", "interrupt"]
+                pc _ = ["interrupt"]
+
+arduinoDiecimila = arduinoDuemilanove { p_capabilities = ["Diecimila"] }
+
+arduinoBT = emptyPlatform { p_digital_pins = [ Pin n $ pc n | n <- [0..6] ++ [7..13] ]
+                          , p_analog_pins = [ Pin n ["analog", "interrupt"] | n <- [0..6] ]
+                          , p_capabilities = ["BT"]
+                          -- This sinister magic is needed to
+                          -- initialise the Bluetooth module, and is
+                          -- allegedly very important to do no matter
+                          -- what.
+                          , p_base_setup = do addCInitStm [$cstm|Serial.begin(115200);|]
+                                              addCInitStm [$cstm|digitalWrite(7, HIGH);|]
+                                              addCInitStm [$cstm|delay(10);|]
+                                              addCInitStm [$cstm|digitalWrite(7, LOW);|]
+                                              addCInitStm [$cstm|delay(2000);|]
+                                              addCInitStm [$cstm|Serial.println("SET BT PAGEMODE 3 2000 1");|]
+                                              addCInitStm [$cstm|Serial.println("SET BT NAME ArduinoBT");|]
+                                              addCInitStm [$cstm|Serial.println("SET BT ROLE 0 f 7d00");|]
+                                              addCInitStm [$cstm|Serial.println("SET CONTROL ECHO 0");|]
+                                              addCInitStm [$cstm|Serial.println("SET BT AUTH * 12345");|]
+                                              addCInitStm [$cstm|Serial.println("SET CONTROL ESCAPE - 00 1");|]
+                          }
+              where
+                pc pin | pin `elem` [3, 5, 6, 9, 10, 11] = ["PWM", "interrupt"]
+                pc _ = ["interrupt"]
+
 finalizeConfig :: forall m . MonadFladuino m
-                  => PConf -> m ()
-finalizeConfig (PConf _ usages) = forM_ usages applyUsage
+                  => PConf m -> m ()
+finalizeConfig (PConf _ usages setups) = do forM_ usages applyUsage
+                                            liftIO $ putStrLn ("number " ++ show (length setups))
+                                            sequence_ setups
     where applyUsage (DPinUsage pin _ (DigitalOutput initstate)) = do
             addCInitStm [$cstm|pinMode($int:pin, OUTPUT);|]
             let val = if initstate then "HIGH" else "LOW"
@@ -265,12 +305,11 @@ finalizeConfig (PConf _ usages) = forM_ usages applyUsage
           applyUsage _ = return ()
 
 finalizeDevices :: forall m . MonadFladuino m
-                   => Platform -> m ()
+                   => Platform m -> m ()
 finalizeDevices p = do
   devices <- getsFladuinoEnv f_devices
-  config <- foldM extendConfiguration (startConf p) (map (\(DRef d) -> usages d) devices)
+  config <- foldM configureDevice (startConf p) devices
   finalizeConfig config
-  mapM_ (\(DRef d) -> setupDevice d) devices
 
 finalizeTimers :: forall m . MonadFladuino m
                => m ()
