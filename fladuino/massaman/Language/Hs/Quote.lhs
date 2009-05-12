@@ -110,7 +110,7 @@ antiPat = const Nothing `extQ` stringPat `extQ` istringPat `extQ` locPat
 
 quasiOpts :: IORef Opts
 quasiOpts = unsafePerformIO $ newIORef $
-            Opts { output = Nothing, flags = [] }
+            Opts { output = Nothing, flags = [], prelude = Nothing, platform = Nothing }
 
 parse  ::  Monad m
        =>  String

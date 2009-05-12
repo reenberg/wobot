@@ -58,6 +58,7 @@ import System.Console.GetOpt
 \begin{code}
 data Opts = Opts  {  output   :: Maybe String
                   ,  prelude  :: Maybe String
+                  ,  platform :: Maybe String
                   ,  flags    :: [Flag]
                   }
   deriving(Show)
@@ -247,7 +248,11 @@ options =
                                             "compiler flag",
 
       Option  ['X']  []                     (ReqArg handleXFlag "FEATURE")
-                                            "language feature"
+                                            "language feature",
+
+      Option  []     ["platform"]            (ReqArg (\f o -> return $ o { platform=Just f })
+                                                        "FILE")
+                                            "prelude"
     ]
 \end{code}
 

@@ -101,6 +101,7 @@ defaultMain m = do
     defaultOpts :: Opts
     defaultOpts = Opts  {  output    = Just "Fladuino"
                         ,  prelude   = Nothing
+                        ,  platform  = Nothing
                         ,  flags     = [Opt_OptC, Opt_ImplicitPrelude]
                         }
 
@@ -246,7 +247,15 @@ void loop()
 
 genStreams :: [FladuinoM (SCode FladuinoM)]
            -> FladuinoM ()
-genStreams = genStreamsForPlatform defaultPlatform
+genStreams m = do o <- getOpts
+                  let pform = maybe defaultPlatform translatePlatform . platform $ o
+                  genStreamsForPlatform pform m
+
+translatePlatform "duemilanove" = arduinoDuemilanove
+translatePlatform "diecimila" = arduinoDiecimila
+translatePlatform "mega" = arduinoMega
+translatePlatform "bt" = arduinoBT
+--translatePlatform "3pi" =
 
 emptyPlatform :: Platform FladuinoM
 emptyPlatform = Platform { p_digital_pins = []
