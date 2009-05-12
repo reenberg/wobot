@@ -53,8 +53,8 @@ streamsForCounter n sp = [ clocked >>> s n | s <- [maybeTurnOn, maybeTurnOff], n
                             >>> sfilter [$exp|(\v -> not v)|] 
                             >>> turnOff (diode (sp+i) False)
 
-      s1 = onPress $ PushButton 10 >>> sconst [$exp|1|]
-      s2 = onPress $ PushButton 11 >>> sconst [$exp|-1|]
+      s1 = onPress (PushButton 10) >>> sconst [$exp|1|]
+      s2 = onPress (PushButton 11) >>> sconst [$exp|-1|]
       s = smerge s1 s2
       clocked = smerge s (clock 1 
                           >>> (valueOf $ Potentiometer 0) 
