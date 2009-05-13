@@ -781,6 +781,22 @@ sif f a = S $ do
         v_out    = s_vout this
         v_f      = n_var nf
 
+salternate :: forall a b eta. (Reify a, Reify b, LiftN eta b) => eta -> eta -> S a -> S b
+salternate alt0 alt1 from = 
+    S $ do n_alt0 <- unN (liftN alt0 :: N b)
+           n_alt1 <- unN (liftN alt1 :: N b)
+           unS $ (sintegrate zero (int n_alt0 n_alt1) from :: S b)
+               where zero :: N Bool
+                     zero = liftN [$exp|False|]
+                     
+                     int :: NCode -> NCode -> N ((a, Bool) -> (b, Bool))
+                     int n_alt0 n_alt1 = liftN [$decls|f (_, False) = ($var:v_alt0, True); f (_, True) = ($var:v_alt1, False)|]
+                         where
+                           v_alt0 = n_var n_alt0
+                           v_alt1 = n_var n_alt1
+
+
+
 infixl 5 >>>
 (>>>) = flip ($)
 
