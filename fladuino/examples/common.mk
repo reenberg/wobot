@@ -52,6 +52,7 @@ ifeq ($(PLATFORM), 3pi)
 MCU = atmega168
 AVRDUDE_PROGRAMMER = avrisp2
 VENDOR = pololu
+UPLOAD_RATE = 115200
 endif
 ifeq ($(PLATFORM), bt)
 MCU = atmega168
@@ -83,16 +84,13 @@ FLADUINO_PRELUDE=$(FLADUINO_RUNTIME)/Prelude.hs
 FLADUINO_FLAGS = --platform $(PLATFORM)
 
 # Pololu specifics
-POLOLU = $(POLOLU_DIR)/src
+POLOLU = $(POLOLU_DIR)
 
 # Arduino specifics
-ARDUINO = $(INSTALL_DIR)/hardware/cores/arduino
+ARDUINO = $(ARDUINO_DIR)/hardware/cores/arduino
 
 
-AVR_TOOLS_PATH = /usr/bin
-
-ifeq ($(VENDOR), arduino)
-SRC =  $(ARDUINO)/pins_arduino.c                                                \
+ARDUINO_SRC =  $(ARDUINO)/pins_arduino.c                                        \
 $(ARDUINO)/wiring.c                                                             \
 $(ARDUINO)/wiring_analog.c                                                      \
 $(ARDUINO)/wiring_digital.c                                                     \
@@ -100,30 +98,55 @@ $(ARDUINO)/wiring_pulse.c                                                       
 $(ARDUINO)/wiring_serial.c                                                      \
 $(ARDUINO)/wiring_shift.c                                                       \
 $(ARDUINO)/WInterrupts.c
-CXXSRC = $(ARDUINO)/HardwareSerial.cpp                                          \
+ARDUINO_CXXSRC = $(ARDUINO)/HardwareSerial.cpp                                  \
 $(ARDUINO)/WMath.cpp $(ARDUINO)/Print.cpp
+
+ARDUINO_CDEFS = 
+ARDUINO_CSSDEFS = 
+
+ARDUINO_CINCS = -I$(ARDUINO)
+ARDUINO_CXXINCS = -I$(ARDUINO)
+
+
+POLOLU_SRC = 
+POLOLU_CXXSRC = $(POLOLU_DIR)/src/OrangutanAnalog/OrangutanAnalog.cpp			\
+$(POLOLU_DIR)/src/Pololu3pi/Pololu3pi.cpp                                               \
+$(POLOLU_DIR)/src/OrangutanTime/OrangutanTime.cpp	                                \
+$(POLOLU_DIR)/src/OrangutanResources/OrangutanResources.cpp				\
+$(POLOLU_DIR)/src/OrangutanSerial/OrangutanSerial.cpp					\
+$(POLOLU_DIR)/src/OrangutanPushbuttons/OrangutanPushbuttons.cpp				\
+$(POLOLU_DIR)/src/OrangutanMotors/OrangutanMotors.cpp					\
+$(POLOLU_DIR)/src/OrangutanLEDs/OrangutanLEDs.cpp					\
+$(POLOLU_DIR)/src/PololuQTRSensors/PololuQTRSensors.cpp					\
+$(POLOLU_DIR)/src/OrangutanLCD/OrangutanLCD.cpp						\
+$(POLOLU_DIR)/src/OrangutanBuzzer/OrangutanBuzzer.cpp					\
+$(POLOLU_DIR)/src/PololuWheelEncoders/PololuWheelEncoders.cpp
+
+# The pololu library needs this definition to compile. 
+POLOLU_CDEFS = -DLIB_POLOLU 
+POLOLU_CXXDEFS = -DLIB_POLOLU
+
+# We also want to be able to use Arduino functions such as digitalWrite etc.
+# Though there could potentially be a problem if we end up including Arduino 
+# time and Pololu time handling, so be carefull.
+POLOLU_CINCS = -I$(POLOLU) -I$(ARDUINO)
+POLOLU_CXXINCS = -I$(POLOLU) -I$(ARDUINO)
+
+
+ifeq ($(VENDOR), arduino)
+SRC = $(ARDUINO_SRC)
+CXXSRC = $(ARDUINO_CXXSRC)
 else ifeq ($(VENDOR), pololu)
-SRC = 
-CXXSRC = $(POLOLU)/OrangutanAnalog/OrangutanAnalog.cpp				\
-$(POLOLU)/Pololu3pi/Pololu3pi.cpp                                               \
-$(POLOLU)/OrangutanTime/OrangutanTime.cpp	                                \
-$(POLOLU)/OrangutanResources/OrangutanResources.cpp				\
-$(POLOLU)/OrangutanSerial/OrangutanSerial.cpp					\
-$(POLOLU)/OrangutanPushbuttons/OrangutanPushbuttons.cpp				\
-$(POLOLU)/OrangutanMotors/OrangutanMotors.cpp					\
-$(POLOLU)/OrangutanLEDs/OrangutanLEDs.cpp					\
-$(POLOLU)/PololuQTRSensors/PololuQTRSensors.cpp					\
-$(POLOLU)/OrangutanLCD/OrangutanLCD.cpp						\
-$(POLOLU)/OrangutanBuzzer/OrangutanBuzzer.cpp					\
-$(POLOLU)/PololuWheelEncoders/PololuWheelEncoders.cpp
+SRC = $(ARDUINO_SRC) $(POLOLU_SRC)
+CXXSRC = $(ARDUINO_CXXSRC) $(POLOLU_CXXSRC)
 endif
 
 
 FORMAT = ihex
 
+AVR_TOOLS_PATH = /usr/bin
 
 TARGET = $(PROGNAME)
-INSTALL_DIR = $(ARDUINO_DIR)
 F_CPU = 16000000
 
 # Name of this Makefile (used for "make depend").
@@ -138,17 +161,18 @@ DEBUG = stabs
 OPT = s
 
 # Place -D or -U options here
-CDEFS = -DF_CPU=$(F_CPU)
-CXXDEFS = -DF_CPU=$(F_CPU)
+CDEFS = -DF_CPU=$(F_CPU) $(ARDUINO_CDEFS) $(POLOLU_CDEFS)
+CXXDEFS = -DF_CPU=$(F_CPU) $(ARDUINO_CXXDEFS) $(POLOLU_CXXDEFS)
 
 # Place -I options here
-CINCS = -I$(ARDUINO) -I$(FLADUINO_RUNTIME)
-CXXINCS = -I$(ARDUINO)
+CINCS = -I$(FLADUINO_RUNTIME) $(ARDUINO_CINCS) $(POLOLU_CINCS)
+CXXINCS = $(ARDUINO_CXXINCS) $(POLOLU_CXXINCS)
+
 
 # Compiler flag to set the C Standard level.
 # c89   - "ANSI" C
-# gnu89 - c89 plus GCC extensions
 # c99   - ISO C99 standard (not yet fully implemented)
+# gnu89 - c89 plus GCC extensions
 # gnu99 - c99 plus GCC extensions
 CSTANDARD = -std=gnu99
 CDEBUG = -g$(DEBUG)
@@ -157,7 +181,7 @@ CTUNING = -funsigned-char -funsigned-bitfields -fpack-struct -fshort-enums
 #CEXTRA = -Wa,-adhlns=$(<:.c=.lst)
 
 CFLAGS = $(CDEBUG) $(CDEFS) $(CINCS) -O$(OPT) $(CWARN) $(CSTANDARD) $(CEXTRA)
-CXXFLAGS = $(CDEFS) $(CINCS) -O$(OPT)
+CXXFLAGS = $(CXXDEFS) $(CXXINCS) -O$(OPT)
 #ASFLAGS = -Wa,-adhlns=$(<:.S=.lst),-gstabs 
 LDFLAGS = -lm
 
@@ -165,9 +189,19 @@ LDFLAGS = -lm
 # Programming support using avrdude. Settings and variables.
 AVRDUDE_PORT = $(PORT)
 AVRDUDE_WRITE_FLASH = -U flash:w:applet/$(TARGET).hex
-AVRDUDE_FLAGS = -v -D -C $(INSTALL_DIR)/hardware/tools/avrdude.conf \
+
+ifeq ($(VENDOR), arduino)
+AVRDUDE_FLAGS = -v -D -C $(ARDUINO_DIR)/hardware/tools/avrdude.conf \
 -p $(MCU) -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER) \
 -b $(UPLOAD_RATE)
+else ifeq ($(VENDOR), pololu)
+# We dont want to disable erase (-D) of the chip for the pololu robots
+# since they dont have a bootloader.
+AVRDUDE_FLAGS = -v -C $(ARDUINO_DIR)/hardware/tools/avrdude.conf \
+-p $(MCU) -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER) \
+-b $(UPLOAD_RATE)
+endif
+
 
 # Program settings
 CC = $(AVR_TOOLS_PATH)/avr-gcc
@@ -189,12 +223,12 @@ LST = $(ASRC:.S=.lst) $(CXXSRC:.cpp=.lst) $(SRC:.c=.lst)
 
 # Combine all necessary flags and optional flags.
 # Add target processor to flags.
-ALL_CFLAGS = -mmcu=$(MCU) -I. $(CFLAGS)
-ALL_CXXFLAGS = -mmcu=$(MCU) -I. $(CXXFLAGS)
+ALL_CFLAGS = -mmcu=$(MCU) -I. $(CFLAGS) $(POLOLU_CFLAGS)
+ALL_CXXFLAGS = -mmcu=$(MCU) -I. $(CXXFLAGS) $(POLOLU_CXXFLAGS)
 ALL_ASFLAGS = -mmcu=$(MCU) -I. -x assembler-with-cpp $(ASFLAGS)
 
-
-all: fladuinoall $(VENDOR)all
+#fladuinoall
+all:  fladuinoall $(VENDOR)all
 clean: fladuinoclean arduinoclean
 
 # Fladuino part of the compilation.
@@ -215,13 +249,16 @@ arduinoclean:
 	applet/$(TARGET).map applet/$(TARGET).sym applet/$(TARGET).lss applet/core.a \
 	$(OBJ) $(LST) $(SRC:.c=.s) $(SRC:.c=.d) $(CXXSRC:.cpp=.s) $(CXXSRC:.cpp=.d)
 
-pololuall: 
+pololuall: applet_files build sizeafter
 
 pololuclean:
+	$(REMOVE) applet/$(TARGET).hex applet/$(TARGET).eep applet/$(TARGET).cof applet/$(TARGET).elf \
+	applet/$(TARGET).map applet/$(TARGET).sym applet/$(TARGET).lss applet/core.a \
+	$(OBJ) $(LST) $(SRC:.c=.s) $(SRC:.c=.d) $(CXXSRC:.cpp=.s) $(CXXSRC:.cpp=.d)
 
 build: elf hex 
 
-applet_files: $(TARGET).pde
+applet_files:$(TARGET).pde
 	# Here is the "preprocessing".
 	# It creates a .cpp file based with the same name as the .pde file.
 	# On top of the new .cpp file comes the WProgram.h header.
@@ -242,6 +279,7 @@ sym: applet/$(TARGET).sym
 
 # Program the device.  
 upload: applet/$(TARGET).hex
+	
 	$(AVRDUDE) $(AVRDUDE_FLAGS) $(AVRDUDE_WRITE_FLASH)
 
 
@@ -274,6 +312,7 @@ extcoff: $(TARGET).elf
 .SUFFIXES: .elf .hex .eep .lss .sym
 
 .elf.hex:
+	# .elf.hex
 	$(OBJCOPY) -O $(FORMAT) -R .eeprom $< $@
 
 .elf.eep:
@@ -288,8 +327,9 @@ extcoff: $(TARGET).elf
 .elf.sym:
 	$(NM) -n $< > $@
 
-	# Link: create ELF output file from library.
+
 applet/$(TARGET).elf: $(TARGET).pde applet/core.a 
+	# Link: create ELF output file from library.
 	$(CC) $(ALL_CFLAGS) -o $@ applet/$(TARGET).cpp -L. applet/core.a $(LDFLAGS)
 
 applet/core.a: $(OBJ)

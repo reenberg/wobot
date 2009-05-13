@@ -1,3 +1,3 @@
 #!/bin/sh
-dot -Tpng -oflask-simple.png flask-simple.dot
-dot -Tpng -oflask-design.png flask-design.dot
+dot -Tpng -oimages/flask-simple.png flask-simple.dot
+dot -Tpng -oimages/flask-design.png flask-design.dot

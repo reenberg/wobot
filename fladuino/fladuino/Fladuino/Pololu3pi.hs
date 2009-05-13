@@ -59,6 +59,7 @@ data Motors = Motors
               deriving (Eq, Show)
 
 instance Device Motors where
+    setupDevice Motors = addCInclude "pololu/motors.h"
     uniqueId _ = "motors"
 
 setMotors :: Motors -> S (Integer, Integer) -> S ()

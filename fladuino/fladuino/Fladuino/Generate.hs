@@ -328,8 +328,7 @@ pololu3pi :: Platform FladuinoM
 pololu3pi = emptyPlatform { p_digital_pins = [ Pin n $ pc n | n <- [0..13] ]
                           , p_analog_pins = [ Pin n ["analog", "interrupt"] | n <- [0..6] ]
                           , p_capabilities = ["3pi"]
-                          , p_base_setup = do addCInclude "pololu/3pi.h"
-                                              addCInitStm [$cstm|pololu_3pi_init(2000);|]
+                          , p_base_setup = addCInclude "3pi/3pi.h"
                           }
               where
                 -- PWM on pin 9 and 10 are disallowed because they interfere with TIMER1
