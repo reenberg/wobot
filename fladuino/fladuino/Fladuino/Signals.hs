@@ -423,6 +423,24 @@ clock period = S $ do
         v_in  = varIn this ""
         v_out = s_vout this
 
+idle :: S Integer
+idle = S $ do
+    sym <- gensym "idle"
+    addStream  "idle"
+               integerTy
+               (Idle sym)
+               gen
+               (const (return ())) $ \this -> do
+    addIdleWaiter this (varIn this "")
+  where
+    gen :: SCode m -> FladuinoM ()
+    gen this = do
+        addDecls [$decls|$var:v_in :: Integer -> ()|]
+        addDecls [$decls|$var:v_in x = $var:v_out x|]
+      where
+        v_in  = varIn this ""
+        v_out = s_vout this
+
 adc :: Integer -> S () -> S Integer
 adc pin from = S $ do
     sfrom   <- unS from
@@ -846,3 +864,19 @@ serialWrite string from = S $ do
         where
           v_in    = varIn this ""
           c_v_in = show v_in
+
+class (Reify a) => NShow a where
+    nshow :: a -> String -> [Stm]
+
+cToString :: (NShow a) => a -> String -> Stm
+cToString a s = let stms = nshow a s
+                in [$cstm|{ $stms:stms; }|]
+{-(params_stm, params) <- newScope False $ do
+            (params, params_ce) <- ToC.flattenParams tauf_f_out
+            [ce_b, ce_state]    <- ToC.dataMembers undefined params_ce
+                                   >>= mapM ToC.concrete
+            ce_out              <- hcall v_out $
+                                   ToC.CLowered tauf_b ce_b
+            addCStm [$cstm|$id:state = $exp:ce_state;|]
+            addCStm [$cstm|$exp:ce_out;|]
+            return params-}

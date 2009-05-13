@@ -122,15 +122,17 @@ genStreamsForPlatform :: Platform FladuinoM -> [FladuinoM (SCode FladuinoM)]
 genStreamsForPlatform p ss = do
     basename <- return (maybe "Fladuino" id) `ap` optVal output
     scodes <- sequence ss
-    timer_connections   <- getsFladuinoEnv f_timer_connections
-    event_connections   <- getsFladuinoEnv f_event_connections
-    channel_connections <- getsFladuinoEnv f_channel_connections
+    timer_connections       <- getsFladuinoEnv f_timer_connections
+    event_connections       <- getsFladuinoEnv f_event_connections
+    channel_connections     <- getsFladuinoEnv f_channel_connections
+    idle_waiter_connections <- getsFladuinoEnv f_idle_waiters
     let scodes' = scodes ++ [scode | (_, conns) <- Map.toList timer_connections,
                                      (scode, _) <- conns]
                          ++ [scode | (_, conns) <- event_connections,
                                      (scode, _) <- conns]
                          ++ [scode | (_, conns) <- Map.toList channel_connections,
                                      (scode, _) <- conns]
+                         ++ [scode | (scode, _) <- idle_waiter_connections]
     genHs Set.empty scodes'
     env <- getFladuinoEnv
     forM_ (f_cvars env) $ \(gv, gty, ce) -> do
@@ -148,6 +150,7 @@ genStreamsForPlatform p ss = do
     finalizeConfig config
     finalizeTimers
     finalizeEvents
+    finalizeIdleWaiters
 --    finalizeADCs
     finalizeFlows
     cdefs_toc            <- getCDefs
@@ -336,7 +339,6 @@ pololu3pi = emptyPlatform { p_digital_pins = [ Pin n $ pc n | n <- [0..13] ]
 finalizeConfig :: forall m . MonadFladuino m
                   => PConf m -> m ()
 finalizeConfig (PConf _ usages setups) = do forM_ usages applyUsage
-                                            liftIO $ putStrLn ("number " ++ show (length setups))
                                             sequence_ . reverse $ setups
     where applyUsage (DPinUsage pin _ (DigitalOutput initstate)) = do
             addCInitStm [$cstm|pinMode($int:pin, OUTPUT);|]
@@ -459,6 +461,41 @@ finalizeEvents = do
                                  $stms:stms
                                }|]
                    addCInitStm [$cstm|PCattachInterrupt($int:c_pin, $id:interruptCP, CHANGE);|]
+
+finalizeIdleWaiters :: MonadFladuino m => m ()
+finalizeIdleWaiters = do
+    waiters <- getsFladuinoEnv $ f_idle_waiters
+    let waitercount = toInteger $ length waiters
+    waitercode <- forM (zip waiters [0..]) $ \(waiter, i) ->
+                      finalizeWaiter waiter i
+    let (timingDefs, stms) = unzip waitercode
+    let stms' = intersperse [$cstm|break;|] stms
+    addCFundef [$cedecl|
+void service_idle_waiters (void)
+{
+  static unsigned int p = 0;
+  unsigned long sincelast;
+  $decls:timingDefs
+  switch (p) {
+    $stms:stms'
+  }
+  p = (p + 1) % $int:waitercount;
+}
+|]
+  where
+    finalizeWaiter :: MonadFladuino m => (SCode m, H.Var) -> Integer -> m (InitGroup, Stm)
+    finalizeWaiter (s, v) i = do
+      tauf <- toF integerTy
+      e <- hcall v $ ToC.CLowered tauf [$cexp|sincelast|]
+      let stm = Exp (Just e) internalLoc
+      return ([$cdecl|static unsigned long $id:waiterCP = 0;|], 
+              [$cstm|case $int:i : {
+                 sincelast = millis() - $id:waiterCP;
+                 $id:waiterCP = millis();
+                 $stm:stm
+               }|])
+      where
+        waiterCP = show v
 
 finalizeADCs :: MonadFladuino m => m ()
 finalizeADCs = do
