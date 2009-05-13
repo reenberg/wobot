@@ -228,7 +228,7 @@ ALL_CXXFLAGS = -mmcu=$(MCU) -I. $(CXXFLAGS) $(POLOLU_CXXFLAGS)
 ALL_ASFLAGS = -mmcu=$(MCU) -I. -x assembler-with-cpp $(ASFLAGS)
 
 #fladuinoall
-all:  $(VENDOR)all
+all:  fladuinoall $(VENDOR)all
 clean: fladuinoclean arduinoclean
 
 # Fladuino part of the compilation.
