@@ -1,4 +1,6 @@
 
+#include <stdio.h>
+
 #define LED1 13
 #define RESET 7
 
@@ -25,13 +27,19 @@ void setup() {
 
 }
 
+int i = 0;
+
 void loop() {
 
      digitalWrite(LED1, HIGH);
-     delay(1000);
+     delay(500);
      digitalWrite(LED1, LOW);
-     delay(1500);
+     delay(800);
 
-     Serial.println("Hello world");
+     char msg[100];
+     sprintf(msg, "Hello world. Count: %8d. Millis: %8u", i, millis());
 
+     Serial.println(msg);
+
+     i++;
 }
