@@ -15,5 +15,5 @@
 # PROGNAME = 
 
 PLATFORM = 3pi
-
+VENDOR = pololu
 include ../common.mk

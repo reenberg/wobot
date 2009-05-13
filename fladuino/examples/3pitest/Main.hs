@@ -21,8 +21,8 @@ import Fladuino.Pololu3pi
 main :: IO ()
 main =
     defaultMain $ do
-      genStream $ clock 1000 >>> salternate [$exp|(-255, 255)|]
-                                            [$exp|(255, -255)|]
+      genStream $ clock 1000 >>> salternate [$exp|(255, 255)|]
+                                            [$exp|(-255, -255)|]
                              >>> setMotors Motors
 
 
