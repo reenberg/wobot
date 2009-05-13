@@ -821,3 +821,28 @@ fromJust = smap rmJust . sfilter isJust
 
       rmJust :: Reify a => N (Maybe a -> a)
       rmJust = liftN [$decls|f (Just x) = x|]
+
+serialWrite :: forall a. (Reify a) => String -> S a -> S ()
+serialWrite string from = S $ do
+    sfrom <- unS from
+    addStream "serialWrite"
+              unitTy
+              (GenericSRep sfrom "serialWrite")
+              (const (return ()))
+              genC $ \this -> do
+    connect sfrom this tau_a (varIn this "")
+  where
+    tau_a :: H.Type
+    tau_a = reify (undefined :: a)
+
+    genC :: SCode m -> FladuinoM ()
+    genC this = do
+      tauf_a <- toF tau_a
+      (params, _) <- ToC.flattenParams tauf_a
+      addCFundef [$cedecl|void $id:c_v_in($params:params) 
+                                   { 
+                                     serialWrite($string:string);
+                                   }|]
+        where
+          v_in    = varIn this ""
+          c_v_in = show v_in
