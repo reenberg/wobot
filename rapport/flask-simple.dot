@@ -1,0 +1,22 @@
+digraph G
+{
+    rankdir = LR;
+    compound=true;
+    nesc_comp[label="NesC compiler"];
+    hsfile[label="Flask program", shape=none];
+    comp_time[label="Compilation time"];
+    gen_time[label="Generation time"];
+    
+    subgraph cluster_flask {
+        labeljust="l"
+        label="Flask";
+        
+        // This isn't complete, some steps are still missing and maybe
+        // we should split it up in several smaller
+        // graphs. (E.g. compile-time and generation-time)        
+        hsfile -> comp_time;
+        comp_time -> gen_time [label="Executable"];
+    }
+    gen_time -> nesc_comp [label="NesC code"];
+    
+}
