@@ -312,10 +312,10 @@ arduinoMega = emptyPlatform { p_digital_pins = [ Pin n $ pc n | n <- [0..53] ]
               where
                 pc pin = maybeInterrupt pin ++ maybePWM pin
                 maybeInterrupt pin
-                    | pin `elem` ([1..7]++[10..13]++[50..53]) = ["interrupt"]
+                    | pin `elem` [1..7]++[10..13]++[50..53] = ["interrupt"]
                     | otherwise = []
                 maybePWM pin
-                    | pin `elem` [2..13] = ["PWM"]
+                    | pin `elem` [2..10]++[13] = ["PWM"]
                     | otherwise = []
 
 finalizeConfig :: forall m . MonadFladuino m
