@@ -257,7 +257,7 @@ translatePlatform "duemilanove" = return arduinoDuemilanove
 translatePlatform "diecimila" = return arduinoDiecimila
 translatePlatform "mega" = return arduinoMega
 translatePlatform "bt" = return arduinoBT
---translatePlatform "3pi" =
+translatePlatform "3pi" = return pololu3pi
 translatePlatform p = fail $ "Unknown platform " ++ p
 
 emptyPlatform :: Platform FladuinoM
@@ -317,6 +317,20 @@ arduinoMega = emptyPlatform { p_digital_pins = [ Pin n $ pc n | n <- [0..53] ]
                 maybePWM pin
                     | pin `elem` [2..13] = ["PWM"]
                     | otherwise = []
+
+-- The pin setup is copied from the Duemilanove specification, it
+-- therefore needs adjustments.
+pololu3pi :: Platform FladuinoM
+pololu3pi = emptyPlatform { p_digital_pins = [ Pin n $ pc n | n <- [0..13] ]
+                          , p_analog_pins = [ Pin n ["analog", "interrupt"] | n <- [0..6] ]
+                          , p_capabilities = ["3pi"]
+                          , p_base_setup = do addCInclude "pololu/3pi.h"
+                                              addCInitStm [$cstm|pololu_3pi_init(2000);|]
+                          }
+              where
+                -- PWM on pin 9 and 10 are disallowed because they interfere with TIMER1
+                pc pin | pin `elem` [3, 5, 6, 11] = ["PWM", "interrupt"] 
+                pc _ = ["interrupt"]
 
 finalizeConfig :: forall m . MonadFladuino m
                   => PConf m -> m ()
