@@ -144,7 +144,8 @@ genStreamsForPlatform p ss = do
     fdecls' <- optimizeF basename (Set.toList live) (f_fdecls env ++ fdecls)
     ToC.transDecls fdecls'
     genC Set.empty scodes'
-    finalizeDevices p
+    config <- finalizeDevices p
+    finalizeConfig config
     finalizeTimers
     finalizeEvents
 --    finalizeADCs
@@ -248,22 +249,25 @@ void loop()
 genStreams :: [FladuinoM (SCode FladuinoM)]
            -> FladuinoM ()
 genStreams m = do o <- getOpts
-                  let pform = maybe defaultPlatform translatePlatform . platform $ o
+                  pform <- maybe (return defaultPlatform) translatePlatform . platform $ o
                   genStreamsForPlatform pform m
 
-translatePlatform "duemilanove" = arduinoDuemilanove
-translatePlatform "diecimila" = arduinoDiecimila
-translatePlatform "mega" = arduinoMega
-translatePlatform "bt" = arduinoBT
---translatePlatform "3pi" =
-translatePlatform p = fail "Unknown platform " ++ p
+translatePlatform :: String -> FladuinoM (Platform FladuinoM)
+translatePlatform "duemilanove" = return arduinoDuemilanove
+translatePlatform "diecimila" = return arduinoDiecimila
+translatePlatform "mega" = return arduinoMega
+translatePlatform "bt" = return arduinoBT
+translatePlatform "3pi" = return pololu3pi
+translatePlatform p = fail $ "Unknown platform " ++ p
 
 emptyPlatform :: Platform FladuinoM
 emptyPlatform = Platform { p_digital_pins = []
                          , p_analog_pins = []
                          , p_capabilities = []
-                         , p_base_setup = return () }
+                         , p_base_setup = return ()
+                         , p_default_devices = [] }
 
+defaultPlatform :: Platform FladuinoM
 defaultPlatform = arduinoDuemilanove
 
 arduinoDuemilanove = emptyPlatform { p_digital_pins = [ Pin n $ pc n | n <- [0..13] ]
@@ -309,17 +313,31 @@ arduinoMega = emptyPlatform { p_digital_pins = [ Pin n $ pc n | n <- [0..53] ]
               where
                 pc pin = maybeInterrupt pin ++ maybePWM pin
                 maybeInterrupt pin
-                    | pin `elem` ([1..7]++[10..13]++[50..53]) = ["interrupt"]
+                    | pin `elem` [1..7]++[10..13]++[50..53] = ["interrupt"]
                     | otherwise = []
                 maybePWM pin
-                    | pin `elem` [2..13] = ["PWM"]
+                    | pin `elem` [2..10]++[13] = ["PWM"]
                     | otherwise = []
+
+-- The pin setup is copied from the Duemilanove specification, it
+-- therefore needs adjustments.
+pololu3pi :: Platform FladuinoM
+pololu3pi = emptyPlatform { p_digital_pins = [ Pin n $ pc n | n <- [0..13] ]
+                          , p_analog_pins = [ Pin n ["analog", "interrupt"] | n <- [0..6] ]
+                          , p_capabilities = ["3pi"]
+                          , p_base_setup = do addCInclude "pololu/3pi.h"
+                                              addCInitStm [$cstm|pololu_3pi_init(2000);|]
+                          }
+              where
+                -- PWM on pin 9 and 10 are disallowed because they interfere with TIMER1
+                pc pin | pin `elem` [3, 5, 6, 11] = ["PWM", "interrupt"] 
+                pc _ = ["interrupt"]
 
 finalizeConfig :: forall m . MonadFladuino m
                   => PConf m -> m ()
 finalizeConfig (PConf _ usages setups) = do forM_ usages applyUsage
                                             liftIO $ putStrLn ("number " ++ show (length setups))
-                                            sequence_ setups
+                                            sequence_ . reverse $ setups
     where applyUsage (DPinUsage pin _ (DigitalOutput initstate)) = do
             addCInitStm [$cstm|pinMode($int:pin, OUTPUT);|]
             let val = if initstate then "HIGH" else "LOW"
@@ -332,11 +350,11 @@ finalizeConfig (PConf _ usages setups) = do forM_ usages applyUsage
           applyUsage _ = return ()
 
 finalizeDevices :: forall m . MonadFladuino m
-                   => Platform m -> m ()
+                   => Platform m -> m (PConf m)
 finalizeDevices p = do
   devices <- getsFladuinoEnv f_devices
-  config <- foldM configureDevice (startConf p) devices
-  finalizeConfig config
+  config <- (startConf p)
+  foldM configureDevice config devices
 
 finalizeTimers :: forall m . MonadFladuino m
                => m ()

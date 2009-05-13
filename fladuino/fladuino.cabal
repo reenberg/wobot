@@ -56,6 +56,7 @@ Library
     Fladuino.Generate
     Fladuino.LiftN
     Fladuino.Monad
+    Fladuino.Pololu3pi
     Fladuino.Reify
     Fladuino.Signals
     Language.F

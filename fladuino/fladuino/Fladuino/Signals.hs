@@ -781,6 +781,22 @@ sif f a = S $ do
         v_out    = s_vout this
         v_f      = n_var nf
 
+salternate :: forall a b eta. (Reify a, Reify b, LiftN eta b) => eta -> eta -> S a -> S b
+salternate alt0 alt1 from = 
+    S $ do n_alt0 <- unN (liftN alt0 :: N b)
+           n_alt1 <- unN (liftN alt1 :: N b)
+           unS $ (sintegrate zero (int n_alt0 n_alt1) from :: S b)
+               where zero :: N Bool
+                     zero = liftN [$exp|False|]
+                     
+                     int :: NCode -> NCode -> N ((a, Bool) -> (b, Bool))
+                     int n_alt0 n_alt1 = liftN [$decls|f (_, False) = ($var:v_alt0, True); f (_, True) = ($var:v_alt1, False)|]
+                         where
+                           v_alt0 = n_var n_alt0
+                           v_alt1 = n_var n_alt1
+
+
+
 infixl 5 >>>
 (>>>) = flip ($)
 
@@ -821,3 +837,28 @@ fromJust = smap rmJust . sfilter isJust
 
       rmJust :: Reify a => N (Maybe a -> a)
       rmJust = liftN [$decls|f (Just x) = x|]
+
+serialWrite :: forall a. (Reify a) => String -> S a -> S ()
+serialWrite string from = S $ do
+    sfrom <- unS from
+    addStream "serialWrite"
+              unitTy
+              (GenericSRep sfrom "serialWrite")
+              (const (return ()))
+              genC $ \this -> do
+    connect sfrom this tau_a (varIn this "")
+  where
+    tau_a :: H.Type
+    tau_a = reify (undefined :: a)
+
+    genC :: SCode m -> FladuinoM ()
+    genC this = do
+      tauf_a <- toF tau_a
+      (params, _) <- ToC.flattenParams tauf_a
+      addCFundef [$cedecl|void $id:c_v_in($params:params) 
+                                   { 
+                                     serialWrite($string:string);
+                                   }|]
+        where
+          v_in    = varIn this ""
+          c_v_in = show v_in

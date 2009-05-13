@@ -203,20 +203,20 @@ ordinary compiler NesC compiler to machine code running on the nodes
 in the sensor network.
 
 \begin{nonfloatingfigure}
-  \includegraphics{flask-design.png}
+  \includegraphics[width=0.9\textwidth]{flask-simple.png}
+  \centering
 \end{nonfloatingfigure}
 
 Thus, when you write a Flask-program, you use ordinary Haskell
 constructs to manipulate which NesC-code should ultimately be
-generated. A program is a description of the flow of data in the
-specific sensor node. A node has some sensor inputs and can output the
-values in different ways e.g. send results to other devices. So you
-specify an acyclic graph connecting its sensors (which generates
-values on request) with its outputs. Flask provides some general
-\textit{signal functions} that combined with \textit{node-level code}
-(code that is actually getting to run on the sensor-nodes) written in
-one of the object-languages, can be used to specify this
-\textit{dataflow graph}.
+generated. A program is a description of the flow of data from inputs
+(e.g. hardware sensor) to outputs (e.g. another node) in the specific
+sensor node. The description takes the form of an acyclic graph
+connecting inputs to outputs, with some optional processing in
+between. For specifying this \textit{dataflow graph}, Flask provides
+some general \textit{signal functions} that can be combined with
+\textit{node-level code} (code that is actually getting to run on the
+sensor-nodes) written in one of the object-languages.
 
 Example dataflow graph from the Flask paper: 
 
@@ -235,7 +235,11 @@ sensor nodes in the first place: the Haskell runtime is too huge to
 fit in the limited memory of a sensor node.
 
 Both languages are integrated into Flask using the quasiquotation
-library \cite{...}.
+library \cite{quasiquote07}, also written by the Flask author. This
+allows you to write the object languages in their original syntax
+inside the Flask/Haskell environment. And it allows you to intersperse
+generation time variables (which results in compile time constants)
+into to object language code.
 
 
 ... 
