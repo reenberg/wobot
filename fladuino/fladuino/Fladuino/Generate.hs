@@ -264,7 +264,8 @@ emptyPlatform :: Platform FladuinoM
 emptyPlatform = Platform { p_digital_pins = []
                          , p_analog_pins = []
                          , p_capabilities = []
-                         , p_base_setup = return () }
+                         , p_base_setup = return ()
+                         , p_default_devices = [] }
 
 defaultPlatform :: Platform FladuinoM
 defaultPlatform = arduinoDuemilanove
@@ -312,10 +313,10 @@ arduinoMega = emptyPlatform { p_digital_pins = [ Pin n $ pc n | n <- [0..53] ]
               where
                 pc pin = maybeInterrupt pin ++ maybePWM pin
                 maybeInterrupt pin
-                    | pin `elem` ([1..7]++[10..13]++[50..53]) = ["interrupt"]
+                    | pin `elem` [1..7]++[10..13]++[50..53] = ["interrupt"]
                     | otherwise = []
                 maybePWM pin
-                    | pin `elem` [2..13] = ["PWM"]
+                    | pin `elem` [2..10]++[13] = ["PWM"]
                     | otherwise = []
 
 -- The pin setup is copied from the Duemilanove specification, it
@@ -352,7 +353,8 @@ finalizeDevices :: forall m . MonadFladuino m
                    => Platform m -> m (PConf m)
 finalizeDevices p = do
   devices <- getsFladuinoEnv f_devices
-  foldM configureDevice (startConf p) devices
+  config <- (startConf p)
+  foldM configureDevice config devices
 
 finalizeTimers :: forall m . MonadFladuino m
                => m ()
