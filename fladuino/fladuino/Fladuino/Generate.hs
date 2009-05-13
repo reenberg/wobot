@@ -264,7 +264,8 @@ emptyPlatform :: Platform FladuinoM
 emptyPlatform = Platform { p_digital_pins = []
                          , p_analog_pins = []
                          , p_capabilities = []
-                         , p_base_setup = return () }
+                         , p_base_setup = return ()
+                         , p_default_devices = [] }
 
 defaultPlatform :: Platform FladuinoM
 defaultPlatform = arduinoDuemilanove
@@ -338,7 +339,8 @@ finalizeDevices :: forall m . MonadFladuino m
                    => Platform m -> m (PConf m)
 finalizeDevices p = do
   devices <- getsFladuinoEnv f_devices
-  foldM configureDevice (startConf p) devices
+  config <- (startConf p)
+  foldM configureDevice config devices
 
 finalizeTimers :: forall m . MonadFladuino m
                => m ()
