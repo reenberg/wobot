@@ -337,7 +337,7 @@ finalizeConfig :: forall m . MonadFladuino m
                   => PConf m -> m ()
 finalizeConfig (PConf _ usages setups) = do forM_ usages applyUsage
                                             liftIO $ putStrLn ("number " ++ show (length setups))
-                                            sequence_ setups
+                                            sequence_ . reverse $ setups
     where applyUsage (DPinUsage pin _ (DigitalOutput initstate)) = do
             addCInitStm [$cstm|pinMode($int:pin, OUTPUT);|]
             let val = if initstate then "HIGH" else "LOW"
