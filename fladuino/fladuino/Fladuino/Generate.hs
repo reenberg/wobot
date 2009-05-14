@@ -185,6 +185,8 @@ void loop()
                         default:
                         break;
                       }
+         } else {
+             service_idle_waiters();
          }
 }
 |]
