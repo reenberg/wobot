@@ -3,12 +3,20 @@
 
 module Fladuino.Pololu3pi where
 
-import Fladuino
-import Fladuino.Devices
+import Prelude hiding (exp)
+
 import Language.C.Quote
 import Language.C.Syntax
+import qualified Language.Hs.Syntax
+import Language.Hs as H
+import Language.Hs.Quote
 import Data.Loc
+import Data.Name
 import Control.Monad.CGen
+import Text.PrettyPrint.Mainland
+
+import Fladuino
+import Fladuino.Devices
 
 -- Device for reading battery level in 3pi robots --
 data BatteryReader = BatteryReader
@@ -62,8 +70,10 @@ instance Device Motors where
     setupDevice Motors = addCInclude "pololu/motors.h"
     uniqueId _ = "motors"
 
-setMotors :: Motors -> S (Integer, Integer) -> S ()
-setMotors Motors = modDev "motors" Motors $
+-- This just calls the pololu set_motors function with the integers on
+-- the input as argument
+set_motors_native :: Motors -> S (Integer, Integer) -> S ()
+set_motors_native Motors = modDev "motors" Motors $
              \Motors c_v_in _ (params, e) -> 
                  let motor0Value = e !! 0
                      motor1Value = e !! 1
@@ -71,6 +81,19 @@ setMotors Motors = modDev "motors" Motors $
                              { 
                                set_motors($exp:motor0Value, $exp:motor1Value);
                              }|]
+-- This interprets the two integers on the input as rotational and 
+set_motors :: Motors -> S (Float, Float) -> S ()
+set_motors Motors from = from >>> f >>> set_motors_native Motors
+    where
+      f :: S (Float, Float) -> S (Integer, Integer)
+      f = smap computeSpeeds
+      computeSpeeds :: N ((Float, Float) -> (Integer, Integer))
+      computeSpeeds = liftN [$decls|
+compute (v, omega) = let motorLvel = v * (if omega <= 0.0 then 1.0 else 1.0 - omega)
+                         motorRvel = v * (if omega >= 0.0 then 1.0 else 0.0 - omega)
+                     in (round (motorLvel * 255.0), round (motorRvel * 255.0))
+                       |]
+
 {-
 
 data ReflectanceSensor = ReflectanceSensor ReflectanceSensorArray 
