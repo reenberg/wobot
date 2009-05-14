@@ -1,0 +1,105 @@
+Name:		fladuino
+Version:	0.0.1
+Cabal-Version:  >= 1.2
+License:	BSD3
+License-File:	LICENSE
+Copyright:	(c) 2006-2008 Harvard University
+Author:		Troels Henriksen <athas@sigkill.dk>, Martin Dybdal <dybber@dybber.dk>, Jesper Reenberb <jesper.reenberg@gmail.com>
+Stability:	alpha
+Category:	Development tool
+Synopsis:	The Flask meta-programming toolkit, crudely modified for arduino.
+
+Build-type:	Custom
+
+Library
+  Build-Depends:	base>=4, syb, haskell98, array, containers, bytestring,
+                        mtl, template-haskell, filepath, editline, process,
+                        directory
+  Cpp-Options:          
+  Hs-source-dirs:	fladuino language massaman syntax
+  Exposed-modules:
+    Check.F
+    Check.F.Bindings
+    Check.F.Builtin
+    Check.F.Check
+    Check.F.Exceptions
+    Check.F.Monad
+    Check.Hs
+    Check.Hs.Bindings
+    Check.Hs.Builtin
+    Check.Hs.Check
+    Check.Hs.Classes
+    Check.Hs.Exceptions
+    Check.Hs.Monad
+    Check.Hs.Types
+    Compiler
+    Compiler.Opt
+    Control.Monad.ContextException
+    Control.Monad.Exception
+    Control.Monad.CGen
+    Control.Monad.Ref
+    Control.Monad.Trace
+    Control.Monad.Unique
+    Data.Digraph
+    Data.IString
+    Data.String.Quote
+    Data.Loc
+    Data.Loc.Pretty
+    Data.Name
+    DepAnal
+    Eval.F
+    Fladuino
+    Fladuino.Driver
+    Fladuino.Exceptions
+    Fladuino.Device
+    Fladuino.Devices
+    Fladuino.Generate
+    Fladuino.LiftN
+    Fladuino.Monad
+    Fladuino.Pololu3pi
+    Fladuino.Reify
+    Fladuino.Signals
+    Language.F
+    Language.F.Parser
+    Language.F.Parser.Exceptions
+    Language.F.Parser.Lexer
+    Language.F.Parser.Monad
+    Language.F.Parser.Parser
+    Language.F.Parser.Tokens
+    Language.F.Pretty
+    Language.F.Smart
+    Language.F.Syntax
+    Language.Hs
+    Language.Hs.Parser
+    Language.Hs.Parser.Exceptions
+    Language.Hs.Parser.Layout
+    Language.Hs.Parser.Lexer
+    Language.Hs.Parser.Parser
+    Language.Hs.Parser.Monad
+    Language.Hs.Parser.Tokens
+    Language.Hs.Parser.Utils
+    Language.Hs.Pretty
+    Language.Hs.Quote
+    Language.Hs.Smart
+    Language.Hs.Syntax
+    Language.C.Parser.Exceptions
+    Language.C.Parser.Lexer
+    Language.C.Parser.Monad
+    Language.C.Parser.Parser
+    Language.C.Parser.Tokens
+    Language.C.Syntax
+    Language.C.Pretty
+    Language.C.Parser
+    Language.C.Quote
+    Match
+    Match.Wadler
+    Text.PrettyPrint.Mainland
+    Transform.F.Simplify
+    Transform.F.Simplify.Lower
+    Transform.F.Simplify.Metrics
+    Transform.F.Simplify.Monad
+    Transform.F.Simplify.OccAnal
+    Transform.F.ToC
+    Transform.Hs.Desugar
+    Transform.Hs.Rename
+    Util

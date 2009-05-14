@@ -1,0 +1,19 @@
+Fladuino requires at least GHC 6.10 and only works with TinyOS 1.x.
+
+INSTALLATION
+------------
+
+The fladuino library should be installed using cabal.
+
+EXAMPLES
+--------
+
+To build the examples, edit examples/common.mk and change the FLADUINO make
+variable to the path to the fladuino source distribution. Then configure and build
+fladuinodb using cabal (you don't need to install it).
+
+temp-query is an example query built using the fladuinodb compiler. Once fladuinodb is
+built, it can be built like any other TinyOS program, with "make PLATFORM,"
+where PLATFORM can be micaz, mica2, telosb or pc.
+
+ewma is a simple EWMA filter using a synthetic data source.

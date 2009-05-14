@@ -1,4 +1,4 @@
-\documentclass[a4paper,oneside, draft]{memoir}
+\documentclass[a4paper, oneside, draft]{memoir}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage[english]{babel}
@@ -13,19 +13,40 @@
 \usepackage{fixme}     % Indsæt "fixme" noter i drafts.
 \usepackage{hyperref}  % Indsæter links (interne og eksterne) i PDF
 
+\usepackage[format=hang]{caption,subfig}
+\usepackage{graphicx}
 
 \renewcommand{\ttdefault}{pcr} % Bedre typewriter font
 %\usepackage[sc]{mathpazo}     % Palatino font
 \renewcommand{\rmdefault}{ugm} % Garamond
-\usepackage[garamond]{mathdesign}
+%\usepackage[garamond]{mathdesign}
 
 %\overfullrule=5pt
 %\setsecnumdepth{part}
 \setcounter{secnumdepth}{-1} % Sæt overskriftsnummereringsdybde. Disable = -1.
+\chapterstyle{hangnum} % changes style of chapters, to look nice.
+
+\makeatletter
+\newenvironment{nonfloatingfigure}{
+  \vskip\intextsep
+  \def\@captype{figure}
+  }{
+  \vskip\intextsep
+}
+
+\newenvironment{nonfloatingtable}{
+  \vskip\intextsep
+  \def\@captype{table}
+  }{
+  \vskip\intextsep
+}
+
+\makeatother
+
 
 \newcommand{\EDSL}{EDSL (Embedded Domain Specific Language) \renewcommand{\EDSL}{ EDSL }}
 
-\title{Controlling embedded devices with funktional reactive programming}
+\title{Controlling embedded devices with functional reactive programming}
 
 \author{Martin Dybdal (dybber@dybber.dk), \\
 Jesper Reenberg (jesper.reenberg@gmail.com) \\ og
@@ -37,6 +58,7 @@ Troels Henriksen (athas@sigkill.dk)}
 
 
 \begin{document}
+
 \maketitle
 
 \begin{abstract}
@@ -47,20 +69,25 @@ Troels Henriksen (athas@sigkill.dk)}
   Frob \cite{frob99} and Yampa \cite{arrowsrobotsfrp02}, has been
   suggested for robot programming, but they require a complete Haskell
   runtime system, which is to large to fit on more
-  resource-constrained devices. We tie these two ends together using,
-  creating a highly declarative language for robot programming using a
-  staged-compilation strategy like the one found in Flask
-  \cite{flask08}, that makes it possible to run programs on devices
-  with few resources. In the creation we've used the Flask-codebase as
-  a starting point and huge parts of the code is left unchanged.
+  resource-constrained devices. 
+
+  We tie these two ends together, creating a highly declarative
+  language for robot programming using a staged compilation-strategy
+  like the one found in Flask \cite{flask08}, that makes it possible
+  to run programs on devices with few resources. In the creation we've
+  used the Flask-codebase as a starting point and huge parts of the
+  code is left unchanged.
 \end{abstract}
 
+\fixme{remove all uses of "`very"'}
 
-\section{Disposition}
+\chapter{Disposition}
 \begin{itemize}
 \item Abstract
 
 \item Preface
+
+\item Introduction
   \begin{itemize}
   \item Brief intro to robot programming
     \begin{itemize}
@@ -73,7 +100,7 @@ Troels Henriksen (athas@sigkill.dk)}
     \end{itemize}
   \end{itemize}
 
-\item Previous Work
+\item Related Work
   \begin{itemize}
   \item Frob
   \item Esterel
@@ -89,7 +116,7 @@ Troels Henriksen (athas@sigkill.dk)}
   \item Node representation
   \item Devices
   \item Interrupts
-  \item Event-queue
+  \item Events
   \end{itemize}
 
 \item Example programs
@@ -105,70 +132,599 @@ Troels Henriksen (athas@sigkill.dk)}
   \end{itemize}
 \end{itemize}  
 
+
+
+\chapter{Preface}
+This paper is written as a 15 ECTS Bachelor project at the Computer
+Science Department (DIKU), University of Copenhagen. The authors are
+Martin Dybdal, Troels Henriksen and Jesper Reenberg. The project is
+supervised by Ken Friis Larsen, assistant professor at DIKU.
+
+\fixme{maybe add thanks to Flask-guys}
+
+
+\chapter{Introduction}
+Robots has been used in the industry for decades, replacing humans in
+repetitive tasks like sewing, assembling and transportation. In the
+last years smaller robots like the Roomba vacuum cleaner has been
+introduced to the consumer market, which is a sign that robots are
+getting cheaper an affordable for more tasks. We will probably see
+robots deployed in many other uses.
+
+
+Electronics is replacing more and more devices that has been
+controlled mechanically before. 
+
+
+Production cost falling => cheaper robots => more robots to be
+programmed. Fast prototyping and re-usability are important for the
+industry.
+
+....
+
+First we establish how the domain of reactive systems is
+identified. We've found the best description in Zhanyong Wan's PhD
+thesis "`Functional Reactive Programming for Real-Time reactive
+systems"'. \fixme{make this a latex-cite}. As he explains we can
+partition computer systems into:
+\begin{itemize}
+\item Transitional systems, that takes some data as input, does some
+  computation on it and delivers some resulting output (an example of this
+  is a compiler).
+\item Interactive systems, where the state of the program switches
+  from computation to getting more input and back (a text editor is an
+  example).
+\item Reactive systems that continuously has to respond to
+  environmental changes. Often reactive systems has to do with our
+  physical environment, either simulating it (e.g. a computer game) or
+  is required to respond to its changes (e.g. a robot).
+\end{itemize}
+
+
+
+
+
+We think that functional reactive programming using a dataflow-based
+approach looks like a good candidate for programming these systems...
+
+
+\fixme{evt. forklaring af "`reactive programming"'. Se }
+
+\chapter{Flask}
+Flask is a domain specific language embedded in Haskell for
+programming sensor networks. A fundamental thing in when learning
+Flask is understanding its compilation-strategy. The basic idea is to
+use Haskell as a metalanguage for several object languages, and
+generate a code in a sensor network language called NesC\footnote{NesC
+  is an extension to C, with some additional constructs suitable for
+  low-level sensor network programming for TinyOS.} when running the
+Haskell program. The generated NesC code can then be translated by an
+ordinary compiler NesC compiler to machine code running on the nodes
+in the sensor network.
+
+\begin{nonfloatingfigure}
+  \includegraphics[width=0.9\textwidth]{images/flask-simple}
+  \centering
+\end{nonfloatingfigure}
+
+Thus, when you write a Flask-program, you use ordinary Haskell
+constructs to manipulate which NesC-code should ultimately be
+generated. A program is a description of the flow of data from inputs
+(e.g. hardware sensor) to outputs (e.g. another node) in the specific
+sensor node. The description takes the form of an acyclic graph
+connecting inputs to outputs, with some optional processing in
+between. For specifying this \textit{dataflow graph}, Flask provides
+some general \textit{signal functions} that can be combined with
+\textit{node-level code} (code that is actually getting to run on the
+sensor-nodes) written in one of the object-languages.
+
+Example dataflow graph from the Flask paper: 
+
+\begin{figure}
+  % ewma example
+\end{figure}
+
+Flask provides two object-languages: NesC and Red. Having NesC as an
+object-language, allows the user to write all programs that's
+expressible in NesC. Red is an amputated Haskell, without recursion,
+recursive datatypes, most of the standard library and curried
+functions. It allows you to write concise functions for simple tasks
+instead of having to deal with NesC. The reason for disallowing these
+things are the same as for not compiling Haskell directly to the
+sensor nodes in the first place: the Haskell runtime is too huge to
+fit in the limited memory of a sensor node.
+
+Both languages are integrated into Flask using the quasiquotation
+library \cite{quasiquote07}, also written by the Flask author. This
+allows you to write the object languages in their original syntax
+inside the Flask/Haskell environment. And it allows you to intersperse
+generation time variables (which results in compile time constants)
+into to object language code.
+
+
+... 
+
+More on:
+  Typechecking
+  Dataflow
+
+
+
+
+\chapter{Overview of the Fladuino system}
+
+Fladuino is a modification of Flask that can be used to program
+Arduino devices in a functional reactive manner.
+
+\section{A note on Arduino}
+
+The term ``Arduino'' is somewhat ambiguous.  It is both a registered
+trademark of the Arduino team that can be used by licensed
+manufacturers, a line of platforms based on various Atmel AVR
+microcontrollers, as well as a general term for any device that is
+mostly compatible with the official Arduino microcontroller boards.
+This paper will use the latter meaning unless otherwise is explicitly
+mentioned.
+
+Additionally, we have only had resources to test our work on the
+Arduino
+Duemilanove\footnote{\url{http://www.arduino.cc/en/Main/ArduinoBoardDuemilanove}},
+Arduino BT\footnote{\url{http://www.arduino.cc/en/Guide/ArduinoBT}},
+Arduino
+Mega\footnote{\url{http://arduino.cc/en/Main/ArduinoBoardMega}},
+and Pololu 3pi\footnote{\url{http://www.pololu.com/catalog/product/975}}.
+
+\section{Terminology and basic \textit{modus operandi}}
+
+As in Flask, Fladuino is implemented as a set of Haskell modules that
+provides facilities for expressing the structure and behavior of a
+\textit{dataflow graph}, connecting \textit{dataflow operators}
+through value-carrying directed graph edges (\textit{wires}).  The
+programmer writes a Haskell program, called the \textit{generator
+  program}, or just the \textit{program}.  We shall refer to the
+compilation of the program as \textit{compile--time}, and execution of
+the program as \textit{generation--time}.  At generation--time, the
+output will be a program source file suitable for further compilation
+with the Arduino tools, but these are not part of the Fladuino system.
+Generation--time may also terminate erroneously if the program
+contains static errors: in this case, an error message with a
+description of the problem will be printed.  Only errors that are
+violations of the Haskell type system can be caught at compile--time,
+and while we have attempted to structure the facilities provided by
+Fladuino such that invalid programs will contain type errors, this
+cannot be done for all error classes.
+
+\fixme{We ought to have a little description of which types of errors is caught
+  at which point. Seems a little quick to mention it but not to clarify}
+
+\section{Structural overview}
+
+Fladuino consists of several interconnected parts combined to form a
+domain-specific language embedded in Haskell.\footnote{We do however
+  make heavy use of Glasgow Haskell language extensions, such as
+  multi--parameter typeclasses and existential types, so Fladuino will
+  not run in a standard implementation of Haskell 98.}  As in Flask,
+this takes the form of providing facilities to express the structure
+of a \textit{dataflow graph}, connecting \textit{dataflow operators}
+through directed graph edges (\textit{wires}).  Conceptually, these
+parts can be divided into the following:
+
+\begin{itemize}
+\item Haskell operators and functions used to describe the dataflow
+  graph have been defined.  It is not intended that these are
+  exclusively used to construct the program, but rather that they are
+  part of a larger Haskell program.  Since a Fladuino program is
+  highly static at run-time, the generating program should be written
+  to support easy configuration and modification.  In a very real
+  sense, the dynamic part of a Fladuino program happens at
+  compile--time.
+\item A compiler is supplied for the Haskell-like programming language
+  Red, which is used to tailor the behavior of stream operators.
+\item A module that encapsulates the hardware facilities offered by
+  the target platform and provides the ability to check whether the
+  requirements made by the users program can be fulfilled.  Arduino is
+  a highly variable hardware platform, no more than a simple
+  microcontroller connected to a basic extensible circuit board, and
+  no assumptions can be made about which electrical components the
+  user might need to control.  Therefore we provide a comprehensive
+  facility for expressing device interaction in a high-level fashion,
+  and automatically check whether any of these interactions are
+  incompatible, or violate basic hardware restrictions.  For example,
+  we might check that the program does not try to interact with a
+  pushbutton connected to a hardware pin that does not support
+  interrupts, or that the program does not express both a
+  potentiometer and diode connected to the same pin.\footnote{Of
+    course, it must be mentioned that we cannot possibly check that
+    the hardware has actually been set up in the way described by the
+    program --- we can only check for internal consistency and
+    violations of basic hardware restrictions, not whether the
+    programs model of the device actually corresponds with reality.}
+
+  Furthermore, since there are several different boards under the
+  Arduino name, all with slightly different capabilities, we permit
+  selection of the exact Arduino variant targeted by the program.
+
+  Finally, since Arduino is a fundamentally extensible platform, we
+  provide facilities for implementing \textit{drivers} for entirely
+  new devices, such that use of these is also automatically
+  sanity-checked.
+\end{itemize}
+
+\section{Framework for specifying peripheral drivers}
+Arduino is a flexible system for general embedded development, with no
+specific application in mind.  The Arduino platform can therefore be
+connected to a diverse amount of peripheral devices, all with their
+own specific functionality and programming interface.  It is thus
+natural to support this diversity as a core concept of Fladuino; not
+(solely) as a library of drivers for various devices, but rather as a
+framework and set of tools provided to the programmer so that Fladuino
+can be extended to transparently support the devices he has need of.
+For demonstration, we have \fixme{not really done yet} written a
+framework for programming the Pololu 3pi robot and the peripherals
+connected to it (electromotors, sensors, buttons, etc.).
+
+Furthermore, Arduino is a broad term encompassing a range of
+more-or-less compatible platforms, though each of them differ slightly
+in their exact capacity.  Apart from variations in such things as
+memory size, they differ in amount and capability of their I/O pins.
+This latter diversity is what we are most concerned with in Fladuino,
+as we would like to statically check (at generation--time) the
+hardware assumptions expressed in the program.  Thus, we also provide
+a facility for describing the exact capabilities of a specific
+Arduino-based platform, and provide default descriptions of common
+Arduino--compatible such as the Arduino Duemilanove, Arduino Mega,
+Arduino BT, and Pololu 3pi.
+
+Defining the driver for each external component consist of a general
+device specification, a set of functions operating on the device and
+eventually some event specifications if the device can generate
+some notion of events.
+
+\fixme{find a good example to add here}
+
+\subsection{Platforms}
+
+A platform is defined by a list of \textit{analog pins},
+\textit{digital pins}, and free--form \textit{capabilities}, the
+latter being a set of strings describing the identity or unusual
+qualities of the platform.  For example, the platform definition for
+the Pololu 3pi robot contains a ``3pi''--capability that exists merely
+to express the fact that the platform supports the quirks of the 3pi
+robot that cannot be expressed through a list of pins.  Any device
+intended to make use of these quirks would explicitly require the
+presence of this capability.
+
+\subsection{Devices}
+A device is any form of peripheral that can be connected to the
+Arduino robot, e.g. buttons, electromotors and potentiometers.  A
+description of a device consists of instructions on how to initialize
+such a device and a way of uniquely identifying a device, so we can
+have a way of referring to the specific device.  If the device is used
+in more than one place, the unique identifier is also used to avoid
+adding the initialization code twice.
+
+\subsection{Events}
+Some devices can generate events.  The simplest example is the push
+button which generates events both when pushed and released.  ...
+
+\chapter{Implementation}
+
+The essence of Fladuino can be condensed to a single, conceptually
+simple problem: translate a high-level functional reactive program to
+a form suitable for execution on the Arduino platform.  We have chosen
+to stop a step short, and merely generate C code meant for further
+compilation through an Arduino-specific compiler.  We have no need of
+the additional power we would gain through generating our own machine
+code, and the additional amount of work required would be very large.
+Flask chooses the same approach, in that it produces NesC--code for
+running on sensor motes, likely for the same reasons.
+
+Our target platform, Arduino, imposes constraints on the resulting
+device-level code.  In particular, the low amount of available main
+memory, and the comparatively large amount of available flash memory
+for program code, suggests that we optimise for low memory usage over
+low code size.  Indeed, as we shall see, we have opted to directly
+express much of the control flow in the code itself, where a typical
+program, with plenty of available memory, might instead choose a more
+data-driven approach.
+
+\section{Basic dataflow translation}
+
+At their heart, both Flask and Fladuino--programs consist of an
+acyclic dataflow graph.  A core part of the system involves the
+translation of this high-level description of the passage of data into
+the procedural target environment.  Fladuino adopts Flask's
+implementation almost verbatim, the details of which will be explained
+within this chapter.
+
+As in Flask, the graph is divided into \textit{atomic subgraphs},
+sections that can be executed without blocking
+
+\subsection{Translation of a simple dataflow graph}
+
+A set of nodes (dataflow operators) connected by a set of directed
+graph edges (wires) make up the entirety of the dataflow graph. Each
+wire is associated with type information regarding the values that
+will be passed along it.  Some dataflow operators have no predecessor
+and exist solely as entry points for data (they can be triggered by
+outside events, such as device or timer interrupts), while others have
+no successors and function as data sinks.  It is required that the
+graph is acyclic, something that is enforced by every operator being
+uniquely identified by (among other things) its predecessor(s).  A
+stream operator can have multiple distinct input, but only a single
+output, though this output can be split so as to send the same output
+value to any number of successors.
+
+For every operator $o$ in the dataflow graph, a set of unary
+functions $o\_in_n()$ and a unary function $o\_out()$ will be
+generated.  The arrival of a value $v$ at $o$ will be implemented by a
+call $o\_in_n(v)$, where the exact choice depends on the wiring of the
+graph.  In the typical case, even when several wires leads to a single
+stream operator, there will be only a single such $o\_in_n()$
+function\footnote{In fact, multiple ``in'' functions are only
+  necessary for operators such as \texttt{szip}, which works by
+  waiting until it has received two values $x, y$ from its two direct
+  predecessors, after which it sends them along to its successors as
+  the tuple $(x,y)$ --- in this case, the two functions will need
+  different types and semantics, as there it is not required that $x$
+  and $y$ have the same type.}.  Depending on the specific semantics
+of $o$, a value $v'\equiv f(v)$ (where $f()$ represents the
+computation done by $o$, the result may not even depend on $v$ at all)
+may be propagated to the successors of $o$.  In this case,
+$o\_in_n(v)$ will call $o\_out(v')$, the implementation of which will
+feature the calls $\forall s \in S(o). s\_in(v')$, where $S(o)$ is the
+set of all successors of $o$.
+
+$o\_in()$ is generated directly by the implementation of the specific
+dataflow operator, but $o\_out()$ is automatically created by Fladuino
+during code generation.  The utility of this division is that the
+implementation of a dataflow operator does not feature tedious
+duplication of the value propagation machinery, yet as it is not
+required that $o\_out()$ is called at all, each dataflow operator can
+still make its own choice whether to propagate a value or not.
+
+It is worth nothing that a value need not contain any information
+apart from its existence; \texttt{()} is perfectly valid as a signal.
+
+
 \bibliographystyle{plain}
 \bibliography{rapport}
 
 \appendix
 
 \chapter{Small guide to Arduino and electronics}
-Arduino is an Open Source project ... hardware ... software
-... prototyping.
 
-\fixme{<<Image of our Duemilanove>>}
+\fixme{We should update the $\backslash$ texttt to uses the listings
+  inline formatting instead when ever c code is listed.}
+
+Description of Arduino from the official
+website\footnote{\url{http://www.arduino.cc/} downloaded the 28. of April 2009 at 15:16}:
+\begin{quotation}
+  Arduino is an open-source electronics prototyping platform based on
+  flexible, easy-to-use hardware and software. It's intended for
+  artists, designers, hobbyists, and anyone interested in creating
+  interactive objects or environments.
+
+  Arduino can sense the environment by receiving input from a variety
+  of sensors and can affect its surroundings by controlling lights,
+  motors, and other actuators. The microcontroller on the board is
+  programmed using the Arduino programming language (based on Wiring)
+  and the Arduino development environment (based on
+  Processing). Arduino projects can be stand-alone or they can
+  communicate with software on running on a computer (e.g. Flash,
+  Processing, MaxMSP).
+\end{quotation}
+
+\begin{nonfloatingfigure}
+  \centering
+  \includegraphics[scale=0.5]{images/ArduinoDuemilanove}
+
+  \caption{Picture of a Arduino Duemilanove. Picture is taken from the Arduino
+    homepage: \url{http://arduino.cc/en/Main/ArduinoBoardDuemilanove}.}
+  
+\end{nonfloatingfigure}
 
 There are different kinds of Arduino boards. All are based on
-different ATmega* processors from Atmel. The older boards used serial
-communication while the newer are connected to a computer through a
-USB cable, but still using the same serial communication protocol
-(i.e. serial through USB). The USB cable also provides power for the
-board.  
+different ATmega processors from Atmel. The older boards used serial
+communication while the newer ones are connected to the computer
+through a USB cable, but still using the same serial communication
+protocol (i.e. serial through USB). The USB cable also serves as a
+power supply.
 
-We will describe the Arduino Duemilanove board we have used in the
-sections that follow, but most (if not all) information will apply to
+
+
+We will describe the Arduino Duemilanove board we have used, in the
+sections that follow, but most information will apply to
 the other Arduino boards as well.
 
 \section{Pins}
 The Arduino board can connect to several external components through
-diverse input and output pins. The pins are split in three sections on
-the board \textit{power}, \textit{analog in} and \textit{digital}.
+diverse input and output pins. The pins are split in three physical sections on
+the board \textit{power}, \textit{analog in} and
+\textit{digital}. Before any IO can happen on a pin, it's mode must be
+set. The mode of a pin defines if it is used to read input or
+write output. The mode is set by the function \texttt{void pinMode(int
+  pinnumber, int mode)} where \textit{pinnumber} is a number between
+0-5 for analog and 0-13 for digital and \textit{mode} is either of the constants
+\texttt{OUTPUT} or \texttt{INPUT}.
 
 \subsection{Power pins}
+% http://arduino.cc/en/Reference/Board?from=Guide.Board
 \begin{itemize}
-\item Gnd: Ground
-\item 5v: constant 5v output
-\item Reset: resets the board when connected to ground. \fixme{tror jeg i
-    hvert fald..}
-\item 3V3: ???
-\item Vin: ???
-\item Sixth pin: ???
+\item Reset: Resets the board when connected to ground.
+\item 3V3: Constant 3,3v output
+\item 5v: Constant 5v output
+\item Gnd: Two ground pins
+\item Vin: The voltage supplied by the external power supply.
 \end{itemize}
+
+\subsection{Digital pins}
+There are 14 digital input and output pins. Six of them can also be
+used to generate analog output by PWM (Pulse Width Modulation). It's
+possible to read a boolean value \texttt{HIGH} and \texttt{LOW} by the
+following function \texttt{bool digitalRead(int pinnumber)} where
+pinnumber is a number between 0 and 13. It's possible to write a
+boolean value by the following function \texttt{void digitalWrite(int
+  pinnumber, int value)} where pinnumber is a number between 0 and 13
+and value is either \texttt{HIGH} or \texttt{LOW}.
 
 \subsection{Analog input}
 There are 6 analog input pins. It's possible to read a voltage level
-from each of them using the function
-\texttt{int analogRead(int pinnumber)} where \textit{pinnumber} is a
-number between 0 and 5 indicating which pin to read from. The result is given
-as an integer in the range from 0 to 1023.
+from each of them using the function \texttt{int analogRead(int
+  pinnumber)} where \textit{pinnumber} is a number between 0 and 5
+indicating which pin to read from. The result is given as an integer
+in the range from 0 to 1023. It's possible to write a voltage level
+(PWM wave, explained below) by the following function \texttt{void
+  analogWrite(int pinnumber, int value)} where \textit{pinnumber} is
+one of (3,5,6,9,10,11) which is located among the 14 digital pins and
+\textit{value} is an integer in the range from 0 to 255. The reason
+why the 6 analog output pins is located among the digital IO pins is
+that the platform uses PWM to generate the desired voltage level.
 
-\subsection{Digital pins}
-There are 14 digital input and output pins.
-\fixme{description of how to use them and special features of the
-  different pins}
+\subsubsection{PWM}
+
+A description of PWM from the Arduino website follows:
+\footnote{\url{http://www.arduino.cc/en/Tutorial/PWM} downloaded the
+  28. of April at 17:14}
+
+\begin{quotation}
+  Pulse Width Modulation, or PWM, is a technique for getting analog
+  results with digital means. Digital control is used to create a
+  square wave, a signal switched between on and off. This on-off
+  pattern can simulate voltages in between full on (5 Volts) and off
+  (0 Volts) by changing the portion of the time the signal spends on
+  versus the time that the signal spends off. The duration of "on
+  time" is called the pulse width. To get varying analog values, you
+  change, or modulate, that pulse width. If you repeat this on-off
+  pattern fast enough with an LED for example, the result is as if the
+  signal is a steady voltage between 0 and 5v controlling the
+  brightness of the LED.
+
+  In the graphic below, the green lines represent a regular time
+  period. This duration or period is the inverse of the PWM
+  frequency. In other words, with Arduino's PWM frequency at about
+  500Hz, the green lines would measure 2 milliseconds each. A call to
+  \texttt{analogWrite()} is on a scale of 0 - 255, such that
+  \texttt{analogWrite(255)} requests a 100\% duty cycle (always on),
+  and \texttt{analogWrite(127)} is a 50\% duty cycle (on half the
+  time) for example.
+
+  \begin{nonfloatingfigure}
+    \centering
+    \includegraphics[scale=0.6]{images/pwm}
+
+    \caption{How 0\%, 25\%, 50\%, 75\% and 100\% PWM is measured by a
+      oscilloscop. Where Each vertical green line indicates the duty
+      cycle}
+    \label{fig:pwm}
+  \end{nonfloatingfigure}
+  
+  \fixme{Better figure text and figure should be non-floating. Jesper
+    has a solution to this in his old Graphics report}
+
+  Once you get this example running, grab your Arduino and shake it
+  back and forth. What you are doing here is essentially mapping time
+  across the space. To our eyes, the movement blurs each LED blink
+  into a line. As the LED fades in and out, those little lines will
+  grow and shrink in length. Now you are seeing the pulse width.
+\end{quotation}
 
 
-\section{Timers}
+
+\section{Timer Interrupts}
+
+\fixme{fix text to support new heading: timer interrupts}
+
 The ATmega168/ATmega328 processors has three different hardware
-timers. One of them is used by arduino software to provide a
+timers. One of them (timer 0) is used by Arduino software to provide a
 \texttt{millis()} function that gives us the amount of milliseconds
 since the timer started and a \texttt{delay} function that actively
-holds the processor occupied for a given time period.
+holds the processor occupied for a given time period. Timer 0 and 2
+uses 8 bit registers and timer 1 uses a 16 bit register. This
+effectively means that timer 0 and 2 can't count to more than 255
+whereas timer 1 can count to 65535. The registers is incremented at
+the speed of the processor, in this case 16MHz, divided by a prescale
+factor which can be either of 1 (no scaleing), 8, 64, 256, 1024 for
+timer 0 and 1 and either of 1, 8, 32, 64, 128, 256, 1024 for timer
+2. The reason why timer 0 and 1 has 2 less prescale factors is that
+they can be wired up with an external clock source and setup to
+trigger on a falling or rising edge. With a prescale of 256 the
+counter is incremented at a rate of $\frac{16000000\mathrm{Hz}}{256} =
+62500\mathrm{Hz}$, which makes the counter overflow at a rate of
+$\frac{16000000\mathrm{Hz}}{255*256} = \frac{62500\mathrm{Hz}}{255} =
+245.1\mathrm{Hz}$ (pr second). This applies to all three timers where the only
+2 variables are the prescale and the size of the counter register.
 
-\fixme{...which are 8 bit and 16 bit timers. Interference problems with the
-PWM output pins.}
+The three timers modes of operation is \texttt{Normal},
+\texttt{CTC}(Clear Timer on Compare match), \texttt{Fast PWM},
+\texttt{Phase Correct PWM} where \texttt{Normal} and \texttt{CTC} are
+the ones of interrest:
+
+\begin{description}
+\item[\texttt{Normal}] mode counts from a optionally specified counter
+  value (initially default set to 0) and increments until it reaches
+  the maximum value 255 where it overruns, restarts from 0, the
+  interrupt is triggered and incrementation of the counter
+  restarts.
+
+\item[\texttt{CTC}] mode has a predefined top value and optionally
+  specified counter value (initially default set to 0). When the
+  counter reaches the defined top value it is cleared to 0, the
+  interrupt is triggered and incrementation of the counter
+  restarts. This gives better resolution of the counter and thus more
+  flexibility than the \texttt{Normal} mode.
+\end{description}
+
+The modes of operation is described in detail in the processors
+datasheet, section 12.7 ``Modes of Operation''.
+
+\subsection{PWM generation}
+
+PWM is generated from these three timers. Pin 5 and 6 are connected to
+timer 0, 9 and 10 to timer 1 and pin 3 and 11 to timer 2. This means
+that the frequency of the PWM signal is controlled by the speed of
+these counters which again is determined by the prescale. When an
+\texttt{analogWrite(pinnumber, value)} is executed, the value is
+compared against a value in a 8-bit counter (one associated to each
+timer). When the counter is less than the specified value it outputs
+\texttt{HIGH} on \textit{pinnumber} and \texttt{LOW} otherwise. This
+generates a square wave with a duty cycle of 50\% since it is
+\texttt{HIGH} on counts $0 \ldots 127$ and \texttt{LOW} on counts $128
+\ldots 255$. Since Arduino uses timer 0 for the various time related
+functions, the prescale on this timer can't be changed unless this
+feature are not to be used. Also because of this the duty cycle of pin
+5 and 6 is not exactly the same as the other 4 pins.
+
+\fixme{Interference problems with the PWM output pins.}  
+
+\section{External Interrupts}
+
+Essentially all the pins on the Arduino board supports external
+interrupts, though only digital pins 2 and 3 is supported directly by
+the Arduino code via the function \texttt{void attachInterrupt(int
+  interruptpin, void (* userfunc)(void), int mode)} where
+\textit{interruptpin} is either 0 or 1, \textit{userfunc} is the user
+function to call when the interrupt triggers and \textit{mode} is one
+of \texttt{LOW}, \texttt{CHANGE}, \texttt{RISING} or
+\texttt{FALLING}. The \textit{mode} property is special for these two
+external interrupt pins, as the other pins only support the
+\texttt{CHANGE} mode. The full descriptions of the modes is in the
+datasheet of the processor section 10.2.1 ``EICRA - External Interrupt
+Control Register A''. To set up external interrupts on the other pins
+the user \textit{ckiick} has added an usable header file to the Arduino
+playground\footnote{\url{http://www.arduino.cc/playground/Main/PcInt}
+  taken 28. of April 2009 at 16:45} also containing an
+example of how it works. This header file defines a function
+\texttt{void PCattachInterrupt(int interruptpin, void (*
+  userfunc)(void), int mode)} where the only difference is that the
+\textit{mode} property only supports \texttt{CHANGE}.
+
 
 \section{Electronics}
 \fixme{Maybe a little refresher on electronics (e.g. how each
   component are drawn in a diagram, if we are going to use diagrams in
   the article). }
+
+
 
 \end{document}

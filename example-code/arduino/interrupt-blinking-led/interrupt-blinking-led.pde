@@ -33,9 +33,9 @@ void setup()
   // Set up timer 1 to generate an interrupt every 1 ms
   //----------------------------------------------------
   TCCR1A = 0x00;
-  TCCR1B = (_BV(WGM12) | // 256 prescale
-            _BV(CS12));  // CTC mode (Clear-on-Terminal-Count), TOP = OCR1A 
-  OCR1A = 15625;         // count up to TOP 
+  TCCR1B = (_BV(CS12) |  // 256 prescale
+            _BV(WGM12)); // CTC mode (Clear-on-Terminal-Count), TOP = OCR1A 
+  OCR1A  = 15625;        // count up to TOP 
   TIMSK1 = _BV(OCIE1A);
   
   sei(); // Enable global interrupts.
