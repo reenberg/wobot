@@ -357,7 +357,8 @@ As in Flask, the dataflow graph is divided into \textit{atomic
 Evaluating such a subgraph consists of supplying a value on the input
 wire, retrieving any values that may show up on output wires, then
 setting up to evaluate any of the successor atomic subgraphs with
-these values.  The notion of an atomic subgraph serves the purpose of
+these values (see \ref{dataflowtranslation} for the implementation
+details).  The notion of an atomic subgraph serves the purpose of
 dividing the dataflow graph into parts that can be evaluated
 atomically without blocking.  While this is conceptually and
 implementation--wise simple, it leaves open the question of what to do
@@ -419,9 +420,79 @@ cannot be guaranteed that this state will not have changed by the time
 the main loop retrieves the element from the event queue.  This means
 that we cannot provide any strict guarantees about the resource usage
 of interrupt handlers, but this is a hardware issue that is
-fundamentally unsolvable in software.  Optimisations can be done, of
-course, but ultimately there are constraints on how much any computer
-can do.
+fundamentally unsolvable in software.  Optimisations can be performed,
+of course, but ultimately there are constraints on how much any
+computer can do.
+
+\subsection{Details of the event queue}
+
+The event queue itself is such a central cog in our event-pumping
+machinery that it is worth paying great attention to its form.  It is
+essentially just a double-ended queue, but as it turns out, the
+textbook implementation of this data structure is undesirable in
+Fladuino.  Normally, one would construct a double-ended queue as a
+linked list or array\footnote{In Fladuino, we would use a linked list
+  rather than an array, as reserving large contiguous blocks of memory
+  on the heap will often not be feasible on the memory-constrained
+  Arduino platform.}, requesting additional memory from the heap as
+necessary, but this runs the risk of the event--queue ballooning to
+great size, especially if the program has an input source that
+constantly triggers new events every few milliseconds.  Since the
+stack and heap share the same memory space, we would run the risk of a
+collision, causing data corruption possibly severe enough to
+completely crash the program (eg. if the procedure return address on
+the topmost stack frame was modified).  While we could modify the
+event queue to perform a check for imminent collision whenever an
+element was about to be added (and if so, ignore the event), we cannot
+do the same whenever we expand the program stack, so we would run the
+risk of the stack growing across the event queue and corrupting its
+data, causing great harm when the main loop gets around to processing
+these now invalid elements.  In conclusion, we cannot permit the stack
+to grow uncontrollably.  An additional problem with using dynamic
+memory is the unpredictable runtime behavior of \texttt{malloc()},
+something that is undesirable in an interrupt handler, as described in
+the preceding section.
+
+The design of our event queue thus has the following constraints:
+
+\begin{itemize}
+\item There must be a limit on the amount of memory it can occupy.
+\item It must not waste too much memory.
+\item Adding an element must have a predictable (and low) runtime
+  cost.
+\end{itemize}
+
+The third constraint also prevents us from being too clever for our
+own good, and for example storing the event-queue in the EEPROM
+available on all Arduino variants in order to avoid using the same
+memory as the program stack.  While an interesting idea, EEPROM writes
+require unacceptable multi-millisecond delays.
+
+Thus, our event queue consists of a statically allocated
+(compile--time fixed-size) array that is not too big, and in which
+element insertions have hard real-time runtime guarantees.  If an
+attempt is made to insert an element into a full event queue, the
+result will be a silent failure.  This is a tradeoff: as mentioned in
+a previous section, we have to accept that it is possible for the
+Arduino to be swamped with more work per time unit (or asked to store
+more data) than it is physically able to do.  All we can do is to
+design Fladuino such that the fatal error conditions are rare, and the
+most common error conditions are survivable.  Stack (or heap)
+corruption will in most cases result in the complete malfunction of
+the program, and are thus the least desirable error case.  In
+Fladuino, use of the heap is very limited (and in fact bounded by the
+static maximum size of the event queue), and stack/heap corruption
+will in practice only occur if the program is large enough to consume
+all available memory with its stack.  The most common error case, on
+the other hand, will be attempting to add an element to a full event
+queue, resulting in a silent failure.  There are many cases where this
+is not desirable, of course, but many reactive programs will not
+experience catastrophic failure if they lose even important events,
+such as button presses.  Still, we recognise that not all event loss
+can be brushed aside as merely an unimportant UI deficiency, and
+therefore we provide a facility, termed \textit{idle waiters}, meant
+to reduce the average load on the event queue and reduce the risk of
+filling it up.
 
 \subsection{Idle waiters}
 
@@ -441,7 +512,7 @@ such as button presses is normally undesirable.
 
 Thus, we provide the notion of \textit{idle waiters}, a list of atomic
 subgraphs that are evaluated in a round--robin fashion whenever the
-event queue is empty.  Thus, they are a useful facility for specifying
+event queue is empty.  They are a useful facility for specifying
 computations that should be done whenever the program is not busy with
 something else.
 
@@ -524,7 +595,7 @@ program, with plenty of available memory, might instead choose a more
 data-driven approach.
 
 \section{Basic dataflow translation}
-
+\label{dataflowtranslation}
 At their heart, both Flask and Fladuino--programs consist of an
 acyclic dataflow graph.  A core part of the system involves the
 translation of this high-level description of the passage of data into
