@@ -80,6 +80,12 @@ Troels Henriksen (athas@sigkill.dk)}
 \end{abstract}
 
 \fixme{remove all uses of "`very"'}
+\fixme{change bibtex style to one that includes URL's in the generated list,
+  such as plain-url or another fancy one.}
+\fixme{change $\backslash$ url to use the hyperref package so real links are
+  used.}
+\fixme{check all quoted text for use of the same quotes!!!!}
+
 
 \chapter{Disposition}
 \begin{itemize}
@@ -936,11 +942,11 @@ standard USB cable consists of 4 wires
   \centering
   \begin{tabular}{|c|c|c|}
     \hline
-    Contact number & Signal name & Wire colour \\
-    1 & VCC & Red \\
-    2 & D- & White \\
-    3 & D+ & Green \\
-    3 & GND & Black \\
+    Contact number & Signal name & Wire colour \\ \hline
+    1 & VCC & Red \\ \hline
+    2 & D- & White \\ \hline
+    3 & D+ & Green \\ \hline
+    3 & GND & Black \\ \hline
   \end{tabular}
   \caption{USB Connector Termination Data. Described in the USB 2.0
     specification\cite{usb20} Table 6-1 ``USB Connector Termination Assignment''}
@@ -965,26 +971,6 @@ shield on the cable so the four wires are free. Then cut away the 2 data wires
 and black). Now the two stripped wires can be connected to the Arduino BT board
 through the power socket (X1). Remember not to reverse the polarity when
 connecting the two wires, ore else the board cold be damaged.
-
-
-\subsection{WT11 iWRAP}
-
-By default the WT11 chip uses the iWRAP firmware which enables the user to
-access Bluetooth functionality with simple ASCII commands sent by a serial
-interface. The Arduino BT board is shipped with the iWRAP firmware version
-2.2.0 as default 
-
-\fixme{and blalblalbla}
-
-\subsubsection{iWRAP commands}
-
-\fixme{brief description of iWRAP commands}
-
-\subsubsection{Firmaware update}
-
-\fixme{show picture http://www.arduino.cc/playground/Learning/BTWT11Interface.}
-\fixme{correct the wrongly pin 3 and pin 8 description on the picture.}
-
 
 \subsection{Binding with the device}
 
@@ -1079,8 +1065,74 @@ binding has been done.
 
 \fixme{not done}
 
-\subsection{Uploading new firmware to the WT11 chip}
+\subsection{iWRAP interface}
 
+By default the WT11 chip uses the iWRAP firmware which enables the user to
+access Bluetooth functionality with simple ASCII commands sent by a serial
+interface. The Arduino BT board is shipped with the iWRAP firmware version 2.2.0
+as default. If the Arduino BT board is used with a host that takes care of the
+binding then there is properly no need for changing any of the WT11 chips
+settings. But if the Arduino BT board is the one who needs to do the binding
+with another Bluetooth device then it is necessary to change the settings and
+therefor also shift into command mode. A thorough description of the different
+iWRAP settings and commands can be seen in the iWRAP 2.2.0 User
+Guide\cite{iWRAP220UG}.
+
+
+\subsubsection{iWRAP modes}
+
+iWRAP can be in two different modes: command mode and data mode. Before sending
+any commands to the iWRAP interface it must be in command mode. The iWRAP
+interface is always in command mode when there is no active connections. When
+there is active connections then the mode can be switched by waiting at least
+one second, sending the sequence \texttt{esc esc esc} and wait at least one
+second, where \texttt{esc} is the defined escape character. When in command mode
+the \texttt{SELECT} command will also change to data mode after changing the
+specified connection to be the current active connection. This is discussed in
+section 3 ``IWRAP MODES'' of the iWRAP 2.2.0 User Guide\cite{iWRAP220UG}.
+
+\subsubsection{Firmaware update}
+
+Bluegiga Technologies support 2 ways of updating the firmware. A proprietary SPI
+protocol that uses a SPI interface or a open UART/USB protocol which uses a
+DFU (Device Firmware Update) interface. 
+
+The downside of the SPI interface is that 
+
+\begin{itemize}
+\item it requires a special SPI cable which basically is a parallel to SPI cable
+  converter.
+
+\item The proprietary BlueSuite software supplied by Bluegiga Technologies used
+  to update the firmware is only released for Windows\footnote{It has not been
+    confirmed whether or not it works on Linux through Wine}.
+
+\item It is necessary to have direct access to the WT11 chip's SPI interface.
+\end{itemize}
+
+Downside of DFU interface is that 
+
+\begin{itemize}
+\item it requires special version of the firmware which can be obtained by
+  contacting the Bluegiga support team.
+
+\item It is however not all firmware versions that can be update through the DFU
+  interface\footnote{``... For example iWRAP 2.1.0 can not be updated to iWRAP
+    2.2.0, since the DFU boot loader code has changed''
+    (\url{http://techforum.bluegiga.com/faq_item?id=10377296} 17th of may at
+    19:36)}.
+
+\item It is necessary to have access to the WT11 UART or USB
+  interface. This can however be done by uploading a program to the host
+  processor through Bluetooth and make it do the firmware upgrade.
+\end{itemize}
+
+The DFU protocol description can be retrieved by contacting the Bluegiga support
+team.
+
+Bluegiga Technologies recommends to buy or build\cite{oik_chematic} a OIK
+(OnBoard Installation Kit), but the Arduino community has posted an
+alternative schematic\cite{oik_chematic_arduino}.
 
 \section{Electronics}
 \fixme{Maybe a little refresher on electronics (e.g. how each
