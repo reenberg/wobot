@@ -105,6 +105,8 @@ data FladuinoEnv m = FladuinoEnv
     ,  f_channel_receiving   :: Map.Map FlowChannel FlowActivity
     ,  f_channel_sending     :: Map.Map FlowChannel FlowActivity
     ,  f_channel_connections :: Map.Map FlowChannel [(SCode m, H.Var)]
+
+    ,  f_idle_waiters      :: [(SCode m, H.Var)]
     }
 
 emptyFladuinoEnv :: FladuinoEnv m
@@ -137,6 +139,8 @@ emptyFladuinoEnv = FladuinoEnv
     ,  f_channel_receiving = Map.empty
     ,  f_channel_sending = Map.empty
     ,  f_channel_connections = Map.empty
+
+    ,  f_idle_waiters = []
     }
 
 type NCodeID = Int
@@ -213,6 +217,7 @@ data SRep m  =  SConst NCode (SCode m)
              |  DeviceWrite (SCode m) String
              |  DeviceRead (SCode m) String
              |  OnEvent String
+             |  Idle String
              |  GenericSRep (SCode m) String -- For random new operators.
   deriving (Eq, Ord, Show)
 
@@ -362,6 +367,12 @@ class (MonadCompiler m,
                        modifyFladuinoEnv $ \s -> 
                            s { f_devices = (DRef d) : (f_devices s) }
                      return ()
+
+    addIdleWaiter :: SCode m -> H.Var -> m ()
+    addIdleWaiter stream v = do
+        liveVar v
+        modifyFladuinoEnv $ \s ->
+            s { f_idle_waiters = (stream, v) : f_idle_waiters s }
 
     useChannel :: FlowChannel -> F.Type -> m ()
     useChannel chan tau = do
