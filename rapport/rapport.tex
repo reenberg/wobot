@@ -79,6 +79,10 @@ Troels Henriksen (athas@sigkill.dk)}
   code is left unchanged.
 \end{abstract}
 
+\clearpage 
+
+\tableofcontents*
+
 \fixme{remove all uses of "`very"'}
 \fixme{change bibtex style to one that includes URL's in the generated list,
   such as plain-url or another fancy one.}
@@ -664,7 +668,7 @@ apart from its existence; \texttt{()} is perfectly valid as a signal.
 
 \appendix
 
-\chapter{Small guide to Arduino and electronics}
+\chapter{Small guide to Arduino}
 
 \fixme{We should update the $\backslash$ texttt to uses the listings
   inline formatting instead when ever c code is listed.}
@@ -1091,11 +1095,14 @@ the \texttt{SELECT} command will also change to data mode after changing the
 specified connection to be the current active connection. This is discussed in
 section 3 ``IWRAP MODES'' of the iWRAP 2.2.0 User Guide\cite{iWRAP220UG}.
 
+\fixme {Mention the mux mode.}
+
 \subsubsection{Firmaware update}
 
 Bluegiga Technologies support 2 ways of updating the firmware. A proprietary SPI
-protocol that uses a SPI interface or a open UART/USB protocol which uses a
-DFU (Device Firmware Update) interface. 
+protocol that uses a SPI interface or a open DFU (Device Firmware Update)
+protocol\footnote{The DFU protocol description can be retrieved by contacting
+  the Bluegiga support team.} which uses a DFU interface over a UART or USB connection.
 
 The downside of the SPI interface is that 
 
@@ -1127,14 +1134,14 @@ Downside of DFU interface is that
   processor through Bluetooth and make it do the firmware upgrade.
 \end{itemize}
 
-The DFU protocol description can be retrieved by contacting the Bluegiga support
-team.
-
 Bluegiga Technologies recommends to buy or build\cite{oik_chematic} a OIK
 (OnBoard Installation Kit), but the Arduino community has posted an
 alternative schematic\cite{oik_chematic_arduino}.
 
-\section{Electronics}
+\fixme{this section needs restructuring.}
+
+\chapter{Guide to electronics}
+
 \fixme{Maybe a little refresher on electronics (e.g. how each
   component are drawn in a diagram, if we are going to use diagrams in
   the article). }
