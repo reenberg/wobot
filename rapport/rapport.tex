@@ -713,11 +713,207 @@ datasheet of the processor section 10.2.1 ``EICRA - External Interrupt
 Control Register A''. To set up external interrupts on the other pins
 the user \textit{ckiick} has added an usable header file to the Arduino
 playground\footnote{\url{http://www.arduino.cc/playground/Main/PcInt}
-  taken 28. of April 2009 at 16:45} also containing an
+  taken 28th of April 2009 at 16:45} also containing an
 example of how it works. This header file defines a function
 \texttt{void PCattachInterrupt(int interruptpin, void (*
   userfunc)(void), int mode)} where the only difference is that the
 \textit{mode} property only supports \texttt{CHANGE}.
+
+
+
+\section{Arduino BT}
+
+The Arduino BT board is different from all the other Arduino boards since it
+comes with a Bluegiga WT11 Bluetooth chip (from now refered to as WT11 chip)
+instead of the USB mount. This means that the board can be programmed and
+communicated with through a wireless connection. The communication protocol is
+still RS232 so besides the wireless communication nothing is different about
+this.
+
+Other main differences as listed at the Arduino
+homepage\footnote{\url{http://arduino.cc/en/Main/ArduinoBoardBluetooth} taken
+  16th of May at 23:57}:
+
+\begin{itemize}
+\item The use of a DC-DC convertor, allowing the board to be powered with a
+  minimum of 1.2 V, but with a maximum of 5.5 V. \textbf{Higher voltages or
+    reversed polarity in the power supply will kill the board.}
+
+\item A surface-mounted ATmega168 (as with the Arduino Mini). This doubles the
+  amount of space available for your sketches and adds three more PWM pins and
+  two more analog inputs.
+
+\item Pin 7 is connected to the reset pin of the bluetooth module. 
+
+\item Only use serial communication at 115200 baud; this is the speed that the
+  module has been configured to use.
+\end{itemize}
+
+As stated digital pin 7 is reserved and connected to the WT11 chip's reset
+pin. This means that if a program does a \texttt{digitalWrite(7, HIGH)} and
+shortly after does a \texttt{digitalWrite(7, LOW)} the WT11 chip will be
+reset. This will however not restore the factory settings of the WT11 chip as
+all changes to settings are persistent.
+
+In the below sections it is assumed that the user is using a Unix-like operating
+system with Bluetooth associated packages installed, unless otherwise noted.
+
+\subsection{Powering through a USB  cable}
+
+As the board doesn't have the USB mount it is not able to draw power from the
+host as most of the other Arduino boards has. This means that the board must be
+powered by an external power supply (E.g. batteries). Powering the board when
+next to a computer can however still be done through a modified USB cable. As a
+standard USB cable consists of 4 wires
+
+\begin{table}[h!]
+  \centering
+  \begin{tabular}{|c|c|c|}
+    \hline
+    Contact number & Signal name & Wire colour \\
+    1 & VCC & Red \\
+    2 & D- & White \\
+    3 & D+ & Green \\
+    3 & GND & Black \\
+  \end{tabular}
+  \caption{USB Connector Termination Data. Described in the USB 2.0
+    specification\cite{usb20} Table 6-1 ``USB Connector Termination Assignment''}
+  \label{tab:ArduinoBT:Connector_Termination_Data}
+\end{table}
+
+According to the USB 2.0 specification\cite{usb20} Table 7-7 ``DC Electrical
+Characteristics'' the VCC wire supplies a minimum of 4.75v and a maximum of
+5.25v which is no problem as the Arduino BT board can handle up to 5.5v and as
+low as 1.2v. There is however always a slight possibility of faulty equipment
+which could damage the board.
+
+The wire colours for a standard USB 2.0 cable are defined in the
+specification\cite{usb20} Figure 6-2 ``USB Standard Detachable Cable Assembly''
+but it is not all manufactures that comply with this.
+
+To construct the USB power cable all that needs done is to cut off the connector
+opposite of the Standard-A connector, which is the one that fits in the
+computer. Next strip off the a few cm of the PVC jacket and the copper/aluminium
+shield on the cable so the four wires are free. Then cut away the 2 data wires
+(green and white) and strip off 0.5cm of the VCC and GND wires insulations (red
+and black). Now the two stripped wires can be connected to the Arduino BT board
+through the power socket (X1). Remember not to reverse the polarity when
+connecting the two wires, ore else the board cold be damaged.
+
+
+\subsection{WT11 iWRAP}
+
+By default the WT11 chip uses the iWRAP firmware which enables the user to
+access Bluetooth functionality with simple ASCII commands sent by a serial
+interface. The Arduino BT board is shipped with the iWRAP firmware version
+2.2.0 as default 
+
+\fixme{and blalblalbla}
+
+\subsubsection{iWRAP commands}
+
+\fixme{brief description of iWRAP commands}
+
+\subsubsection{Firmaware update}
+
+\fixme{show picture http://www.arduino.cc/playground/Learning/BTWT11Interface.}
+\fixme{correct the wrongly pin 3 and pin 8 description on the picture.}
+
+
+\subsection{Binding with the device}
+
+Before the board can be programmed or communicated with, it must be binded with
+a host. To bind with a Bluetooth device, its MAC address is needed. A list of
+names and MAC addresses of all Bluetooth devices in the area can be found with
+the following command:
+
+\begin{verbatim}
+hcitool scan
+\end{verbatim}
+
+A factory Arduino BT board is always named \textit{ArduinoBT} and has the PIN
+12345. There are at least 2 ways of handling Bluetooth PIN authentication. The
+simplest ways is to put the PIN and nothing else in the file
+\textit{/etc/bluetooth/pin} before binding with the device this however can be
+complicated when binding with multiple devices with different PIN as the file
+can only contain a single PIN at a time. The other way is to use
+\texttt{bluetooth-applet} (Gnome) or \texttt{kbluetooth4} (KDE), which both
+places a icon in the tray and queries the user for a PIN when required by the
+Linux Bluetooth stack.
+
+Whichever way is used, the host can now bind with the Arduino BT board with the
+following command
+
+\begin{verbatim}
+rfcomm bind rfcommX xx:xx:xx:xx:xx:xx 1
+\end{verbatim}
+
+where \texttt{rfcommX} is the desired host device that is to be used ex
+\texttt{rfcomm0}, \texttt{xx:xx:xx:xx:xx:xx} is the boards MAC Address and
+\texttt{1} is the channel to be used. A factory Arduino BT board has only
+enabled \texttt{SSP} (Serial Port Profile) and thus this is located on channel 1. It is
+possible to query which Bluetooth profiles the Arduino BT board exposes by the
+following command
+
+\begin{verbatim}
+sdptool browse xx:xx:xx:xx:xx:xx
+\end{verbatim}
+
+To find the channel, just locate \texttt{SPP} in the returned list and see what channel
+the \texttt{rfcomm} protocol is associated with. 
+
+\subsection{Important program setup}
+
+When creating a program for the Arduino BT it is important to remember a few
+things in the \texttt{setup()} function. This is to ensure that the WT11 chip is
+always configured when the program starts. The WT11 chip remembers its settings even
+if it loses power. This means that if the settings are change at some point of
+the program execution then at least the basic settings will be set to a known
+default when the program is restarted. It is however still possible to change
+the settings of the WT11 chip so it won't accept connections from any
+hosts. This is addressed in the below sections.
+
+\begin{table}
+  \centering
+\begin{verbatim}
+  pinMode(7, OUTPUT);
+  Serial.begin(115200);
+  digitalWrite(7, HIGH);
+  delay(10);
+  digitalWrite(7, LOW);
+  delay(2000);
+
+  Serial.println("SET BT PAGEMODE 3 2000 1");
+  Serial.println("SET BT NAME ARDUINOBT");
+  Serial.println("SET BT ROLE 0 f 7d00");
+  Serial.println("SET CONTROL ECHO 0");
+  Serial.println("SET BT AUTH * 12345");
+  Serial.println("SET CONTROL ESCAPE - 00 1");
+  Serial.println("SET CONTROL BAUD 115200,8n1");
+\end{verbatim}
+  \caption{asd}
+  \label{tab:ArduinoBT:Initial_Setup_code}
+\end{table}
+
+
+The WT11 chip is connected to the Atmega chip by its RX and TX lines, which
+means that communication is done through Arduino's serial communication
+capabilities. The WT11 chip communicates at a baud rate of 115200 thus it is
+important to use this speed in the \texttt{Serial.begin} function. Even though
+the WT11 chip's iWRAP firmware can be changed to use another baud rate, this is
+not recommended and will most likely not work. The name that should be visible
+when searching to Bluetooth devices is configured by the \textit{SET BT NAME}
+command, and the PIN is configured by\texttt{SET BT AUTH *} command. Other iWRAP
+commands and their definitions can be seen in the ``iWRAP User Guide''.
+
+\subsection{Communication with the Atmega chip without Bluetooth}
+
+If for some reason the Arduino BT board refuses to accept connections after
+binding has been done. 
+
+\fixme{not done}
+
+\subsection{Uploading new firmware to the WT11 chip}
 
 
 \section{Electronics}
