@@ -92,7 +92,7 @@ unsigned char timer1_load_value;
 // Sets up timer1, so it fires with the given frequency.
 // Currently it supports a range going from 0.4 interrupts/second
 // to 16000000 interrupts/second.
-void SetupTimer2(float timeoutFrequency, void (*handler)() ){
+void SetupTimer1(float timeoutFrequency, void (*handler)() ){
   timer1_interrupt_handler = handler;
 
   // How high the 16-bit TCNT1 register can count before overflowing
@@ -123,7 +123,7 @@ void SetupTimer2(float timeoutFrequency, void (*handler)() ){
   // has to be made before we hit the wanted interrupt frequency. 
   // And results in an initial value that gives this amount of incrementations
   // before firering.
-  timer1_load_value = timer1_max - (timerClockFreq/timeoutFrequency);
+  timer1_load_value = (timer1_max - (timerClockFreq/timeoutFrequency)) + 1;
 
   TCCR1A = 0;   // Normal counting mode  (WGM21:0 = 000)
 
