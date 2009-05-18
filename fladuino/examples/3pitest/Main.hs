@@ -20,19 +20,37 @@ import Fladuino.Devices
 import Fladuino.Pololu3pi
 
 
-red_led = diode 1 False
-green_led = diode 7 False
+stepSize = 0.01
+speed = 0.5
+rotationLimit = 0.5
+
 
 main :: IO ()
 main =
     defaultMain $ do
-      genStreams $ map unS [motor_control, 
-                            clock 500 >>> (toggle red_led), 
-                            clock 500 >>> (toggle green_led), 
-                            clock 100 >>> (turnOff green_led)]
-        where
-          motor_control = clock 1000 >>> salternate [$exp|(255, 255)|]
-                                                    [$exp|(-255, -255)|]
-                                     >>> setMotors Motors
+      addCInclude "math.h"
+      addCImport "round" [$ty|Float -> Integer|] [$cexp|round|]
+      genStream $ clock 1 >>> smooth
+                             >>> (smap [$decls|f x = ($flo:speed, x)|] :: S Float -> S (Float, Float))
+                             >>> set_motors Motors
+          where 
+            smooth  :: S () -> S Float
+            smooth = sintegrate startingState update
+            startingState :: N (Float, Bool)
+            startingState = liftN [$exp|(0.0, True)|] -- A True state means going right.
+            update :: N (((), (Float, Bool)) -> (Float, (Float, Bool)))
+            update = liftN [$decls|
+f (_, (x, True)) | x <= 0.0 - $flo:rotationLimit =   (x1, (x1, False)) where x1 = x - $flo:stepSize
+f (_, (x, True)) =              (x1, (x1, True))  where x1 = x - $flo:stepSize
+f (_, (x, False)) | x >= $flo:rotationLimit = (x1, (x1, True))  where x1 = x + $flo:stepSize
+f (_, (x, False)) =             (x1, (x1, False)) where x1 = x + $flo:stepSize|]
 
 
+{-
+
+main :: IO ()
+main =
+    defaultMain $ do
+      genStream $ clock 1000 >>> (salternate ([$exp|(255, -255)|]) ([$exp|(-255, 255)|]))
+                          >>> set_motors_native Motors
+-}

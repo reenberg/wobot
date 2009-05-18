@@ -244,6 +244,15 @@ instance Device Potentiometer where
 instance AnalogInputDevice Potentiometer where
     genReadCode (Potentiometer pin) resultvar = [[$cstm|$id:resultvar = analogRead($int:pin);|]]
 
+
+data PotentiometerChangeEvent = PotentiometerChangeEvent Potentiometer
+                                deriving (Eq, Show)
+
+instance Event PotentiometerChangeEvent () where
+    setupEvent e@(PotentiometerChangeEvent (d@(Potentiometer pin))) = 
+                                                 return $ mkEvent e Nothing Nothing
+    interruptPins (PotentiometerChangeEvent (Potentiometer pin)) = [54+pin]
+
 {-
 
 instance Event PotetiometerChangeEvent () where
