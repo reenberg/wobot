@@ -90,7 +90,7 @@ set_motors Motors from = from >>> f >>> set_motors_native Motors
       computeSpeeds :: N ((Float, Float) -> (Integer, Integer))
       computeSpeeds = liftN [$decls|
 compute (v, omega) = let motorLvel = v * (if omega <= 0.0 then 1.0 else 1.0 - omega)
-                         motorRvel = v * (if omega >= 0.0 then 1.0 else 0.0 - omega)
+                         motorRvel = v * (if omega >= 0.0 then 1.0 else 1.0 + omega)
                      in (round (motorLvel * 255.0), round (motorRvel * 255.0))
                        |]
 
