@@ -1,3 +1,4 @@
+
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FunctionalDependencies #-}
@@ -148,7 +149,7 @@ genStreamsForPlatform p ss = do
     genC Set.empty scodes'
     config <- finalizeDevices p
     finalizeConfig config
-    finalizeTimers
+    finalizeTimers p
     finalizeEvents
     finalizeIdleWaiters
 --    finalizeADCs
@@ -270,7 +271,9 @@ emptyPlatform = Platform { p_digital_pins = []
                          , p_analog_pins = []
                          , p_capabilities = []
                          , p_base_setup = return ()
-                         , p_default_devices = [] }
+                         , p_default_devices = [] 
+                         , p_timerid = 1 -- ^ The timer used by the "clock" primitive
+                         }
 
 defaultPlatform :: Platform FladuinoM
 defaultPlatform = arduinoDuemilanove
@@ -305,6 +308,7 @@ arduinoBT = emptyPlatform { p_digital_pins = [ Pin n $ pc n | n <- [0..6] ++ [7.
                                               addCInitStm [$cstm|Serial.println("SET CONTROL ECHO 0");|]
                                               addCInitStm [$cstm|Serial.println("SET BT AUTH * 12345");|]
                                               addCInitStm [$cstm|Serial.println("SET CONTROL ESCAPE - 00 1");|]
+                          , p_timerid = 2
                           }
               where
                 pc pin | pin `elem` [3, 5, 6, 9, 10, 11] = ["PWM", "interrupt"]
@@ -360,15 +364,22 @@ finalizeDevices p = do
   foldM configureDevice config devices
 
 finalizeTimers :: forall m . MonadFladuino m
-               => m ()
-finalizeTimers = do
+               => Platform m -> m ()
+finalizeTimers platform = do
     timersMap <- getsFladuinoEnv $ \s -> f_timers s
     let timers = Map.toList timersMap
     -- We must at least have 0.24 interrupts each second for TIMER1
-    let interruptsPerSecond = max 0.24 (1000 / (fromIntegral . fst $ Map.findMin timersMap))
+    let interruptsPerSecond = (1000 / (fromIntegral . fst $ Map.findMin timersMap))
+    let interruptsPerSecondLimited = case p_timerid platform of
+                                       1 ->         max 0.24 interruptsPerSecond
+                                       otherwise -> max 62 interruptsPerSecond
+    let timerSetupFunc = case p_timerid platform of
+                          1 ->         "SetupTimer1"
+                          otherwise -> "SetupTimer2"
+                               
     when (timers /= []) $ do 
                    addCInclude "common/timersupport.h"
-                   addCInitStm [$cstm|SetupTimer1($float:interruptsPerSecond, &timer_handler);|]
+                   addCInitStm [$cstm|$id:timerSetupFunc($float:interruptsPerSecondLimited, &timer_handler);|]
     counterCode <- forM timers $ \(period, timerC) ->
         finalizeTimer period timerC interruptsPerSecond
     let (funcs, counterDefs, counterStms) = unzip3 counterCode

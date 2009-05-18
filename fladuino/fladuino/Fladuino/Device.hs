@@ -27,6 +27,7 @@
 -- THIS SOFTWARE IS PROVIDED BY THE UNIVERSITY AND CONTRIBUTORS ``AS IS'' AND
 -- ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 -- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+
 -- ARE DISCLAIMED.  IN NO EVENT SHALL THE UNIVERSITY OR CONTRIBUTORS BE LIABLE
 -- FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 -- DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
@@ -90,7 +91,8 @@ data MonadFladuino m => Platform m = Platform
     , p_analog_pins :: [Pin]
     , p_capabilities :: [Capability]
     , p_base_setup :: m ()
-    , p_default_devices :: [DRef m] }
+    , p_default_devices :: [DRef m]
+    , p_timerid :: Integer }
 
 data MonadFladuino m => PConf m = PConf (Platform m) [Usage] [m ()]
 
