@@ -491,6 +491,9 @@ cIdent s =
                      ' ' -> '_'
                      '(' -> 'L'
                      ')' -> 'R'
+                     '[' -> 'L'
+                     ']' -> 'R'
+                     ',' -> '_'
                      c -> c) s
   in
     case Char.isDigit $ head s of
