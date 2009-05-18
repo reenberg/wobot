@@ -321,7 +321,7 @@ arduinoMega = emptyPlatform { p_digital_pins = [ Pin n $ pc n | n <- [0..53] ]
                     | pin `elem` [1..7]++[10..13]++[50..53] = ["interrupt"]
                     | otherwise = []
                 maybePWM pin
-                    | pin `elem` [2..10]++[13] = ["PWM"]
+                    | pin `elem` [2..7]++[10..13] = ["PWM"]
                     | otherwise = []
 
 -- The pin setup is copied from the Duemilanove specification, it
@@ -471,18 +471,19 @@ finalizeIdleWaiters = do
                       finalizeWaiter waiter i
     let (timingDefs, stms) = unzip waitercode
     let stms' = intersperse [$cstm|break;|] stms
-    addCFundef [$cedecl|
-void service_idle_waiters (void)
-{
-  static unsigned int p = 0;
-  unsigned long sincelast;
-  $decls:timingDefs
-  switch (p) {
-    $stms:stms'
-  }
-  p = (p + 1) % $int:waitercount;
-}
-|]
+    addCFundef (if (waitercount >= 1) then 
+                    [$cedecl|
+                     void service_idle_waiters (void)
+                     {
+                       static unsigned int p = 0;
+                       unsigned long sincelast;
+                       $decls:timingDefs
+                       switch (p) {
+                         $stms:stms'
+                       }
+                       p = (p + 1) % $int:waitercount;
+                     }
+                     |] else [$cedecl|void service_idle_waiters (void) { }|])
   where
     finalizeWaiter :: MonadFladuino m => (SCode m, H.Var) -> Integer -> m (InitGroup, Stm)
     finalizeWaiter (s, v) i = do
