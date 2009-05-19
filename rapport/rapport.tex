@@ -180,17 +180,17 @@ behavior will often could be achieved programmatically.
   specific about arduino}
 
 Our goal is to provide a framework that facilitates robot programming
-(specifically for the Arduino-platform), but doing that also involves
-writing code for that kind of input-output systems which doesn't
-necessarily have any autonomous behavior. So there are actually two
-steps: making a library suitable for programming sensors, actuators
-and connecting them, and secondly facilitate programming autonomous
-robots.
+(specifically for the Arduino-platform), but such a framework also has
+to provide features for programming the kind of input-output systems
+which doesn't necessarily have any autonomous behavior. So there are
+actually two steps: making a library suitable for programming sensors,
+actuators and connecting them, and secondly facilitate programming
+autonomous robots.
 
 Robots are reactive systems. We've found the best description of what
 distinguishes a reactive system in Zhanyong Wan's PhD
 thesis "`Functional Reactive Programming for Real-Time reactive
-systems"'. \fixme{make this a latex-cite}. As he explains we can
+systems"'. \fixme{make this a latex-cite} As he explains we can
 partition computer systems into:
 \begin{itemize}
 \item Transitional systems, that takes some data as input, does some
@@ -212,7 +212,7 @@ called signals.
 \fixme{something about why we've chosen Arduino}.
 
 Because the Arduino has a relatively limited computation capacity, we
-had to find a way of programming these systems ... 
+had to find a way of programming these systems \ldots
 
 \fixme{flask, dataflow, etc.}
 
@@ -268,10 +268,7 @@ generation time variables (which results in compile time constants)
 into object language code.
 
 
-
-
-... 
-
+\begin{verbatim}
 More on:
   Tilsvining af Red. Mangler:
     - Type-klasser (hvilket betyder at konstanter f.eks. "`0"' ikke
@@ -282,7 +279,7 @@ More on:
     - 
   Typechecking
   Dataflow
-
+\end{verbatim}
 
 
 
