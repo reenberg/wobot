@@ -203,3 +203,65 @@ onEvent event = S $ do
       where
         v_in  = varIn this ""
         v_out = s_vout this
+
+postThenWait :: forall a eta e t. (Reify a, Reify t, LiftN eta (a -> ()), Event e t)
+                => eta -> e -> S a -> S t
+postThenWait poster event from = S $ do
+    nposter <- unN $ (liftN poster :: N (a -> ()))
+    sfrom   <- unS from
+    addStream  "postThenWait"
+               unitTy
+               (Poster sfrom $ show event)
+               genHs
+               (genC nposter) $ \this -> do 
+      connect sfrom this tau_a (varIn this "")
+      connectEvent event this (varIn this "receiver")
+    where
+      tau_a = reify (undefined :: a)
+      tau_t = reify (undefined :: t)
+
+      genHs this = do
+        addCImport c_v_in   [$ty|$ty:tau_a -> ()|] [$cexp|$id:c_v_in|]
+        addCImport c_v_recv [$ty|$ty:tau_t -> ()|] [$cexp|$id:c_v_recv|]
+          where
+            v_in     = varIn this ""
+            c_v_in   = show v_in
+            v_recv   = varIn this "receiver"
+            c_v_recv = show v_recv
+
+      genC :: NCode -> SCode m -> FladuinoM ()
+      genC nf this = do
+        tauf_a     <- toF tau_a
+        (a_params, a_params_ce) <- ToC.flattenParams tauf_a
+        post       <- hcall v_f $ ToC.CUnboxedData tauf_a [a_params_ce]
+        tauf_t     <- toF tau_t
+        (t_params, t_params_ce) <- ToC.flattenParams tauf_t
+        e_out      <- hcall v_out $ ToC.CUnboxedData tauf_t [t_params_ce]
+        addCDecldef [$cedecl|unsigned char $id:enabled = 0;|]
+        addCFundef [$cedecl|
+void $id:c_v_in($params:a_params)
+{
+  $exp:post;
+  $id:enabled = 1;
+}
+|]
+        addCFundef [$cedecl|
+void $id:c_v_recv($params:t_params)
+{
+  if ($id:enabled) {
+    $id:enabled = 0;
+    $exp:e_out;
+  }
+}
+|]
+        where
+          v_in     = varIn this ""
+          c_v_in   = show v_in
+          v_recv   = varIn this "receiver"
+          c_v_recv = show v_recv
+          v_f      = n_var nf
+          enabled  = ident this "enabled"
+          v_out    = s_vout this
+
+delayUntilEvent :: forall a e t. (Reify a, Event e t) => e -> S a -> S t
+delayUntilEvent = postThenWait [$exp|\_ -> ()|]

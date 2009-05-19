@@ -218,6 +218,7 @@ data SRep m  =  SConst NCode (SCode m)
              |  DeviceRead (SCode m) String
              |  OnEvent String
              |  Idle String
+             |  Poster (SCode m) String
              |  GenericSRep (SCode m) String -- For random new operators.
   deriving (Eq, Ord, Show)
 
