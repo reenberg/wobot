@@ -23,7 +23,7 @@
 
 %\overfullrule=5pt
 %\setsecnumdepth{part}
-\setcounter{secnumdepth}{-1} % Sæt overskriftsnummereringsdybde. Disable = -1.
+\setcounter{secnumdepth}{0} % Sæt overskriftsnummereringsdybde. Disable = -1.
 \chapterstyle{hangnum} % changes style of chapters, to look nice.
 
 \makeatletter
@@ -74,9 +74,13 @@ Troels Henriksen (athas@sigkill.dk)}
   We tie these two ends together, creating a highly declarative
   language for robot programming using a staged compilation-strategy
   like the one found in Flask \cite{flask08}, that makes it possible
-  to run programs on devices with few resources. In the creation we've
-  used the Flask-codebase as a starting point and huge parts of the
-  code is left unchanged.
+  to run reactive control programs on devices with few resources. In
+  the creation we've used the Flask-codebase as a starting point and
+  huge (isolated) parts of the code is left unchanged. Our
+  contribution includes functionality suitable for the robot domain,
+  including a framework for specifying interfaces to peripherals (like
+  sensors, motors or LCD-displays), primitives for event-handling and
+  (\ldots).
 \end{abstract}
 
 \clearpage 
@@ -95,7 +99,7 @@ Troels Henriksen (athas@sigkill.dk)}
 \begin{itemize}
 \item Abstract
 
-\item Preface
+\item Preface 
 
 \item Introduction
   \begin{itemize}
@@ -145,35 +149,46 @@ Troels Henriksen (athas@sigkill.dk)}
 
 
 \chapter{Preface}
-This paper is written as a 15 ECTS Bachelor project at the Computer
-Science Department (DIKU), University of Copenhagen. The authors are
-Martin Dybdal, Troels Henriksen and Jesper Reenberg. The project is
+This report is a 15 ECTS Bachelor project at the Computer Science
+Department (DIKU), University of Copenhagen. The authors are Martin
+Dybdal, Troels Henriksen and Jesper Reenberg. The project is
 supervised by Ken Friis Larsen, assistant professor at DIKU.
 
 \fixme{maybe add thanks to Flask-guys}
 
 
 \chapter{Introduction}
+
 Robots has been used in the industry for decades, replacing humans in
 repetitive tasks like sewing, assembling and transportation. In the
-last years smaller robots like the Roomba vacuum cleaner has been
-introduced to the consumer market, which is a sign that robots are
-getting cheaper an affordable for more tasks. We will probably see
-robots deployed in many other uses.
+last years, robots have been introduced to the consumer market,
+e.g. the Roomba vacuum cleaner. This is quite probably be a sign that
+robots are getting cheaper an affordable for more tasks. In the future
+we will probably see robots deployed in many other uses. But falling
+hardware prices is not everything, efficient development and
+prototyping of robot control programs is another aspect in making
+robots affordable. \fixme{code reusability}
 
+It is the prevailing conception that robots has some sort of
+autonomous behavior. A simpler definition, says that a robot is any
+programmable electronic system that is equipped with sensors and
+actuators. The second definition is more general, in that it applies
+to almost any programmable electronic system, and the autonomous
+behavior will often could be achieved programmatically. 
 
-Electronics is replacing more and more devices that has been
-controlled mechanically before. 
+\fixme{something about how robots are normally programmed, maybe a bit
+  specific about arduino}
 
+Our goal is to provide a framework that facilitates robot programming
+(specifically for the Arduino-platform), but doing that also involves
+writing code for that kind of input-output systems which doesn't
+necessarily have any autonomous behavior. So there are actually two
+steps: making a library suitable for programming sensors, actuators
+and connecting them, and secondly facilitate programming autonomous
+robots.
 
-Production cost falling => cheaper robots => more robots to be
-programmed. Fast prototyping and re-usability are important for the
-industry.
-
-....
-
-First we establish how the domain of reactive systems is
-identified. We've found the best description in Zhanyong Wan's PhD
+Robots are reactive systems. We've found the best description of what
+distinguishes a reactive system in Zhanyong Wan's PhD
 thesis "`Functional Reactive Programming for Real-Time reactive
 systems"'. \fixme{make this a latex-cite}. As he explains we can
 partition computer systems into:
@@ -190,15 +205,16 @@ partition computer systems into:
   is required to respond to its changes (e.g. a robot).
 \end{itemize}
 
+A reactive programming language is a language with primitives for
+connecting an process this kind of ever-changing input values, often
+called signals.
 
+\fixme{something about why we've chosen Arduino}.
 
+Because the Arduino has a relatively limited computation capacity, we
+had to find a way of programming these systems ... 
 
-
-We think that functional reactive programming using a dataflow-based
-approach looks like a good candidate for programming these systems...
-
-
-\fixme{evt. forklaring af "`reactive programming"'. Se }
+\fixme{flask, dataflow, etc.}
 
 \chapter{Flask}
 Flask is a domain specific language embedded in Haskell for
@@ -249,12 +265,21 @@ library \cite{quasiquote07}, also written by the Flask author. This
 allows you to write the object languages in their original syntax
 inside the Flask/Haskell environment. And it allows you to intersperse
 generation time variables (which results in compile time constants)
-into to object language code.
+into object language code.
+
+
 
 
 ... 
 
 More on:
+  Tilsvining af Red. Mangler:
+    - Type-klasser (hvilket betyder at konstanter f.eks. "`0"' ikke
+                    kan opfattes som både heltal og flydendetal afhængigt af konteksten)
+    - Højereordens funktioner
+    - Største delen af standard biblioteket
+    - 
+    - 
   Typechecking
   Dataflow
 
