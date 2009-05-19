@@ -283,7 +283,7 @@ More on:
 
 
 
-\chapter{Overview of the Fladuino system}
+\chapter{Design of the Fladuino system}
 
 Fladuino is a modification of Flask that can be used to program
 Arduino devices in a functional reactive manner.
@@ -327,7 +327,26 @@ Fladuino such that invalid programs will contain type errors, this
 cannot be done for all error classes.
 
 \fixme{We ought to have a little description of which types of errors is caught
-  at which point. Seems a little quick to mention it but not to clarify}
+  at which point. Seems a little quick to mention it but not to
+  clarify}
+
+\section{Hardware constraints}
+
+While we do not use ``Arduino'' to refer to any specific hardware
+configuration, implementations of our target platform still share some
+fundamental characteristics that have influenced many design choices
+and tradeoffs in Fladuino.  In particular, the low amount of available
+main memory, and the comparatively large amount of available flash
+memory for program code, suggests that we optimise for low memory
+usage over low code size.  Indeed, as we shall see in
+\ref{dataflowtranslation}, we have opted to directly express much of
+the control flow in the code itself, where a typical program, with
+plenty of available memory, might instead opt a more data-driven
+approach.  This choice was also made in Flask itself, and as
+\cite{flask08} observes, such static dataflow is not a problem for a
+large class of applications.  Additionally, we recover much of the
+lost flexibility through programmatic wiring of the dataflow graph at
+generation--time.
 
 \section{Structural overview}
 
@@ -616,15 +635,6 @@ the additional power we would gain through generating our own machine
 code, and the additional amount of work required would be very large.
 Flask chooses the same approach, in that it produces NesC--code for
 running on sensor motes, likely for the same reasons.
-
-Our target platform, Arduino, imposes constraints on the resulting
-device-level code.  In particular, the low amount of available main
-memory, and the comparatively large amount of available flash memory
-for program code, suggests that we optimise for low memory usage over
-low code size.  Indeed, as we shall see, we have opted to directly
-express much of the control flow in the code itself, where a typical
-program, with plenty of available memory, might instead choose a more
-data-driven approach.
 
 \section{Basic dataflow translation}
 \label{dataflowtranslation}
