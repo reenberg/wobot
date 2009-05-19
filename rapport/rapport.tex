@@ -593,9 +593,9 @@ Arduino--compatible such as the Arduino Duemilanove, Arduino Mega,
 Arduino BT, and Pololu 3pi.
 
 Defining the driver for each external component consist of a general
-device specification, a set of functions operating on the device and
-eventually some event specifications if the device can generate
-some notion of events.
+device specification in the form of a Haskell type definition, a set
+of functions operating on the device type and possibly a set of event
+specifications, provided the device can supports the notion of events.
 
 \fixme{find a good example to add here}
 
@@ -610,6 +610,51 @@ to express the fact that the platform supports the quirks of the 3pi
 robot that cannot be expressed through a list of pins.  Any device
 intended to make use of these quirks would explicitly require the
 presence of this capability.
+
+There is no concrete distinction between analog and digital pins in
+the Atmel microcontroller that lies at the heart of all Arduino
+platforms --- they are just subsets of the single set of numbered pins
+that differ in their capabilities.  Arduino, however, drives a hard
+distinction between analog input and general-purpose digital pins, in
+particular enumerating them in different sequences (there is a digital
+pin 0 distinct from analog pin 0).  This notion is fully integrated
+and supported in Fladuino; in fact there is no way to directly address
+pins by the name they are known by to the Atmel microcontroller.  This
+choice is not as obvious as it may appear: we do lose a non-nil amount
+of expressive power by restricting ourselves to the interface provided
+by Arduino, rather than permitting complete exploitation of the
+capabilities of the microprocessor.  Yet for the following reasons, we
+believe we made the right choice:
+
+\begin{itemize}
+\item The software abstraction provided by Arduino exposes a uniform
+  interface to a range of different hardware implementations.  These
+  implementations share a similar software interface to their shared
+  functionality, thus making porting between them easy.  In contrast,
+  not even pin numbers are necessarily identical between the
+  microcontrollers found across the range of supported platforms.  We
+  could solve this by defining our own mapping between abstract pins
+  and hardware pins (based on the chosen platform), but we see no
+  advantage to this approach over adopting the mapping already defined
+  by Arduino.
+\item A shared pin abstraction makes it easier for Fladuino--generated
+  programs to use existing Arduino libraries.
+\item The pin identifier sequences defined by the Atmel
+  microcontrollers are not particularly intuitive when mapped to the
+  physical layout of the Arduino boards.  They are fragmented and with
+  large jumps.
+\end{itemize}
+
+Abstractions aside, each pin is not only defined by its number, but
+also by a set of \textit{capabilities}, very much like the ones that
+cover the entire platform.  For example, a given pin may support such
+things as \texttt{pin--change interrupts} (triggering an asynchronous
+signal when the input value on the pin changes) or \texttt{pulse-width
+  modulation} (analog output).  Many hardware devices only work when
+attached to pins with special capabilities --- for example, a
+push--button must be attached to a pin supporting interrupts --- and
+the capability notion allows us to statically sanity--check any used
+devices for such requirements at generation--time.
 
 \subsection{Devices}
 A device is any form of peripheral that can be connected to the
