@@ -207,11 +207,25 @@ partition computer systems into:
 
 A reactive programming language is a language with primitives for
 connecting an process this kind of ever-changing input values, often
-called signals.
+called signals. The choice of hardware-platform has an influence on
+how to design such a language.
 
-\fixme{something about why we've chosen Arduino}.
+We've chosen to make our language and framework target the
+Arduino-platform\footnote{\url{http://www.arduino.cc/}}.  There are
+number of reasons for why we think this platform is a good
+choice. First of all, our institute DIKU was planning on buying a
+couple of these boards for research in Human Centered Computing about
+interactive-objects.\fixme{måske en forklaring af hvorfor vi laver
+  noget andet end HCC med dem?} And they finally bought some in the
+first weeks of our project. Even better reasons is that they are cheap
+(approximately 200 DKK for an Arduino Duemilanove, at the time of
+writing) and is easily extensible. E.g. you can buy extensions for
+ethernet, bluetooth, or even small touchscreens. Finally, the Arduino
+comes with a reltively high-level C-interface, sparing us from most
+low-level programming and bit trickery.
 
-Because the Arduino has a relatively limited computation capacity, we
+
+Because the Arduino processor has a relatively limited computation capacity, we
 had to find a way of programming these systems \ldots
 
 \fixme{flask, dataflow, etc.}
