@@ -753,6 +753,45 @@ still make its own choice whether to propagate a value or not.
 It is worth nothing that a value need not contain any information
 apart from its existence; \texttt{()} is perfectly valid as a signal.
 
+\chapter{Example programs}
+\textit{Beskrivelse af vores fedeste eksempelprogrammer: 3pi,
+  binærtæller etc. og hvorfor det er smart.}
+
+
+\chapter{Conclusions}
+\textit{Opsummering på hvad vi har opnået}
+
+Ideas for this section:
+\begin{itemize}
+\item Modified Flask, so it generates Arduino targeting C-code.
+\item Added abstractions for Events, Devices, Platform specification etc.
+\item Written a small framework/driver-library for the 3pi.
+\item Small note on example programs
+\item Comparison with Frob, Atom etc.
+\end{itemize}
+
+
+\chapter{The Fladuino Future}
+\textit{Hvad vi ikke har, eller hvad der skal arbejdes videre med. }
+
+Lidt idéer:
+\begin{itemize}
+\item Find på noget bedre end Red 
+\item Se om man kan få lavet en instans af Arrow-typeklassen, så man
+  kan bruge Yampas Arrow-syntax.
+\item Bedre fejlmeddelelser (Pt. udskrives syntaxtræet efter parse af
+  quasiquotet tekst ved fejl. Dette skal dog rettes i
+  Quasiquotation-modulet eller måske kræver det speciel integration
+  med compileren)
+\item \textit{(Bør vi måske satse på at få med inden aflevering:)}
+  Gør det endnu nemmere at skrive drivers til nye
+  robotter. F.eks. så man kun skal angive en typeklasse instans der
+  foræller om robottens fysiske egenskaber (afstand mellem hjul etc.)
+  og hvilke funktioner der skal kaldes for at styre hjulenes
+  hastighed. Hvorefter man så får adgang til en række generelle
+  styringsabstraktioner.
+\end{itemize}
+
 
 \bibliographystyle{bibliography/theseurl}
 \bibliography{bibliography/rapport}
