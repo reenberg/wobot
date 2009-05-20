@@ -300,7 +300,25 @@ More on:
 \chapter{Design of the Fladuino system}
 
 Fladuino is a modification of Flask that can be used to program
-Arduino devices in a functional reactive manner.
+Arduino devices in a functional reactive manner.  Our final program is
+governed by the following requirements.
+
+\begin{itemize}
+\item Fladuino must be able to generate a C--program suitable for
+  running on an Arduino from a description of a dataflow graph.  This
+  graph must be expressed in the form of a Haskell program.
+\item The C--program generated must be \textit{valid}, except for any
+  custom C included by the user.
+\item We shall not describe the implementation of any specific
+  reactive program with Fladuino, nor will we attempt to support the
+  writing of any such specific program.  We shall endeavour to support
+  functionality outside our core requirements only insofar as it is
+  useful for evaluating Fladuino as a whole.
+\item The design of Fladuino must mirror similar core design choices
+  in Flask.
+\item To the extent that it is possible, we must statically analyse
+  the program for validity (type or logic errors).
+\end{itemize}
 
 \section{A note on Arduino}
 
