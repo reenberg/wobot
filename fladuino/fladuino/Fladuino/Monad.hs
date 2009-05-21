@@ -193,7 +193,7 @@ data ERep m = ERep
     { e_value      :: Maybe H.Var
     , e_predicate  :: Maybe H.Var
     , e_type       :: H.Type
-    , e_interrupts :: [Integer]
+    , e_interrupts :: [Pin]
     , e_id         :: String
     }
 
@@ -502,6 +502,9 @@ cIdent s =
       False -> id
 
 type Capability = String
+
+data Pin = APin Integer | DPin Integer
+           deriving (Ord, Eq, Show)
 
 data PinType = DigitalOutput Bool
              | DigitalInput

@@ -84,11 +84,11 @@ import Fladuino.Reify
 
 import Fladuino.LiftN
 
-data Pin = Pin Integer [Capability]
+data PinDecl = PinDecl Pin [Capability]
 
 data MonadFladuino m => Platform m = Platform
-    { p_digital_pins :: [Pin]
-    , p_analog_pins :: [Pin]
+    { p_pins :: [PinDecl]
+    , p_pinmap :: Pin -> Integer
     , p_capabilities :: [Capability]
     , p_base_setup :: m ()
     , p_default_devices :: [DRef m]
@@ -101,10 +101,10 @@ startConf p = do mapM_ (\(DRef d) -> addDevice d) $ p_default_devices p
                  return (PConf p [] [p_base_setup p])
 
 supports :: MonadFladuino m => PConf m -> Usage -> Bool
-supports (PConf p _ _) (DPinUsage pin caps _) = isJust $ find f (p_digital_pins p)
-    where f (Pin pin' caps') = pin == pin' && null (caps \\ caps')
-supports (PConf p _ _) (APinUsage pin caps) = isJust $ find f (p_analog_pins p)
-    where f (Pin pin' caps') = pin == pin' && null (caps \\ caps')
+supports (PConf p _ _) (DPinUsage pin caps _) = isJust $ find f (p_pins p)
+    where f (PinDecl pin' caps') = (DPin pin) == pin' && null (caps \\ caps')
+supports (PConf p _ _) (APinUsage pin caps) = isJust $ find f (p_pins p)
+    where f (PinDecl pin' caps') = (APin pin) == pin' && null (caps \\ caps')
 
 conflicts :: MonadFladuino m => PConf m -> Usage -> Bool
 conflicts (PConf _ us _) (DPinUsage pin _ _) = isJust $ find f us
@@ -139,10 +139,9 @@ statevar d s = do
   case findIndex (\(DRef d2) -> uniqueId d2 == uniqueId d) devices of
     Just n -> return $ "device_" ++ (uniqueId d) ++ s
     Nothing -> return $ error $ "Unknown device " ++ uniqueId d ++ " encountered."
-    
                       
 class (Eq e, Show e, Reify t) => Event e t | e -> t where
-    interruptPins :: e -> [Integer]
+    interruptPins :: e -> [Pin]
     setupEvent :: e -> FladuinoM (ERep FladuinoM)
 
 eventValueType :: forall e t. (Event e t) => e -> H.Type

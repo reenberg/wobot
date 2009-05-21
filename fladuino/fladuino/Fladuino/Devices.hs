@@ -251,7 +251,7 @@ data PotentiometerChangeEvent = PotentiometerChangeEvent Potentiometer
 instance Event PotentiometerChangeEvent () where
     setupEvent e@(PotentiometerChangeEvent (d@(Potentiometer pin))) = 
                                                  return $ mkEvent e Nothing Nothing
-    interruptPins (PotentiometerChangeEvent (Potentiometer pin)) = [54+pin]
+    interruptPins (PotentiometerChangeEvent (Potentiometer pin)) = [APin pin]
 
 {-
 
@@ -271,7 +271,7 @@ instance Event PotetiometerChangeEvent () where
 data InterruptEvent = InterruptEvent Integer
                     deriving (Eq, Show)
 instance Event InterruptEvent () where
-    interruptPins (InterruptEvent n) = [n]
+    interruptPins (InterruptEvent n) = [DPin n]
     setupEvent e = return $ mkEvent e Nothing Nothing
 
 -- Button device and Events --
@@ -294,7 +294,7 @@ instance Event PushButtonPressEvent () where
                                                                      return (digitalRead($int:pin) == HIGH);
                                                                    }|]
                                                return $ mkEvent e Nothing (Just v)
-    interruptPins (PushButtonPressEvent (PushButton pin)) = [pin]
+    interruptPins (PushButtonPressEvent (PushButton pin)) = [DPin pin]
 
 data PushButtonReleaseEvent = PushButtonReleaseEvent PushButton
                               deriving (Eq, Show)
@@ -309,7 +309,7 @@ instance Event PushButtonReleaseEvent () where
                                                                        return (digitalRead($int:pin) == LOW);
                                                                      }|]
                                                  return $ mkEvent e Nothing (Just v)
-    interruptPins (PushButtonReleaseEvent (PushButton pin)) = [pin]
+    interruptPins (PushButtonReleaseEvent (PushButton pin)) = [DPin pin]
 
 class (Device d) => Button d where
     onPress   :: d -> S ()
