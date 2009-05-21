@@ -318,3 +318,53 @@ class (Device d) => Button d where
 instance Button PushButton where
     onPress   = onEvent . PushButtonPressEvent
     onRelease = onEvent . PushButtonReleaseEvent
+
+-- Simple unidirectional data ports --
+
+data DigitalOutputPort = DigitalOutputPort Integer [Integer]
+                         deriving (Eq, Show)
+
+instance Device DigitalOutputPort where
+    usages (DigitalOutputPort controlpin datapins) = (DPinUsage controlpin [] $ DigitalOutput False) :
+                                                     map (\pin -> DPinUsage pin [] $ DigitalOutput False) datapins
+
+writeValue :: DigitalOutputPort -> S Integer -> S ()
+writeValue pin = modDev "writeValue" pin $ \(DigitalOutputPort controlpin datapins) c_v_in sv (params, e) ->
+                 let valueexp = e!!0
+                     stms = map (\(n, pin) -> [$cstm|digitalWrite($int:pin, ($exp:valueexp >> $int:n) & 1 ? HIGH : LOW);|]) $ zip [0..] (reverse datapins)
+                 in [$cedecl|void $id:c_v_in($params:params)
+                                 {
+                                   digitalWrite($int:controlpin, LOW);
+                                   $stms:stms
+                                   digitalWrite($int:controlpin, HIGH);
+                                 }|]
+
+data DigitalInputPort = DigitalInputPort Integer [Integer]
+                        deriving (Eq, Show)
+
+instance Device DigitalInputPort where
+    usages (DigitalInputPort controlpin datapins) = (DPinUsage controlpin ["interrupt"] DigitalInput) :
+                                                    map (\pin -> DPinUsage pin [] DigitalInput) datapins
+
+data ValueReceivedEvent = ValueReceivedEvent DigitalInputPort
+                         deriving (Eq, Show)
+
+instance Event ValueReceivedEvent Integer where
+    setupEvent e@(ValueReceivedEvent (d@(DigitalInputPort controlpin datapins))) = 
+                                            do addDevice d
+                                               pv <- statevar d "receive_predicate"
+                                               vv <- statevar d "receive_value"
+                                               let pf = H.Var (mkName pv)
+                                               let vf = H.Var (mkName vv)
+                                               addCImport pv [$ty|() -> Bool|] [$cexp|$id:pv|]
+                                               addCFundef [$cedecl|int $id:pv () {
+                                                                     return (digitalRead($int:controlpin) == HIGH);
+                                                                   }|]
+                                               addCImport vv [$ty|() -> Integer|] [$cexp|$id:vv|]
+                                               let stms = map (\pin -> [$cstm|ret = ((ret << 1) | digitalRead($int:pin));|]) . sort $ datapins
+                                               addCFundef [$cedecl|unsigned int $id:vv () {
+                                                                     unsigned int ret = 0;
+                                                                     $stms:stms
+                                                                   }|]
+                                               return $ mkEvent e (Just vf) (Just pf)
+    interruptPins (ValueReceivedEvent (d@(DigitalInputPort controlpin _))) = [DPin controlpin]
