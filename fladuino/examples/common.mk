@@ -57,7 +57,7 @@ endif
 ifeq ($(PLATFORM), bt)
 MCU = atmega168
 UPLOAD_RATE = 115200
-PORT = /dev/rfcom0
+PORT = /dev/rfcomm0
 endif
 ifeq ($(PLATFORM), mega)
 MCU = atmega1280
@@ -211,7 +211,7 @@ OBJDUMP = $(AVR_TOOLS_PATH)/avr-objdump
 AR  = $(AVR_TOOLS_PATH)/avr-ar
 SIZE = $(AVR_TOOLS_PATH)/avr-size
 NM = $(AVR_TOOLS_PATH)/avr-nm
-AVRDUDE = $(AVR_TOOLS_PATH)/avrdude
+AVRDUDE = $(ARDUINO_DIR)/hardware/tools/avrdude
 REMOVE = rm -f
 MV = mv -f
 

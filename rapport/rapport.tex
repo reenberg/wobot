@@ -1007,24 +1007,24 @@ rfcomm bind rfcommX xx:xx:xx:xx:xx:xx 1
 where \texttt{rfcommX} is the desired host device that is to be used ex
 \texttt{rfcomm0}, \texttt{xx:xx:xx:xx:xx:xx} is the boards MAC Address and
 \texttt{1} is the channel to be used. A factory Arduino BT board has only
-enabled \texttt{SSP} (Serial Port Profile) and thus this is located on channel 1. It is
-possible to query which Bluetooth profiles the Arduino BT board exposes by the
-following command
+enabled \texttt{SSP} (Serial Port Profile) and thus this is located on channel
+1. It is possible to query which Bluetooth profiles the Arduino BT board exposes
+by the following command
 
 \begin{verbatim}
 sdptool browse xx:xx:xx:xx:xx:xx
 \end{verbatim}
 
-To find the channel, just locate \texttt{SPP} in the returned list and see what channel
-the \texttt{rfcomm} protocol is associated with. 
+To find the channel, just locate \texttt{SPP} in the returned list and see what
+channel the \texttt{rfcomm} protocol is associated with.
 
 \subsection{Important program setup}
 
 When creating a program for the Arduino BT it is important to remember a few
 things in the \texttt{setup()} function. This is to ensure that the WT11 chip is
-always configured when the program starts. The WT11 chip remembers its settings even
-if it loses power. This means that if the settings are change at some point of
-the program execution then at least the basic settings will be set to a known
+always configured when the program starts. The WT11 chip remembers its settings
+even if it loses power. This means that if the settings are change at some point
+of the program execution then at least the basic settings will be set to a known
 default when the program is restarted. It is however still possible to change
 the settings of the WT11 chip so it won't accept connections from any
 hosts. This is addressed in the below sections.
