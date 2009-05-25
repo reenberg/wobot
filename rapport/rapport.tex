@@ -1,4 +1,4 @@
-\documentclass[a4paper, oneside, draft]{memoir}
+\documentclass[a4paper, oneside, final]{memoir}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage[english]{babel}
@@ -10,7 +10,7 @@
 
 \usepackage{colortbl}  % Bruges til at farve celler, rækker mv. i tabeller
 \usepackage{pdflscape} % Gør landscape-environmentet tilgængeligt
-\usepackage{fixme}     % Indsæt "fixme" noter i drafts.
+\usepackage[draft]{fixme}     % Indsæt "fixme" noter i drafts.
 \usepackage{hyperref}  % Indsæter links (interne og eksterne) i PDF
 
 \usepackage[format=hang]{caption,subfig}
@@ -23,7 +23,7 @@
 
 %\overfullrule=5pt
 %\setsecnumdepth{part}
-\setcounter{secnumdepth}{-1} % Sæt overskriftsnummereringsdybde. Disable = -1.
+\setcounter{secnumdepth}{0} % Sæt overskriftsnummereringsdybde. Disable = -1.
 \chapterstyle{hangnum} % changes style of chapters, to look nice.
 
 \makeatletter
@@ -74,9 +74,13 @@ Troels Henriksen (athas@sigkill.dk)}
   We tie these two ends together, creating a highly declarative
   language for robot programming using a staged compilation-strategy
   like the one found in Flask \cite{flask08}, that makes it possible
-  to run programs on devices with few resources. In the creation we've
-  used the Flask-codebase as a starting point and huge parts of the
-  code is left unchanged.
+  to run reactive control programs on devices with few resources. In
+  the creation we've used the Flask-codebase as a starting point and
+  huge (isolated) parts of the code is left unchanged. Our
+  contribution includes functionality suitable for the robot domain,
+  including a framework for specifying interfaces to peripherals (like
+  sensors, motors or LCD-displays), primitives for event-handling and
+  (\ldots).
 \end{abstract}
 
 \clearpage 
@@ -95,7 +99,7 @@ Troels Henriksen (athas@sigkill.dk)}
 \begin{itemize}
 \item Abstract
 
-\item Preface
+\item Preface 
 
 \item Introduction
   \begin{itemize}
@@ -145,37 +149,48 @@ Troels Henriksen (athas@sigkill.dk)}
 
 
 \chapter{Preface}
-This paper is written as a 15 ECTS Bachelor project at the Computer
-Science Department (DIKU), University of Copenhagen. The authors are
-Martin Dybdal, Troels Henriksen and Jesper Reenberg. The project is
+This report is a 15 ECTS Bachelor project at the Computer Science
+Department (DIKU), University of Copenhagen. The authors are Martin
+Dybdal, Troels Henriksen and Jesper Reenberg. The project is
 supervised by Ken Friis Larsen, assistant professor at DIKU.
 
 \fixme{maybe add thanks to Flask-guys}
 
 
 \chapter{Introduction}
+
 Robots has been used in the industry for decades, replacing humans in
 repetitive tasks like sewing, assembling and transportation. In the
-last years smaller robots like the Roomba vacuum cleaner has been
-introduced to the consumer market, which is a sign that robots are
-getting cheaper an affordable for more tasks. We will probably see
-robots deployed in many other uses.
+last years, robots have been introduced to the consumer market,
+e.g. the Roomba vacuum cleaner. This is quite probably be a sign that
+robots are getting cheaper an affordable for more tasks. In the future
+we will probably see robots deployed in many other uses. But falling
+hardware prices is not everything, efficient development and
+prototyping of robot control programs is another aspect in making
+robots affordable. \fixme{code reusability}
 
+It is the prevailing conception that robots has some sort of
+autonomous behavior. A simpler definition, says that a robot is any
+programmable electronic system that is equipped with sensors and
+actuators. The second definition is more general, in that it applies
+to almost any programmable electronic system, and the autonomous
+behavior will often could be achieved programmatically. 
 
-Electronics is replacing more and more devices that has been
-controlled mechanically before. 
+\fixme{something about how robots are normally programmed, maybe a bit
+  specific about arduino}
 
+Our goal is to provide a framework that facilitates robot programming
+(specifically for the Arduino-platform), but such a framework also has
+to provide features for programming the kind of input-output systems
+which doesn't necessarily have any autonomous behavior. So there are
+actually two steps: making a library suitable for programming sensors,
+actuators and connecting them, and secondly facilitate programming
+autonomous robots.
 
-Production cost falling => cheaper robots => more robots to be
-programmed. Fast prototyping and re-usability are important for the
-industry.
-
-....
-
-First we establish how the domain of reactive systems is
-identified. We've found the best description in Zhanyong Wan's PhD
+Robots are reactive systems. We've found the best description of what
+distinguishes a reactive system in Zhanyong Wan's PhD
 thesis "`Functional Reactive Programming for Real-Time reactive
-systems"'. \fixme{make this a latex-cite}. As he explains we can
+systems"'. \fixme{make this a latex-cite} As he explains we can
 partition computer systems into:
 \begin{itemize}
 \item Transitional systems, that takes some data as input, does some
@@ -190,15 +205,48 @@ partition computer systems into:
   is required to respond to its changes (e.g. a robot).
 \end{itemize}
 
+A reactive programming language is a language with primitives for
+connecting an process this kind of ever-changing input values, often
+called signals. The choice of hardware-platform has an influence on
+how to design such a language.
+
+We've chosen to make our language and framework target the
+Arduino-platform\footnote{\url{http://www.arduino.cc/}}.  There are
+number of reasons for why we think this platform is a good
+choice. First of all, our institute DIKU was planning on buying a
+couple of these boards for research in Human Centered Computing about
+interactive-objects.\fixme{måske en forklaring af hvorfor vi laver
+  noget andet end HCC med dem?} And they finally bought some in the
+first weeks of our project. Even better reasons is that they are cheap
+(approximately 200 DKK for an Arduino Duemilanove, at the time of
+writing) and is easily extensible. E.g. you can buy extensions for
+ethernet, bluetooth, or even small touchscreens. Finally, the Arduino
+comes with a reltively high-level C-interface, sparing us from most
+low-level programming and bit trickery.
 
 
+Because the Arduino processor has a relatively limited computation capacity, we
+had to find a way of programming these systems \ldots
 
+\fixme{flask, dataflow, etc.}
 
-We think that functional reactive programming using a dataflow-based
-approach looks like a good candidate for programming these systems...
+\section{A note on Arduino}
 
+The term ``Arduino'' is somewhat ambiguous.  It is both a registered
+trademark of the Arduino team that can be used by licensed
+manufacturers, a line of platforms based on various Atmel AVR
+microcontrollers, as well as a general term for any device that is
+mostly compatible with the official Arduino microcontroller boards.
+This paper will use the latter meaning unless otherwise is explicitly
+mentioned.
 
-\fixme{evt. forklaring af "`reactive programming"'. Se }
+Additionally, we have only had resources to test our work on the
+Arduino
+Duemilanove\footnote{\url{http://www.arduino.cc/en/Main/ArduinoBoardDuemilanove}},
+Arduino BT\footnote{\url{http://www.arduino.cc/en/Guide/ArduinoBT}},
+Arduino
+Mega\footnote{\url{http://arduino.cc/en/Main/ArduinoBoardMega}},
+and Pololu 3pi\footnote{\url{http://www.pololu.com/catalog/product/975}}.
 
 \chapter{Flask}
 Flask is a domain specific language embedded in Haskell for
@@ -249,40 +297,46 @@ library \cite{quasiquote07}, also written by the Flask author. This
 allows you to write the object languages in their original syntax
 inside the Flask/Haskell environment. And it allows you to intersperse
 generation time variables (which results in compile time constants)
-into to object language code.
+into object language code.
 
 
-... 
-
+\begin{verbatim}
 More on:
+  Tilsvining af Red. Mangler:
+    - Type-klasser (hvilket betyder at konstanter f.eks. "`0"' ikke
+                    kan opfattes som både heltal og flydendetal afhængigt af konteksten)
+    - Højereordens funktioner
+    - Største delen af standard biblioteket
+    - 
+    - 
   Typechecking
   Dataflow
+\end{verbatim}
 
 
 
-
-\chapter{Overview of the Fladuino system}
+\chapter{Design of the Fladuino system}
 
 Fladuino is a modification of Flask that can be used to program
-Arduino devices in a functional reactive manner.
+Arduino devices in a functional reactive manner.  Our final program is
+governed by the following requirements.
 
-\section{A note on Arduino}
-
-The term ``Arduino'' is somewhat ambiguous.  It is both a registered
-trademark of the Arduino team that can be used by licensed
-manufacturers, a line of platforms based on various Atmel AVR
-microcontrollers, as well as a general term for any device that is
-mostly compatible with the official Arduino microcontroller boards.
-This paper will use the latter meaning unless otherwise is explicitly
-mentioned.
-
-Additionally, we have only had resources to test our work on the
-Arduino
-Duemilanove\footnote{\url{http://www.arduino.cc/en/Main/ArduinoBoardDuemilanove}},
-Arduino BT\footnote{\url{http://www.arduino.cc/en/Guide/ArduinoBT}},
-Arduino
-Mega\footnote{\url{http://arduino.cc/en/Main/ArduinoBoardMega}},
-and Pololu 3pi\footnote{\url{http://www.pololu.com/catalog/product/975}}.
+\begin{itemize}
+\item Fladuino must be able to generate a C--program suitable for
+  running on an Arduino from a description of a dataflow graph.  This
+  graph must be expressed in the form of a Haskell program.
+\item The C--program generated must be \textit{valid}, except for any
+  custom C included by the user.
+\item We shall not describe the implementation of any specific
+  reactive program with Fladuino, nor will we attempt to support the
+  writing of any such specific program.  We shall endeavour to support
+  functionality outside our core requirements only insofar as it is
+  useful for evaluating Fladuino as a whole.
+\item The design of Fladuino must mirror similar core design choices
+  in Flask.
+\item To the extent that it is possible, we must statically analyse
+  the program for validity (type or logic errors).
+\end{itemize}
 
 \section{Terminology and basic \textit{modus operandi}}
 
@@ -305,7 +359,26 @@ Fladuino such that invalid programs will contain type errors, this
 cannot be done for all error classes.
 
 \fixme{We ought to have a little description of which types of errors is caught
-  at which point. Seems a little quick to mention it but not to clarify}
+  at which point. Seems a little quick to mention it but not to
+  clarify}
+
+\section{Hardware constraints}
+
+While we do not use ``Arduino'' to refer to any specific hardware
+configuration, implementations of our target platform still share some
+fundamental characteristics that have influenced many design choices
+and tradeoffs in Fladuino.  In particular, the low amount of available
+main memory, and the comparatively large amount of available flash
+memory for program code, suggests that we optimise for low memory
+usage over low code size.  Indeed, as we shall see in
+\ref{dataflowtranslation}, we have opted to directly express much of
+the control flow in the code itself, where a typical program, with
+plenty of available memory, might instead opt a more data-driven
+approach.  This choice was also made in Flask itself, and as
+\cite{flask08} observes, such static dataflow is not a problem for a
+large class of applications.  Additionally, we recover much of the
+lost flexibility through programmatic wiring of the dataflow graph at
+generation--time.
 
 \section{Structural overview}
 
@@ -552,23 +625,93 @@ Arduino--compatible such as the Arduino Duemilanove, Arduino Mega,
 Arduino BT, and Pololu 3pi.
 
 Defining the driver for each external component consist of a general
-device specification, a set of functions operating on the device and
-eventually some event specifications if the device can generate
-some notion of events.
+device specification in the form of a Haskell type definition, a set
+of functions operating on the device type and possibly a set of event
+specifications, provided the device can supports the notion of events.
 
 \fixme{find a good example to add here}
 
 \subsection{Platforms}
 
-A platform is defined by a list of \textit{analog pins},
-\textit{digital pins}, and free--form \textit{capabilities}, the
-latter being a set of strings describing the identity or unusual
-qualities of the platform.  For example, the platform definition for
-the Pololu 3pi robot contains a ``3pi''--capability that exists merely
-to express the fact that the platform supports the quirks of the 3pi
-robot that cannot be expressed through a list of pins.  Any device
-intended to make use of these quirks would explicitly require the
-presence of this capability.
+A platform is defined by a list of \textit{logical pins}, and
+free--form \textit{capabilities}, the latter being a set of strings
+describing the identity or unusual qualities of the platform.  For
+example, the platform definition for the Pololu 3pi robot contains a
+``3pi''--capability that exists merely to express the fact that the
+platform supports the quirks of the 3pi robot that cannot be expressed
+through a list of pins.  Any device intended to make use of these
+quirks would explicitly require the presence of this capability.
+
+\subsubsection{The Fladuino pin model}
+
+There is no concrete distinction between analog and digital pins in
+the Atmel microcontroller that lies at the heart of all Arduino
+platforms --- they are just subsets of the single set of numbered pins
+that differ in their capabilities.  Arduino, however, drives a hard
+distinction between analog input and general-purpose digital pins, in
+particular enumerating them in different sequences (there is a digital
+pin 0 distinct from analog pin 0).  This notion is fully integrated
+and supported in Fladuino; in fact there is no way to directly address
+pins by the name they are known by to the Atmel microcontroller.  We
+identify three layers of pin abstraction, each building on the one
+below it:
+
+\begin{description}
+\item[Arduino pins] are what a normal user of Arduino will be familiar
+  with.  They are identified by a \textit{pin type} (digital or
+  analog-input) and a number.  Analog-input pin 0 and digital pin 0
+  are not the same pin.  This is the layer of abstraction that devices
+  work at.
+\item[Logical pins] are a simplification of Arduino pins, where the
+  Arduino pin abstraction is mapped to a single enumerated sequence.
+  This mapping is defined specifically for each platform; for example,
+  Arduino digital pin 0 will equal logical pin 0 on both the
+  Duemilanove and Mega platforms, but analog pin 0 equals logical pin
+  14 and 54, respectively.  A typical user of Fladuino will never have
+  to go below this level of abstraction, and will only have to
+  interact with it if he is defining a new platform.
+\item[Hardware pins] are the physical pins connected to the
+  microcontroller.  They are only interacted with in the
+  implementation of the Arduino and Fladuino supporting libraries.
+  The Arduino libraries themselves define the mapping from logical to
+  hardware pins, and adding a new mapping is a significant task.
+\end{description}
+
+This choice of abstraction is not as obvious as it may appear: we do
+lose a non-nil amount of expressive power by restricting ourselves to
+the interface provided by Arduino, rather than permitting complete
+exploitation of the capabilities of the microprocessor.  Yet for the
+following reasons, we believe we made the right choice:
+
+\begin{itemize}
+\item The software abstraction provided by Arduino exposes a uniform
+  interface to a range of different hardware implementations.  These
+  implementations share a similar software interface to their shared
+  functionality, thus making porting between them easy.  In contrast,
+  not even pin numbers are necessarily identical between the
+  microcontrollers found across the range of supported platforms.  We
+  could solve this by defining our own mapping between abstract pins
+  and hardware pins (based on the chosen platform), but we see no
+  advantage to this approach over adopting the mapping already defined
+  by Arduino.
+\item A shared pin abstraction makes it easier for Fladuino--generated
+  programs to use existing Arduino libraries.
+\item The pin identifier sequences defined by the Atmel
+  microcontrollers are not particularly intuitive when mapped to the
+  physical layout of the Arduino boards.  They are fragmented and with
+  large jumps.
+\end{itemize}
+
+Abstractions aside, each pin is not only defined by its number, but
+also by a set of \textit{capabilities}, very much like the ones that
+cover the entire platform.  For example, a given pin may support such
+things as \texttt{pin--change interrupts} (triggering an asynchronous
+signal when the input value on the pin changes) or \texttt{pulse-width
+  modulation} (analog output).  Many hardware devices only work when
+attached to pins with special capabilities --- for example, a
+push--button must be attached to a pin supporting interrupts --- and
+the capability notion allows us to statically sanity--check any used
+devices for such requirements at generation--time.
 
 \subsection{Devices}
 A device is any form of peripheral that can be connected to the
@@ -594,15 +737,6 @@ the additional power we would gain through generating our own machine
 code, and the additional amount of work required would be very large.
 Flask chooses the same approach, in that it produces NesC--code for
 running on sensor motes, likely for the same reasons.
-
-Our target platform, Arduino, imposes constraints on the resulting
-device-level code.  In particular, the low amount of available main
-memory, and the comparatively large amount of available flash memory
-for program code, suggests that we optimise for low memory usage over
-low code size.  Indeed, as we shall see, we have opted to directly
-express much of the control flow in the code itself, where a typical
-program, with plenty of available memory, might instead choose a more
-data-driven approach.
 
 \section{Basic dataflow translation}
 \label{dataflowtranslation}
@@ -661,6 +795,55 @@ still make its own choice whether to propagate a value or not.
 
 It is worth nothing that a value need not contain any information
 apart from its existence; \texttt{()} is perfectly valid as a signal.
+
+\chapter{Example programs}
+\textit{Beskrivelse af vores fedeste eksempelprogrammer: 3pi,
+  binærtæller etc. og hvorfor det er smart.}
+
+\chapter{Evaluation}
+\begin{itemize}
+\item Is this for any practical use?
+\item What was easy and hard when writing the example-programs?
+\item How does the example-programs compare to similar programs
+  written directly in C? More or less code? More or less debugging?
+\end{itemize}
+
+\chapter{The Fladuino Future}
+\textit{Hvad vi ikke har, eller hvad der skal arbejdes videre med. }
+
+Lidt idéer:
+\begin{itemize}
+\item Find på noget bedre end Red 
+\item Se om man kan få lavet en instans af Arrow-typeklassen, så man
+  kan bruge Yampas Arrow-syntax.
+\item Bedre fejlmeddelelser (Pt. udskrives syntaxtræet efter parse af
+  quasiquotet tekst ved fejl. Dette skal dog rettes i
+  Quasiquotation-modulet eller måske kræver det speciel integration
+  med compileren)
+\item \textit{(Bør vi måske satse på at få med inden aflevering:)}
+  Gør det endnu nemmere at skrive drivers til nye
+  robotter. F.eks. så man kun skal angive en typeklasse instans der
+  foræller om robottens fysiske egenskaber (afstand mellem hjul etc.)
+  og hvilke funktioner der skal kaldes for at styre hjulenes
+  hastighed. Hvorefter man så får adgang til en række generelle
+  styringsabstraktioner.
+\end{itemize}
+
+\chapter{The past}
+Discussion about related robot programming tools (Frob, Yampa, Atom,
+Lustre, etc.).
+
+\chapter{Conclusions}
+\textit{Opsummering på hvad vi har opnået}
+
+Ideas for this section:
+\begin{itemize}
+\item Modified Flask, so it generates Arduino targeting C-code.
+\item Added abstractions for Events, Devices, Platform specification etc.
+\item Written a small framework/driver-library for the 3pi.
+\item Small note on example programs
+\item Comparison with Frob, Atom etc.
+\end{itemize}
 
 
 \bibliographystyle{bibliography/theseurl}

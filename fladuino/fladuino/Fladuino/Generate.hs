@@ -90,6 +90,7 @@ defaultMain m = do
                     addCInclude "avr/io.h"
                     addCInclude "common/Fladuino.h"
                     addCInclude "common/event_dispatch.h"
+                    addCInclude "<stdio.h>"
                     fdecls <- forPrelude [] compileHs
                     modifyFladuinoEnv $ \s ->
                         s { f_fdecls = f_fdecls s ++ fdecls }
@@ -148,8 +149,8 @@ genStreamsForPlatform p ss = do
     genC Set.empty scodes'
     config <- finalizeDevices p
     finalizeConfig config
-    finalizeTimers
-    finalizeEvents
+    finalizeTimers p
+    finalizeEvents p
     finalizeIdleWaiters
 --    finalizeADCs
     finalizeFlows
@@ -266,18 +267,23 @@ translatePlatform "3pi" = return pololu3pi
 translatePlatform p = fail $ "Unknown platform " ++ p
 
 emptyPlatform :: Platform FladuinoM
-emptyPlatform = Platform { p_digital_pins = []
-                         , p_analog_pins = []
+emptyPlatform = Platform { p_pins = []
+                         , p_pinmap = undefined
                          , p_capabilities = []
                          , p_base_setup = return ()
-                         , p_default_devices = [] }
+                         , p_default_devices = [] 
+                         , p_timerid = 1 -- ^ The timer used by the "clock" primitive
+                         }
 
 defaultPlatform :: Platform FladuinoM
 defaultPlatform = arduinoDuemilanove
 
-arduinoDuemilanove = emptyPlatform { p_digital_pins = [ Pin n $ pc n | n <- [0..13] ]
-                            , p_analog_pins = [ Pin n ["analog", "interrupt"] | n <- [0..6] ]
-                            , p_capabilities = ["Duemilanove"] }
+arduinoDuemilanove = emptyPlatform { p_pins = [ PinDecl (DPin n) $ pc n | n <- [0..13] ] ++
+                                              [ PinDecl (APin n) ["analog", "interrupt"] | n <- [0..6] ]
+                                   , p_pinmap = (\x -> case x of
+                                                         DPin pin -> pin
+                                                         APin pin -> pin+14)
+                                   , p_capabilities = ["Duemilanove"] }
               where
                 -- PWM on pin 9 and 10 are disallowed because they interfere with TIMER1
                 pc pin | pin `elem` [3, 5, 6, 11] = ["PWM", "interrupt"] 
@@ -287,33 +293,37 @@ arduinoDiecimila :: Platform FladuinoM
 arduinoDiecimila = arduinoDuemilanove { p_capabilities = ["Diecimila"] }
 
 arduinoBT :: Platform FladuinoM
-arduinoBT = emptyPlatform { p_digital_pins = [ Pin n $ pc n | n <- [0..6] ++ [7..13] ]
-                          , p_analog_pins = [ Pin n ["analog", "interrupt"] | n <- [0..6] ]
-                          , p_capabilities = ["BT"]
-                          -- This sinister magic is needed to
-                          -- initialise the Bluetooth module, and is
-                          -- allegedly very important to do, no matter
-                          -- what.
-                          , p_base_setup = do addCInitStm [$cstm|Serial.begin(115200);|]
-                                              addCInitStm [$cstm|digitalWrite(7, HIGH);|]
-                                              addCInitStm [$cstm|delay(10);|]
-                                              addCInitStm [$cstm|digitalWrite(7, LOW);|]
-                                              addCInitStm [$cstm|delay(2000);|]
-                                              addCInitStm [$cstm|Serial.println("SET BT PAGEMODE 3 2000 1");|]
-                                              addCInitStm [$cstm|Serial.println("SET BT NAME ArduinoBT");|]
-                                              addCInitStm [$cstm|Serial.println("SET BT ROLE 0 f 7d00");|]
-                                              addCInitStm [$cstm|Serial.println("SET CONTROL ECHO 0");|]
-                                              addCInitStm [$cstm|Serial.println("SET BT AUTH * 12345");|]
-                                              addCInitStm [$cstm|Serial.println("SET CONTROL ESCAPE - 00 1");|]
-                          }
+arduinoBT = arduinoDuemilanove { p_pins = [ PinDecl (DPin n) $ pc n | n <- [0..6] ++ [7..13] ] ++
+                                          [ PinDecl (APin n) ["analog", "interrupt"] | n <- [0..6] ]
+                               , p_capabilities = ["BT"]
+                               -- This sinister magic is needed to
+                               -- initialise the Bluetooth module, and is
+                               -- allegedly very important to do, no matter
+                               -- what.
+                               , p_base_setup = do addCInitStm [$cstm|Serial.begin(115200);|]
+                                                   addCInitStm [$cstm|digitalWrite(7, HIGH);|]
+                                                   addCInitStm [$cstm|delay(10);|]
+                                                   addCInitStm [$cstm|digitalWrite(7, LOW);|]
+                                                   addCInitStm [$cstm|delay(2000);|]
+                                                   addCInitStm [$cstm|Serial.println("SET BT PAGEMODE 3 2000 1");|]
+                                                   addCInitStm [$cstm|Serial.println("SET BT NAME ArduinoBT");|]
+                                                   addCInitStm [$cstm|Serial.println("SET BT ROLE 0 f 7d00");|]
+                                                   addCInitStm [$cstm|Serial.println("SET CONTROL ECHO 0");|]
+                                                   addCInitStm [$cstm|Serial.println("SET BT AUTH * 12345");|]
+                                                   addCInitStm [$cstm|Serial.println("SET CONTROL ESCAPE - 00 1");|]
+                               , p_timerid = 2
+                        }
               where
                 pc pin | pin `elem` [3, 5, 6, 9, 10, 11] = ["PWM", "interrupt"]
                 pc _ = ["interrupt"]
 
 arduinoMega :: Platform FladuinoM
-arduinoMega = emptyPlatform { p_digital_pins = [ Pin n $ pc n | n <- [0..53] ]
-                            , p_analog_pins = [ Pin n ["analog"] | n <- [0..7] ] ++ 
-                                              [ Pin n ["analog", "interrupt"] | n <- [8..15] ]
+arduinoMega = emptyPlatform { p_pins = [ PinDecl (DPin n) $ pc n | n <- [0..53] ]
+                                       ++ [ PinDecl (APin n) ["analog"] | n <- [0..7] ]
+                                       ++ [ PinDecl (APin n) ["analog", "interrupt"] | n <- [8..15] ]
+                            , p_pinmap = (\x -> case x of
+                                                  DPin pin -> pin
+                                                  APin pin -> pin+54)
                             , p_capabilities = ["Duemilanove"] }
               where
                 pc pin = maybeInterrupt pin ++ maybePWM pin
@@ -327,8 +337,8 @@ arduinoMega = emptyPlatform { p_digital_pins = [ Pin n $ pc n | n <- [0..53] ]
 -- The pin setup is copied from the Duemilanove specification, it
 -- therefore needs adjustments.
 pololu3pi :: Platform FladuinoM
-pololu3pi = emptyPlatform { p_digital_pins = [ Pin n $ pc n | n <- [0..13] ]
-                          , p_analog_pins = [ Pin n ["analog", "interrupt"] | n <- [0..6] ]
+pololu3pi = emptyPlatform { p_pins = [ PinDecl (DPin n) $ pc n | n <- [0..13] ] ++
+                                     [ PinDecl (APin n) ["analog", "interrupt"] | n <- [0..6] ]
                           , p_capabilities = ["3pi"]
                           , p_base_setup = addCInclude "3pi/3pi.h"
                           }
@@ -360,15 +370,22 @@ finalizeDevices p = do
   foldM configureDevice config devices
 
 finalizeTimers :: forall m . MonadFladuino m
-               => m ()
-finalizeTimers = do
+               => Platform m -> m ()
+finalizeTimers platform = do
     timersMap <- getsFladuinoEnv $ \s -> f_timers s
     let timers = Map.toList timersMap
     -- We must at least have 0.24 interrupts each second for TIMER1
-    let interruptsPerSecond = max 0.24 (1000 / (fromIntegral . fst $ Map.findMin timersMap))
+    let interruptsPerSecond = (1000 / (fromIntegral . fst $ Map.findMin timersMap))
+    let interruptsPerSecondLimited = case p_timerid platform of
+                                       1 ->         max 0.24 interruptsPerSecond
+                                       otherwise -> max 62 interruptsPerSecond
+    let timerSetupFunc = case p_timerid platform of
+                          1 ->         "SetupTimer1"
+                          otherwise -> "SetupTimer2"
+                               
     when (timers /= []) $ do 
                    addCInclude "common/timersupport.h"
-                   addCInitStm [$cstm|SetupTimer1($float:interruptsPerSecond, &timer_handler);|]
+                   addCInitStm [$cstm|$id:timerSetupFunc($float:interruptsPerSecondLimited, &timer_handler);|]
     counterCode <- forM timers $ \(period, timerC) ->
         finalizeTimer period timerC interruptsPerSecond
     let (funcs, counterDefs, counterStms) = unzip3 counterCode
@@ -403,8 +420,8 @@ void timer_handler (void)
         counterCP = timerCP ++ "_counter"
 
 finalizeEvents :: forall m. MonadFladuino m
-               => m ()
-finalizeEvents = do
+               => Platform m -> m ()
+finalizeEvents p = do
   connections <- getsFladuinoEnv f_event_connections
   when (connections /= []) $ do 
                    addCInclude "common/PCINT.h"
@@ -447,7 +464,7 @@ finalizeEvents = do
                                                   queue_funcall(&$id:eventCP);
                                                 }
                                               }|]
-         return (eventCheckCP, e_interrupts erep)
+         return (eventCheckCP, map (p_pinmap p) $ e_interrupts erep)
   let bindings' = foldl (\map (f, ints) -> 
                              foldl (\map int -> 
                                         Map.insert int (f : Map.findWithDefault [] int map) map)

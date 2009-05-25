@@ -27,6 +27,7 @@
 -- THIS SOFTWARE IS PROVIDED BY THE UNIVERSITY AND CONTRIBUTORS ``AS IS'' AND
 -- ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 -- IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+
 -- ARE DISCLAIMED.  IN NO EVENT SHALL THE UNIVERSITY OR CONTRIBUTORS BE LIABLE
 -- FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
 -- DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
@@ -83,14 +84,15 @@ import Fladuino.Reify
 
 import Fladuino.LiftN
 
-data Pin = Pin Integer [Capability]
+data PinDecl = PinDecl Pin [Capability]
 
 data MonadFladuino m => Platform m = Platform
-    { p_digital_pins :: [Pin]
-    , p_analog_pins :: [Pin]
+    { p_pins :: [PinDecl]
+    , p_pinmap :: Pin -> Integer
     , p_capabilities :: [Capability]
     , p_base_setup :: m ()
-    , p_default_devices :: [DRef m] }
+    , p_default_devices :: [DRef m]
+    , p_timerid :: Integer }
 
 data MonadFladuino m => PConf m = PConf (Platform m) [Usage] [m ()]
 
@@ -99,10 +101,10 @@ startConf p = do mapM_ (\(DRef d) -> addDevice d) $ p_default_devices p
                  return (PConf p [] [p_base_setup p])
 
 supports :: MonadFladuino m => PConf m -> Usage -> Bool
-supports (PConf p _ _) (DPinUsage pin caps _) = isJust $ find f (p_digital_pins p)
-    where f (Pin pin' caps') = pin == pin' && null (caps \\ caps')
-supports (PConf p _ _) (APinUsage pin caps) = isJust $ find f (p_analog_pins p)
-    where f (Pin pin' caps') = pin == pin' && null (caps \\ caps')
+supports (PConf p _ _) (DPinUsage pin caps _) = isJust $ find f (p_pins p)
+    where f (PinDecl pin' caps') = (DPin pin) == pin' && null (caps \\ caps')
+supports (PConf p _ _) (APinUsage pin caps) = isJust $ find f (p_pins p)
+    where f (PinDecl pin' caps') = (APin pin) == pin' && null (caps \\ caps')
 
 conflicts :: MonadFladuino m => PConf m -> Usage -> Bool
 conflicts (PConf _ us _) (DPinUsage pin _ _) = isJust $ find f us
@@ -137,10 +139,9 @@ statevar d s = do
   case findIndex (\(DRef d2) -> uniqueId d2 == uniqueId d) devices of
     Just n -> return $ "device_" ++ (uniqueId d) ++ s
     Nothing -> return $ error $ "Unknown device " ++ uniqueId d ++ " encountered."
-    
                       
 class (Eq e, Show e, Reify t) => Event e t | e -> t where
-    interruptPins :: e -> [Integer]
+    interruptPins :: e -> [Pin]
     setupEvent :: e -> FladuinoM (ERep FladuinoM)
 
 eventValueType :: forall e t. (Event e t) => e -> H.Type
@@ -201,3 +202,65 @@ onEvent event = S $ do
       where
         v_in  = varIn this ""
         v_out = s_vout this
+
+postThenWait :: forall a eta e t. (Reify a, Reify t, LiftN eta (a -> ()), Event e t)
+                => eta -> e -> S a -> S t
+postThenWait poster event from = S $ do
+    nposter <- unN $ (liftN poster :: N (a -> ()))
+    sfrom   <- unS from
+    addStream  "postThenWait"
+               unitTy
+               (Poster sfrom $ show event)
+               genHs
+               (genC nposter) $ \this -> do 
+      connect sfrom this tau_a (varIn this "")
+      connectEvent event this (varIn this "receiver")
+    where
+      tau_a = reify (undefined :: a)
+      tau_t = reify (undefined :: t)
+
+      genHs this = do
+        addCImport c_v_in   [$ty|$ty:tau_a -> ()|] [$cexp|$id:c_v_in|]
+        addCImport c_v_recv [$ty|$ty:tau_t -> ()|] [$cexp|$id:c_v_recv|]
+          where
+            v_in     = varIn this ""
+            c_v_in   = show v_in
+            v_recv   = varIn this "receiver"
+            c_v_recv = show v_recv
+
+      genC :: NCode -> SCode m -> FladuinoM ()
+      genC nf this = do
+        tauf_a     <- toF tau_a
+        (a_params, a_params_ce) <- ToC.flattenParams tauf_a
+        post       <- hcall v_f $ ToC.CUnboxedData tauf_a [a_params_ce]
+        tauf_t     <- toF tau_t
+        (t_params, t_params_ce) <- ToC.flattenParams tauf_t
+        e_out      <- hcall v_out $ ToC.CUnboxedData tauf_t [t_params_ce]
+        addCDecldef [$cedecl|unsigned char $id:enabled = 0;|]
+        addCFundef [$cedecl|
+void $id:c_v_in($params:a_params)
+{
+  $exp:post;
+  $id:enabled = 1;
+}
+|]
+        addCFundef [$cedecl|
+void $id:c_v_recv($params:t_params)
+{
+  if ($id:enabled) {
+    $id:enabled = 0;
+    $exp:e_out;
+  }
+}
+|]
+        where
+          v_in     = varIn this ""
+          c_v_in   = show v_in
+          v_recv   = varIn this "receiver"
+          c_v_recv = show v_recv
+          v_f      = n_var nf
+          enabled  = ident this "enabled"
+          v_out    = s_vout this
+
+delayUntilEvent :: forall a e t. (Reify a, Event e t) => e -> S a -> S t
+delayUntilEvent = postThenWait [$exp|\_ -> ()|]
