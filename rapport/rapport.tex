@@ -238,7 +238,8 @@ manufacturers, a line of platforms based on various Atmel AVR
 microcontrollers, as well as a general term for any device that is
 mostly compatible with the official Arduino microcontroller boards.
 This paper will use the latter meaning unless otherwise is explicitly
-mentioned.
+mentioned.  We will use the term ``an Arduino board'' to refer to the
+physical package of microcontroller and I/O ports.
 
 Additionally, we have only had resources to test our work on the
 Arduino
@@ -714,13 +715,13 @@ the capability notion allows us to statically sanity--check any used
 devices for such requirements at generation--time.
 
 \subsection{Devices}
-A device is any form of peripheral that can be connected to the
-Arduino robot, e.g. buttons, electromotors and potentiometers.  A
-description of a device consists of instructions on how to initialize
-such a device and a way of uniquely identifying a device, so we can
-have a way of referring to the specific device.  If the device is used
-in more than one place, the unique identifier is also used to avoid
-adding the initialization code twice.
+We use the term \textit{device} for any form of peripheral that can be
+connected to an Arduino board, e.g. buttons, electromotors and
+potentiometers.  A description of a device consists of instructions on
+how to initialise such a device and a way of uniquely identifying a
+device, so we can have a way of referring to the specific device.  If
+the device is used in more than one place, the unique identifier is
+also used to avoid adding the initialisation code twice.
 
 \subsection{Events}
 Some devices can generate events.  The simplest example is the push
