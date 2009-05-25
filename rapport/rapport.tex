@@ -633,15 +633,16 @@ specifications, provided the device can supports the notion of events.
 
 \subsection{Platforms}
 
-A platform is defined by a list of \textit{analog pins},
-\textit{digital pins}, and free--form \textit{capabilities}, the
-latter being a set of strings describing the identity or unusual
-qualities of the platform.  For example, the platform definition for
-the Pololu 3pi robot contains a ``3pi''--capability that exists merely
-to express the fact that the platform supports the quirks of the 3pi
-robot that cannot be expressed through a list of pins.  Any device
-intended to make use of these quirks would explicitly require the
-presence of this capability.
+A platform is defined by a list of \textit{logical pins}, and
+free--form \textit{capabilities}, the latter being a set of strings
+describing the identity or unusual qualities of the platform.  For
+example, the platform definition for the Pololu 3pi robot contains a
+``3pi''--capability that exists merely to express the fact that the
+platform supports the quirks of the 3pi robot that cannot be expressed
+through a list of pins.  Any device intended to make use of these
+quirks would explicitly require the presence of this capability.
+
+\subsubsection{The Fladuino pin model}
 
 There is no concrete distinction between analog and digital pins in
 the Atmel microcontroller that lies at the heart of all Arduino
@@ -651,12 +652,36 @@ distinction between analog input and general-purpose digital pins, in
 particular enumerating them in different sequences (there is a digital
 pin 0 distinct from analog pin 0).  This notion is fully integrated
 and supported in Fladuino; in fact there is no way to directly address
-pins by the name they are known by to the Atmel microcontroller.  This
-choice is not as obvious as it may appear: we do lose a non-nil amount
-of expressive power by restricting ourselves to the interface provided
-by Arduino, rather than permitting complete exploitation of the
-capabilities of the microprocessor.  Yet for the following reasons, we
-believe we made the right choice:
+pins by the name they are known by to the Atmel microcontroller.  We
+identify three layers of pin abstraction, each building on the one
+below it:
+
+\begin{description}
+\item[Arduino pins] are what a normal user of Arduino will be familiar
+  with.  They are identified by a \textit{pin type} (digital or
+  analog-input) and a number.  Analog-input pin 0 and digital pin 0
+  are not the same pin.  This is the layer of abstraction that devices
+  work at.
+\item[Logical pins] are a simplification of Arduino pins, where the
+  Arduino pin abstraction is mapped to a single enumerated sequence.
+  This mapping is defined specifically for each platform; for example,
+  Arduino digital pin 0 will equal logical pin 0 on both the
+  Duemilanove and Mega platforms, but analog pin 0 equals logical pin
+  14 and 54, respectively.  A typical user of Fladuino will never have
+  to go below this level of abstraction, and will only have to
+  interact with it if he is defining a new platform.
+\item[Hardware pins] are the physical pins connected to the
+  microcontroller.  They are only interacted with in the
+  implementation of the Arduino and Fladuino supporting libraries.
+  The Arduino libraries themselves define the mapping from logical to
+  hardware pins, and adding a new mapping is a significant task.
+\end{description}
+
+This choice of abstraction is not as obvious as it may appear: we do
+lose a non-nil amount of expressive power by restricting ourselves to
+the interface provided by Arduino, rather than permitting complete
+exploitation of the capabilities of the microprocessor.  Yet for the
+following reasons, we believe we made the right choice:
 
 \begin{itemize}
 \item The software abstraction provided by Arduino exposes a uniform
