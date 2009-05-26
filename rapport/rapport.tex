@@ -337,6 +337,17 @@ governed by the following requirements.
   in Flask.
 \item To the extent that it is possible, we must statically analyse
   the program for validity (type or logic errors).
+\item It must be possible to define interfaces to external devices
+  connected to an Arduino board, without having to modify Fladuino
+  itself.  Interaction with these devices must take place through the
+  same statically typed stream operator (and event) interface as any
+  built-in part of Fladuino.
+\item It must be possible to define simple variations on Arduino
+  boards in terms of I/O--pin availability and custom capabilities,
+  without having to modify Fladuino itself.  Implementing support for
+  platforms that differ significantly from our built-ins (for example,
+  using a different microcontroller) will not be possible without
+  modifying the Fladuino libraries themselves, however.
 \end{itemize}
 
 \section{Terminology and basic \textit{modus operandi}}
