@@ -655,7 +655,7 @@ through a list of pins.  Any device intended to make use of these
 quirks would explicitly require the presence of this capability.
 
 \subsubsection{The Fladuino pin model}
-
+\label{pins}
 There is no concrete distinction between analog and digital pins in
 the Atmel microcontroller that lies at the heart of all Arduino
 platforms --- they are just subsets of the single set of numbered pins
@@ -779,8 +779,66 @@ interact with them.  Indeed, this solution is mostly satisfactory, as
 long as the devices are (almost) identical in their interface.
 
 \subsection{Events}
-Some devices can generate events.  The simplest example is the push
-button which generates events both when pushed and released.  ...
+
+A central aspect of any embedded system is responding to external,
+asynchronous events.  The hardware feature enabling this functionality
+--- asynchronous interrupts --- is primitive and hard to use, leading
+us to define a high--level interface, closely interconnected with the
+device abstraction, with which we can describe reactions to stimuli in
+terms that are closer to the problem domain of the application.  In
+the following, we distinguish between \textit{triggering an
+  interrupt}, which is the hardware executing the interrupt handler,
+and \textit{triggering an event}, which is Fladuino arranging for the
+execution of any event listener operators with the event as the input
+value.
+
+All events have a static type and value, which is used to distinguish
+between them at generation--time, and an event may carry a data
+\textit{payload} at runtime.  A critical piece of static information,
+that can be found in most (if not all) events, is the device that the
+event is associated with.  All events stem from external sources of
+input, and a given event is such intrinsically linked to some specific
+device.  Not all events have payloads (or rather, some events have
+payloads of the information--less type \textit{unit}): an event
+indicating the press of a pushbutton has no payload, and contains no
+information apart from the static event value itself (which indicates
+the exact button that was pressed), while an event indicating that a
+piece of sensor hardware has finished taking a reading may contain the
+reading data as the payload.
+
+As an example, assume that $p_1$ is a pushbutton device connected to
+digital pin 1, $d_2$ a diode connected to pin 2, and $\sigma(e,d)$ a
+dataflow graph node that fires whenever the given device $d$ triggers
+event $e$.  We can then construct a dataflow graph such as
+$\sigma(pushdown,p_1) \Rightarrow toggle(d_2)$, connecting the input
+of pressing a button to the action of toggling the state of a diode.
+
+In the definition of an event, a list of Arduino pins (see \ref{pins})
+indicates which pin--change interrupts might trigger the event.
+Additionally, two object--language functions are defined: a
+\textit{predicate}, for checking whether a given pin--change interrupt
+is actually should actually cause the event to trigger, and a
+\textit{value function}, that calculates the payload (if any) of the
+event.  This yields total control to the event implementor, at the
+cost of having to check all events possibly triggerable by an
+interrupt, whenever the interrupt is triggered.  This can potentially
+be problematic: as mentioned above, it is highly undesirable to spend
+too much time in an interrupt handler, but we cannot defer execution
+of either predicate or value function, as the result of those may
+depend on highly volatile dynamic state of the Arduino.  Indeed;
+merely the minute delay between the triggering of the interrupt, and
+the execution of a some predicate or value function, may change this
+state.  On the upside, the time spent in the interrupt handlers will
+have a static upper bound defined by the number of events used in the
+program, thus making problems of this sort likely to appear during
+initial testing, and not lay dormant until after deployment.  Of
+course, this bound is dependent on the implementation of the
+user--defined predicate and value functions --- if these have
+unpredictable runtime behavior (or worse: block), we cannot guarantee
+anything.
+
+Events initiate dataflow at nodes marked as \textit{listeners} for the
+specific event.  
 
 \chapter{Implementation}
 
@@ -851,6 +909,10 @@ still make its own choice whether to propagate a value or not.
 
 It is worth nothing that a value need not contain any information
 apart from its existence; \texttt{()} is perfectly valid as a signal.
+
+\subsection{Posting wires}
+
+
 
 \chapter{Example programs}
 \textit{Beskrivelse af vores fedeste eksempelprogrammer: 3pi,
