@@ -644,7 +644,7 @@ specifications, provided the device can supports the notion of events.
 \fixme{find a good example to add here}
 
 \subsection{Platforms}
-
+\label{capabilities}
 A platform is defined by a list of \textit{logical pins}, and
 free--form \textit{capabilities}, the latter being a set of strings
 describing the identity or unusual qualities of the platform.  For
@@ -728,11 +728,55 @@ devices for such requirements at generation--time.
 \subsection{Devices}
 We use the term \textit{device} for any form of peripheral that can be
 connected to an Arduino board, e.g. buttons, electromotors and
-potentiometers.  A description of a device consists of instructions on
-how to initialise such a device and a way of uniquely identifying a
-device, so we can have a way of referring to the specific device.  If
-the device is used in more than one place, the unique identifier is
-also used to avoid adding the initialisation code twice.
+potentiometers.  The definition of a device consists of a list of
+\textit{usages}, each describing a discrete reservation of some
+hardware resource, and a unique identifier.  A device can be
+parametric --- in fact, most are --- in for example the I/O pins that
+it is attached to.  As a concrete example, the device describing a
+plain digital output pin is parametric in the form of the single
+integer parameter denoting the number of the digital pin it
+represents.
+
+The notion of a usage deserves further elaboration: apart from being a
+facility for statically finding resource usage conflicts between
+devices, they are also a way to configure the starting state of the
+Arduino board.  We define three different kinds of usages, two of which
+reserve exclusive access to the hardware resource that they refer to:
+
+\begin{description}
+\item[Digital pin usage] is an expression of exclusive access to one
+  of the digital pins on the Arduino board.  If any other device has a
+  usage involving the same pin, this will be reported as an error at
+  generation--time.  A digital pin usage also specifies a list of
+  capabilities that must be provided by the indicated pin.
+  Additionally, a digital pin usage can have one of three types:
+  \begin{description}
+  \item[Digital output,] in which case the usage will also have to
+    specify a starting value (\texttt{HIGH} or \texttt{LOW}) on the
+    pin.
+  \item[Digital input]
+  \item[Analog output,] in which case a starting value must be
+    specified in the range $[0,255]$.  Note that this ``analog'' value
+    is, of course, implemented via PWM (see \ref{pwm}), and the
+    capability ``PWM'' should thus be required of the pin.
+  \end{description}
+\item[Analog input pin usage] denotes exclusive access to a specified
+  analog input pin.  The usage also specifies a list of capabilities
+  that must be provided by the indicated pin.
+\item[Capability requirement usage] is a dependency on the presence of
+  a given \textit{platform capability} (see \ref{capabilities}).  In
+  contrast to the pin usages, this dependency is not exclusive.
+\end{description}
+
+Some measure of power is lost by restricting devices to exclusive
+access to pins.  However, the fragility of having devices share these
+I/O pathways require detailed knowledge of exact device behavior
+anyway, in order to ensure that they will not be incompatible.  Given
+this knowledge, the user can merely connect several physical devices
+to the same IO pin (for example, multiple diodes to the same digital
+output pin) and use a single logical device in the Fladuino program to
+interact with them.  Indeed, this solution is mostly satisfactory, as
+long as the devices are (almost) identical in their interface.
 
 \subsection{Events}
 Some devices can generate events.  The simplest example is the push
@@ -930,6 +974,7 @@ write output. The mode is set by the function \texttt{void pinMode(int
 \end{itemize}
 
 \subsection{Digital pins}
+
 There are 14 digital input and output pins. Six of them can also be
 used to generate analog output by PWM (Pulse Width Modulation). It's
 possible to read a boolean value \texttt{HIGH} and \texttt{LOW} by the
@@ -953,7 +998,7 @@ why the 6 analog output pins is located among the digital IO pins is
 that the platform uses PWM to generate the desired voltage level.
 
 \subsubsection{PWM}
-
+\label{pwm}
 A description of PWM from the Arduino website follows:
 \footnote{\url{http://www.arduino.cc/en/Tutorial/PWM} downloaded the
   28. of April at 17:14}
