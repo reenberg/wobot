@@ -314,7 +314,11 @@ More on:
   Dataflow
 \end{verbatim}
 
+\section{Streams and node--level values}
 
+\subsection{\texttt{Reify}/\texttt{LiftN}}
+
+\section{Red --- a restricted node--level language}
 
 \chapter{Design of the Fladuino system}
 
@@ -611,6 +615,8 @@ event queue is empty.  They are a useful facility for specifying
 computations that should be done whenever the program is not busy with
 something else.
 
+\subsection{Posting wires}
+
 \section{Framework for specifying peripheral drivers}
 Arduino is a flexible system for general embedded development, with no
 specific application in mind.  The Arduino platform can therefore be
@@ -838,7 +844,7 @@ unpredictable runtime behavior (or worse: block), we cannot guarantee
 anything.
 
 Events initiate dataflow at nodes marked as \textit{listeners} for the
-specific event.  
+specific event.
 
 \chapter{Implementation}
 
@@ -852,7 +858,7 @@ code, and the additional amount of work required would be very large.
 Flask chooses the same approach, in that it produces NesC--code for
 running on sensor motes, likely for the same reasons.
 
-\section{Basic dataflow translation}
+\section{Dataflow translation}
 \label{dataflowtranslation}
 At their heart, both Flask and Fladuino--programs consist of an
 acyclic dataflow graph.  A core part of the system involves the
@@ -910,13 +916,32 @@ still make its own choice whether to propagate a value or not.
 It is worth nothing that a value need not contain any information
 apart from its existence; \texttt{()} is perfectly valid as a signal.
 
-\subsection{Posting wires}
+\subsection{Implementation of posting wires}
 
+\subsection{On blocking and busywaiting}
 
+\section{User--extensible abstractions with typeclasses}
+
+\subsection{Defining new devices}
+
+\subsection{Defining new events}
 
 \chapter{Example programs}
+
 \textit{Beskrivelse af vores fedeste eksempelprogrammer: 3pi,
   binærtæller etc. og hvorfor det er smart.}
+
+\section{Building on the abstractions}
+
+\subsection{Defining a pushbutton}
+
+\subsection{Defining a potentiometer}
+
+\subsection{Defining a servomotor}
+
+\subsection{Defining a new platform}
+
+\subsection{Defining Saturn V--nozzle control}
 
 \chapter{Evaluation}
 \begin{itemize}
