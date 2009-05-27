@@ -1408,10 +1408,13 @@ when searching to Bluetooth devices is configured by the \textit{SET BT NAME}
 command, and the PIN is configured by\texttt{SET BT AUTH *} command. Other iWRAP
 commands and their definitions can be seen in the ``iWRAP User Guide''.
 
-\subsection{Communication with the Atmega chip without Bluetooth}
+\subsection{Communication without Bluetooth}
 
-If for some reason the Arduino BT board refuses to accept connections after
-binding has been done. 
+
+
+Bluetooth communication to the Atmega chip may break if. The WT11 chip is
+configured wrong it may not accept connections or avrdude may not be able to
+communicate with the boatloader.
 
 \fixme{not done}
 
@@ -1431,17 +1434,97 @@ Guide\cite{iWRAP220UG}.
 
 \subsubsection{iWRAP modes}
 
-iWRAP can be in two different modes: command mode and data mode. Before sending
-any commands to the iWRAP interface it must be in command mode. The iWRAP
-interface is always in command mode when there is no active connections. When
-there is active connections then the mode can be switched by waiting at least
-one second, sending the sequence \texttt{esc esc esc} and wait at least one
-second, where \texttt{esc} is the defined escape character. When in command mode
-the \texttt{SELECT} command will also change to data mode after changing the
-specified connection to be the current active connection. This is discussed in
-section 3 ``IWRAP MODES'' of the iWRAP 2.2.0 User Guide\cite{iWRAP220UG}.
+iWRAP can be in three different modes: command,data and mux mode (multiplexing
+mode).
 
-\fixme {Mention the mux mode.}
+Command and data mode are the default behaviour. Before sending any commands to
+the iWRAP interface it must be in command mode. The iWRAP interface is always in
+command mode when there is no active connections. When a connection is made
+iWRAP automatically switches to data mode on this connection.  The mode can be
+switched back to command mode by waiting at least one second, sending the
+sequence \texttt{esc esc esc} and wait at least one second (\texttt{esc} is the
+defined escape character\footnote{The escape character is defined by the iWRAP
+  command \texttt{SET CONTROL ESCAPE}}). When in command mode the \texttt{LIST}
+command will list all active connections and \texttt{SELECT} \textit{link\_id}
+command will switch to data mode on the specified connection. Command/data mode
+has the advantage of being easy and fairly intuitive when operating one a small
+amount of active connections (preferably only one connection) but when multiple
+connections is used the mode switching becomes quite a bottleneck as iWRAP needs
+to be in data mode on the desired connection to receiving data and if it is in
+command mode or data mode on another connection the data is stored in a buffer
+and thus could potentially be lost if the buffer overflows before the connection
+is selected.
+
+This can however be solved by using multiplexing mode. In multiplexing mode data
+and command mode is melted into one mode and it uses a special protocol which
+doesn't accept normal iWRAP ASCII commands. Instead the multiplexing protocol is
+a ASCII list of space separated hex values that contains some control segments
+which defines whether the data part is a control (iWRAP command) sequence or
+which connection the data sequence should be sent to or is received from. Table
+\ref{tab:multiplexing_protocol} illustrates the multiplexing frame format.
+
+\begin{table}[h!]
+  \centering
+  \textsf{
+    \begin{tabular}{|l|l|l|l|}
+      \hline
+      \textbf{Length:} & \textbf{Name:} & \textbf{Description:} & \textbf{Value:} \\ \hline
+      8 bits & SOF & Start of Frame & \texttt{0xBF} \\ \hline
+      8 bits & LINK & Link ID & \texttt{0x00}--\texttt{0x08} or \texttt{0xFF} for
+      control commands \\ \hline
+      6 bits & FLAGS & Frame Flags & \texttt{0x00} \\ \hline
+      10 bits & LENGTH & Size of data field in bytes & - \\ \hline
+      0-800 bits & DATA & Data & - \\ \hline 
+      8 bits & nLINK & LINK \texttt{xor} \texttt{0xFF} & - \\ \hline 
+    \end{tabular}
+  }
+  \caption{Multiplexing frame format as described in Table 4 of the iWRAP 2.2.0 User
+    Guide}
+  \label{tab:multiplexing_protocol}
+
+\end{table}
+
+When multiplexing mode has been enabled\footnote{To enable multiplexing mode
+  send the iWRAP command \texttt{SET CONTROL MUX 1}}, it can be disable by the
+following sequence \texttt{BF FF 00 11 53 45 54 20 43 4f 4e 54 52 4f 4c 20 4d 55
+  58 20 30 00} which breaks down to the following
+
+\begin{center}
+  \begin{tabular}{|l|p{300pt}|}
+    \hline 
+    \textbf{Name:} & \textbf{Description:} \\ \hline
+    \textsf{SOF} & Is always \texttt{0xBF} \\ \hline
+    \textsf{LINK} & Is \texttt{0xFF} as it is a control command \\ \hline
+    \textsf{FLAGS} & Is always \texttt{0x00} \\ \hline
+    \textsf{LENGTH} & Is \texttt{11} (length of data is 17 characters) \\ \hline
+    \textsf{DATA} & Is \texttt{53 45 54 20 43 4F 4E 54 52 4F 4C 20 4D 55 58 20 30} which is the hex
+    representation of \texttt{SET CONTROL MUX 0} \\ \hline
+    \textsf{nLINK} & is \texttt{0x00} as \texttt{0xFF xor 0xFF = 0x00} \\ \hline
+  \end{tabular}
+\end{center}
+ 
+iWRAP commands should not end with ``$\backslash$r'' or
+``$\backslash$r$\backslash$n'' when encoded to their hex representation and used
+in a multiplexing frame.
+
+The iWRAP 2.2.0 User Guide states that there can be used four simultaneous
+connections in multiplexing mode, though iWRAP 3.0.0 User Guide\cite{iWRAP300UG}
+states in section 6.20.3 on page 120 that 
+
+\begin{quote}
+  In MUX mode the processor of the module is highly utilized and on the edge of
+  its performance. This may be seen as a instability of Bluetooth connections,
+  especially if 3 or more connections are used or data rate is high.
+\end{quote}
+
+\noindent
+and suggests to use \texttt{SNIFF} mode and optimise the bluetooth packet size
+by using the MTU option in the \texttt{CALL} command to leave more time for the
+processor to parse the multiplexing protocol. 
+
+Section 3 of the iWRAP 2.2.0/3.0.0 User Guide covers the three iWRAP modes in
+depth.
+
 
 \subsubsection{Firmaware update}
 
