@@ -8,6 +8,15 @@
 % anvendt af babel »12«, hvilket kan give orddelingen »h-vor«.
 \renewcommand{\englishhyphenmins}{22} 
 
+% Fix of fancyref to work with memoir. Makes references look
+% nice. Redefines memoir \fref and \Fref to \refer and \Refer.
+% \usepackage{refer}             %
+% As we dont really have any use for \fref and \Fref we just undefine what
+% memoir defined them as, so fancyref can define what it wants.
+\let\fref\undefined
+\let\Fref\undefined
+\usepackage{fancyref} % Better reference. 
+
 \usepackage{colortbl}  % Bruges til at farve celler, rækker mv. i tabeller
 \usepackage{pdflscape} % Gør landscape-environmentet tilgængeligt
 \usepackage[draft]{fixme}     % Indsæt "fixme" noter i drafts.
@@ -93,7 +102,9 @@ Troels Henriksen (athas@sigkill.dk)}
 \fixme{change $\backslash$ url to use the hyperref package so real links are
   used.}
 \fixme{check all quoted text for use of the same quotes!!!!}
-
+\fixme{Check all cites. Should there be a space between the word and cite or
+  not.}
+\fixme{Check all refs. Should be converted to vref to utilize the varioref package}
 
 \chapter{Disposition}
 \begin{itemize}
@@ -205,25 +216,21 @@ partition computer systems into:
   is required to respond to its changes (e.g. a robot).
 \end{itemize}
 
-A reactive programming language is a language with primitives for
-connecting an process this kind of ever-changing input values, often
-called signals. The choice of hardware-platform has an influence on
-how to design such a language.
+A reactive programming language is a language with primitives for connecting an
+process this kind of ever-changing input values, often called signals. The
+choice of hardware-platform has an influence on how to design such a language.
 
 We've chosen to make our language and framework target the
-Arduino-platform\footnote{\url{http://www.arduino.cc/}}.  There are
-number of reasons for why we think this platform is a good
-choice. First of all, our institute DIKU was planning on buying a
-couple of these boards for research in Human Centered Computing about
-interactive-objects.\fixme{måske en forklaring af hvorfor vi laver
-  noget andet end HCC med dem?} And they finally bought some in the
-first weeks of our project. Even better reasons is that they are cheap
-(approximately 200 DKK for an Arduino Duemilanove, at the time of
-writing) and is easily extensible. E.g. you can buy extensions for
-ethernet, bluetooth, or even small touchscreens. Finally, the Arduino
-comes with a reltively high-level C-interface, sparing us from most
-low-level programming and bit trickery.
-
+Arduino-platform\footnote{\url{http://www.arduino.cc/}}.  There are number of
+reasons for why we think this platform is a good choice. First of all, our
+institute DIKU was planning on buying a couple of these boards for research in
+Human Centered Computing about interactive-objects.\fixme{måske en forklaring af
+  hvorfor vi laver noget andet end HCC med dem?} And they finally bought some in
+the first weeks of our project. Even better reasons is that they are cheap
+(approximately 200 DKK for an Arduino Duemilanove, at the time of writing) and
+is easily extensible. E.g. you can buy extensions for ethernet, bluetooth, or
+even small touchscreens. Finally, the Arduino comes with a reltively high-level
+C-interface, sparing us from most low-level programming and bit trickery.
 
 Because the Arduino processor has a relatively limited computation capacity, we
 had to find a way of programming these systems \ldots
@@ -331,7 +338,7 @@ governed by the following requirements.
   running on an Arduino from a description of a dataflow graph.  This
   graph must be expressed in the form of a Haskell program.
 \item The C--program generated must be \textit{valid}, except for any
-  custom C included by the user.
+  custom C--code included by the user.
 \item We shall not describe the implementation of any specific
   reactive program with Fladuino, nor will we attempt to support the
   writing of any such specific program.  We shall endeavour to support
@@ -1391,13 +1398,54 @@ commands and their definitions can be seen in the ``iWRAP User Guide''.
 
 \subsection{Communication without Bluetooth}
 
+If the WT11 chip is configured in a way such that it refuses connections or in
+some other way that the Atmega chip cannot be programmed, you need to reset to
+factory settings (by doing a firmware update) or by changing the individual
+settings back to something that works. 
 
+Before settings on the WT11 chip can be changed, they must be directly sent to
+it. This can be done by using a 3.3v USB to RS-232 serial converter\footnote{E.g. a
+  breakout board with FTDI's FT232RL chip, which is widely available and can be
+  used to update the firmware using the DFU protocol as well.
+  \url{http://www.sparkfun.com/commerce/product_info.php?products_id=718}} and
+connect it to the WT11 chips \texttt{RX} and \texttt{TX} pins which can be
+located at the two solder points \texttt{JP1} directly underneth the WT11 chip
+on the bottom side of the Arduino board. As \texttt{RX} is the receive line and
+\texttt{TX} is the transmit, it is important to cross these two\footnote{Serial
+  converter RX goes to WT11 TX and serial converter TX goes to WT11 RX} when
+connecting the serial converter and the WT11 chip. No damage will happen if the
+lines aren't crossed, but no communication will be able to take place.
 
-Bluetooth communication to the Atmega chip may break if. The WT11 chip is
-configured wrong it may not accept connections or avrdude may not be able to
-communicate with the boatloader.
+There can be some timing issues if using an external power source while using
+the serial convert, so it is highly recommended to use the serial converters
+3.3v power supply feature.
 
-\fixme{not done}
+The most common issues and solutions is
+
+\begin{itemize}
+\item If control echo has been enabled it will not be possible to program the
+  Atmega chip as the bootloader will receive messages from the WT11 chip at
+  bootup and thus fail when waiting for control characters. The solution to this
+  is to disable control echo by sending the command \texttt{SET CONTROL ECHO 0}.
+
+\item If the SPP (Serial Port Profile) has been disabled, no host can make a
+  serial (rfcomm) connection and thus not make any serial communication (program
+  the Atmega chip). The solution to this is to enable the SSP again by sending
+  the following command \texttt{SET PROFILE SPP on} and then reset the WT11 chip
+  by putting high on pin 7 for a short while or sending the command
+  \texttt{RESET}.
+
+\item If bluetooth connection is restored, the serial converter is still
+  connected and any attempt to program the Atmega chip fail. Solution to this is
+  that the serial converter must not be connected to the Arduino board while
+  trying to program the Atmega chip. 
+
+  In fact the serial converter interferes with the signals whether it is
+  connected to the WT11 chip or Atmega Chip (digital pins 0 and 1). This results
+  in communication only goes between the serial converter and the chip it is
+  connected to. So whenever communication between the Atmega chip and the WT11
+  chip is desired, the serial converter must be disconnected.
+\end{itemize}
 
 \subsection{iWRAP interface}
 
@@ -1441,8 +1489,9 @@ and command mode is melted into one mode and it uses a special protocol which
 doesn't accept normal iWRAP ASCII commands. Instead the multiplexing protocol is
 a ASCII list of space separated hex values that contains some control segments
 which defines whether the data part is a control (iWRAP command) sequence or
-which connection the data sequence should be sent to or is received from. Table
-\ref{tab:multiplexing_protocol} illustrates the multiplexing frame format.
+which connection the data sequence should be sent to or is received
+from. \Fref{tab:multiplexing_protocol} illustrates the multiplexing frame
+format.
 
 \begin{table}[h!]
   \centering
@@ -1465,10 +1514,13 @@ which connection the data sequence should be sent to or is received from. Table
 
 \end{table}
 
-When multiplexing mode has been enabled\footnote{To enable multiplexing mode
-  send the iWRAP command \texttt{SET CONTROL MUX 1}}, it can be disable by the
-following sequence \texttt{BF FF 00 11 53 45 54 20 43 4f 4e 54 52 4f 4c 20 4d 55
-  58 20 30 00} which breaks down to the following
+When multiplexing mode is enabled\footnote{To enable multiplexing mode send the
+  iWRAP command \texttt{SET CONTROL MUX 1}}, it can be disable by the following
+sequence \texttt{BF FF 00 11 53 45 54 20 43 4f 4e 54 52 4f 4c 20 4d 55 58 20 30
+  00} which should be send as its ASCII representation without spaces. A python
+script that demonstrates this can be seen in \fref{sec:python-demux-script}.
+
+The sequence breaks down to the following
 
 \begin{center}
   \begin{tabular}{|l|p{300pt}|}
@@ -1478,22 +1530,21 @@ following sequence \texttt{BF FF 00 11 53 45 54 20 43 4f 4e 54 52 4f 4c 20 4d 55
     \textsf{LINK} & Is \texttt{0xFF} as it is a control command \\ \hline
     \textsf{FLAGS} & Is always \texttt{0x00} \\ \hline
     \textsf{LENGTH} & Is \texttt{11} (length of data is 17 characters) \\ \hline
-    \textsf{DATA} & Is \texttt{53 45 54 20 43 4F 4E 54 52 4F 4C 20 4D 55 58 20 30} which is the hex
-    representation of \texttt{SET CONTROL MUX 0} \\ \hline
+    \textsf{DATA} & Is \texttt{53 45 54 20 43 4F 4E 54 52 4F 4C 20 4D 55 58 20
+      30} which is the hex representation of \texttt{SET CONTROL MUX 0} \\ \hline
     \textsf{nLINK} & is \texttt{0x00} as \texttt{0xFF xor 0xFF = 0x00} \\ \hline
   \end{tabular}
 \end{center}
  
 iWRAP commands should not end with ``$\backslash$r'' or
-``$\backslash$r$\backslash$n'' when encoded to their hex representation and used
-in a multiplexing frame.
+``$\backslash$r$\backslash$n'' when used in a multiplexing frame.
 
 The iWRAP 2.2.0 User Guide states that there can be used four simultaneous
 connections in multiplexing mode, though iWRAP 3.0.0 User Guide\cite{iWRAP300UG}
 states in section 6.20.3 on page 120 that 
 
 \begin{quote}
-  In MUX mode the processor of the module is highly utilized and on the edge of
+  In MUX mode the processor of the module is highly utilised and on the edge of
   its performance. This may be seen as a instability of Bluetooth connections,
   especially if 3 or more connections are used or data rate is high.
 \end{quote}
@@ -1549,6 +1600,7 @@ Bluegiga Technologies recommends to buy or build\cite{oik_chematic} a OIK
 alternative schematic\cite{oik_chematic_arduino}.
 
 \fixme{this section needs restructuring.}
+\fixme{this section is outdated. Firmware update has been done another way.}
 
 \chapter{Guide to electronics}
 
@@ -1556,6 +1608,25 @@ alternative schematic\cite{oik_chematic_arduino}.
   component are drawn in a diagram, if we are going to use diagrams in
   the article). }
 
+\chapter{Code snippets}
 
+\section{Python demux script}
+\label{sec:python-demux-script}
+
+This is a python script that sends the iWRAP command \texttt{SET CONTROL MUX 0}
+to disable multiplexing mode. This assumes that the breakout board is connected
+to the WT11 chips serial communication pins and connected to the computer at
+\textit{/dev/ttyUSB0}.
+
+\begin{verbatim}
+#!/usr/bin/python
+
+# sets str to '\xbf\xff\x00\x11SET CONTROL MUX 0\x00'
+str = 'BFFF001153455420434f4e54524f4c204d5558203000'.decode("hex")
+
+f = open('/dev/ttyUSB0', 'w')
+f.write(str)
+f.close()
+\end{verbatim}
 
 \end{document}
