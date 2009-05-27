@@ -238,7 +238,8 @@ manufacturers, a line of platforms based on various Atmel AVR
 microcontrollers, as well as a general term for any device that is
 mostly compatible with the official Arduino microcontroller boards.
 This paper will use the latter meaning unless otherwise is explicitly
-mentioned.
+mentioned.  We will use the term ``an Arduino board'' to refer to the
+physical package of microcontroller and I/O ports.
 
 Additionally, we have only had resources to test our work on the
 Arduino
@@ -313,7 +314,11 @@ More on:
   Dataflow
 \end{verbatim}
 
+\section{Streams and node--level values}
 
+\subsection{\texttt{Reify}/\texttt{LiftN}}
+
+\section{Red --- a restricted node--level language}
 
 \chapter{Design of the Fladuino system}
 
@@ -336,6 +341,17 @@ governed by the following requirements.
   in Flask.
 \item To the extent that it is possible, we must statically analyse
   the program for validity (type or logic errors).
+\item It must be possible to define interfaces to external devices
+  connected to an Arduino board, without having to modify Fladuino
+  itself.  Interaction with these devices must take place through the
+  same statically typed stream operator (and event) interface as any
+  built-in part of Fladuino.
+\item It must be possible to define simple variations on Arduino
+  boards in terms of I/O--pin availability and custom capabilities,
+  without having to modify Fladuino itself.  Implementing support for
+  platforms that differ significantly from our built-ins (for example,
+  using a different microcontroller) will not be possible without
+  modifying the Fladuino libraries themselves, however.
 \end{itemize}
 
 \section{Terminology and basic \textit{modus operandi}}
@@ -599,6 +615,8 @@ event queue is empty.  They are a useful facility for specifying
 computations that should be done whenever the program is not busy with
 something else.
 
+\subsection{Posting wires}
+
 \section{Framework for specifying peripheral drivers}
 Arduino is a flexible system for general embedded development, with no
 specific application in mind.  The Arduino platform can therefore be
@@ -632,7 +650,7 @@ specifications, provided the device can supports the notion of events.
 \fixme{find a good example to add here}
 
 \subsection{Platforms}
-
+\label{capabilities}
 A platform is defined by a list of \textit{logical pins}, and
 free--form \textit{capabilities}, the latter being a set of strings
 describing the identity or unusual qualities of the platform.  For
@@ -643,7 +661,7 @@ through a list of pins.  Any device intended to make use of these
 quirks would explicitly require the presence of this capability.
 
 \subsubsection{The Fladuino pin model}
-
+\label{pins}
 There is no concrete distinction between analog and digital pins in
 the Atmel microcontroller that lies at the heart of all Arduino
 platforms --- they are just subsets of the single set of numbered pins
@@ -714,17 +732,119 @@ the capability notion allows us to statically sanity--check any used
 devices for such requirements at generation--time.
 
 \subsection{Devices}
-A device is any form of peripheral that can be connected to the
-Arduino robot, e.g. buttons, electromotors and potentiometers.  A
-description of a device consists of instructions on how to initialize
-such a device and a way of uniquely identifying a device, so we can
-have a way of referring to the specific device.  If the device is used
-in more than one place, the unique identifier is also used to avoid
-adding the initialization code twice.
+We use the term \textit{device} for any form of peripheral that can be
+connected to an Arduino board, e.g. buttons, electromotors and
+potentiometers.  The definition of a device consists of a list of
+\textit{usages}, each describing a discrete reservation of some
+hardware resource, and a unique identifier.  A device can be
+parametric --- in fact, most are --- in for example the I/O pins that
+it is attached to.  As a concrete example, the device describing a
+plain digital output pin is parametric in the form of the single
+integer parameter denoting the number of the digital pin it
+represents.
+
+The notion of a usage deserves further elaboration: apart from being a
+facility for statically finding resource usage conflicts between
+devices, they are also a way to configure the starting state of the
+Arduino board.  We define three different kinds of usages, two of which
+reserve exclusive access to the hardware resource that they refer to:
+
+\begin{description}
+\item[Digital pin usage] is an expression of exclusive access to one
+  of the digital pins on the Arduino board.  If any other device has a
+  usage involving the same pin, this will be reported as an error at
+  generation--time.  A digital pin usage also specifies a list of
+  capabilities that must be provided by the indicated pin.
+  Additionally, a digital pin usage can have one of three types:
+  \begin{description}
+  \item[Digital output,] in which case the usage will also have to
+    specify a starting value (\texttt{HIGH} or \texttt{LOW}) on the
+    pin.
+  \item[Digital input]
+  \item[Analog output,] in which case a starting value must be
+    specified in the range $[0,255]$.  Note that this ``analog'' value
+    is, of course, implemented via PWM (see \ref{pwm}), and the
+    capability ``PWM'' should thus be required of the pin.
+  \end{description}
+\item[Analog input pin usage] denotes exclusive access to a specified
+  analog input pin.  The usage also specifies a list of capabilities
+  that must be provided by the indicated pin.
+\item[Capability requirement usage] is a dependency on the presence of
+  a given \textit{platform capability} (see \ref{capabilities}).  In
+  contrast to the pin usages, this dependency is not exclusive.
+\end{description}
+
+Some measure of power is lost by restricting devices to exclusive
+access to pins.  However, the fragility of having devices share these
+I/O pathways require detailed knowledge of exact device behavior
+anyway, in order to ensure that they will not be incompatible.  Given
+this knowledge, the user can merely connect several physical devices
+to the same IO pin (for example, multiple diodes to the same digital
+output pin) and use a single logical device in the Fladuino program to
+interact with them.  Indeed, this solution is mostly satisfactory, as
+long as the devices are (almost) identical in their interface.
 
 \subsection{Events}
-Some devices can generate events.  The simplest example is the push
-button which generates events both when pushed and released.  ...
+
+A central aspect of any embedded system is responding to external,
+asynchronous events.  The hardware feature enabling this functionality
+--- asynchronous interrupts --- is primitive and hard to use, leading
+us to define a high--level interface, closely interconnected with the
+device abstraction, with which we can describe reactions to stimuli in
+terms that are closer to the problem domain of the application.  In
+the following, we distinguish between \textit{triggering an
+  interrupt}, which is the hardware executing the interrupt handler,
+and \textit{triggering an event}, which is Fladuino arranging for the
+execution of any event listener operators with the event as the input
+value.
+
+All events have a static type and value, which is used to distinguish
+between them at generation--time, and an event may carry a data
+\textit{payload} at runtime.  A critical piece of static information,
+that can be found in most (if not all) events, is the device that the
+event is associated with.  All events stem from external sources of
+input, and a given event is such intrinsically linked to some specific
+device.  Not all events have payloads (or rather, some events have
+payloads of the information--less type \textit{unit}): an event
+indicating the press of a pushbutton has no payload, and contains no
+information apart from the static event value itself (which indicates
+the exact button that was pressed), while an event indicating that a
+piece of sensor hardware has finished taking a reading may contain the
+reading data as the payload.
+
+As an example, assume that $p_1$ is a pushbutton device connected to
+digital pin 1, $d_2$ a diode connected to pin 2, and $\sigma(e,d)$ a
+dataflow graph node that fires whenever the given device $d$ triggers
+event $e$.  We can then construct a dataflow graph such as
+$\sigma(pushdown,p_1) \Rightarrow toggle(d_2)$, connecting the input
+of pressing a button to the action of toggling the state of a diode.
+
+In the definition of an event, a list of Arduino pins (see \ref{pins})
+indicates which pin--change interrupts might trigger the event.
+Additionally, two object--language functions are defined: a
+\textit{predicate}, for checking whether a given pin--change interrupt
+is actually should actually cause the event to trigger, and a
+\textit{value function}, that calculates the payload (if any) of the
+event.  This yields total control to the event implementor, at the
+cost of having to check all events possibly triggerable by an
+interrupt, whenever the interrupt is triggered.  This can potentially
+be problematic: as mentioned above, it is highly undesirable to spend
+too much time in an interrupt handler, but we cannot defer execution
+of either predicate or value function, as the result of those may
+depend on highly volatile dynamic state of the Arduino.  Indeed;
+merely the minute delay between the triggering of the interrupt, and
+the execution of a some predicate or value function, may change this
+state.  On the upside, the time spent in the interrupt handlers will
+have a static upper bound defined by the number of events used in the
+program, thus making problems of this sort likely to appear during
+initial testing, and not lay dormant until after deployment.  Of
+course, this bound is dependent on the implementation of the
+user--defined predicate and value functions --- if these have
+unpredictable runtime behavior (or worse: block), we cannot guarantee
+anything.
+
+Events initiate dataflow at nodes marked as \textit{listeners} for the
+specific event.
 
 \chapter{Implementation}
 
@@ -738,7 +858,7 @@ code, and the additional amount of work required would be very large.
 Flask chooses the same approach, in that it produces NesC--code for
 running on sensor motes, likely for the same reasons.
 
-\section{Basic dataflow translation}
+\section{Dataflow translation}
 \label{dataflowtranslation}
 At their heart, both Flask and Fladuino--programs consist of an
 acyclic dataflow graph.  A core part of the system involves the
@@ -796,9 +916,32 @@ still make its own choice whether to propagate a value or not.
 It is worth nothing that a value need not contain any information
 apart from its existence; \texttt{()} is perfectly valid as a signal.
 
+\subsection{Implementation of posting wires}
+
+\subsection{On blocking and busywaiting}
+
+\section{User--extensible abstractions with typeclasses}
+
+\subsection{Defining new devices}
+
+\subsection{Defining new events}
+
 \chapter{Example programs}
+
 \textit{Beskrivelse af vores fedeste eksempelprogrammer: 3pi,
   binærtæller etc. og hvorfor det er smart.}
+
+\section{Building on the abstractions}
+
+\subsection{Defining a pushbutton}
+
+\subsection{Defining a potentiometer}
+
+\subsection{Defining a servomotor}
+
+\subsection{Defining a new platform}
+
+\subsection{Defining Saturn V--nozzle control}
 
 \chapter{Evaluation}
 \begin{itemize}
@@ -918,6 +1061,7 @@ write output. The mode is set by the function \texttt{void pinMode(int
 \end{itemize}
 
 \subsection{Digital pins}
+
 There are 14 digital input and output pins. Six of them can also be
 used to generate analog output by PWM (Pulse Width Modulation). It's
 possible to read a boolean value \texttt{HIGH} and \texttt{LOW} by the
@@ -941,7 +1085,7 @@ why the 6 analog output pins is located among the digital IO pins is
 that the platform uses PWM to generate the desired voltage level.
 
 \subsubsection{PWM}
-
+\label{pwm}
 A description of PWM from the Arduino website follows:
 \footnote{\url{http://www.arduino.cc/en/Tutorial/PWM} downloaded the
   28. of April at 17:14}
