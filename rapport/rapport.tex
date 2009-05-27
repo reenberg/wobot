@@ -617,6 +617,21 @@ something else.
 
 \subsection{Posting wires}
 
+In the dataflow graph, atomic subgraphs can be connected by
+\textit{posting wires}.  These serve to temporarily suspend execution
+while the system waits for external response, thus serving in place of
+blocking operations (which are not permitted in atomic subgraphs).
+Conceptually, when a posting wire is encountered during evaluation of
+the graph, it will send a request to an external hardware unit, wait
+for a response, and then fire the destination node with the value of
+the response as the input value.  Posting wires are therefore a
+natural fit for solving the problem of sensor-requests that can
+involve waiting an indeterminate time for the response.
+
+It is not intuitively obvious what to do when a posting wire is
+reached a second time, before a response has come back from the
+previously sent request.
+
 \section{Framework for specifying peripheral drivers}
 Arduino is a flexible system for general embedded development, with no
 specific application in mind.  The Arduino platform can therefore be
@@ -804,6 +819,10 @@ between them at generation--time, and an event may carry a data
 that can be found in most (if not all) events, is the device that the
 event is associated with.  All events stem from external sources of
 input, and a given event is such intrinsically linked to some specific
+device, though it is possible to define events that are not connected
+to Arduino's notion of a logical device --- for example, by hardcoding
+the I/O pins directly into the implementation of the event.  In this
+section, however, we shall assume that all events are connected to a
 device.  Not all events have payloads (or rather, some events have
 payloads of the information--less type \textit{unit}): an event
 indicating the press of a pushbutton has no payload, and contains no
