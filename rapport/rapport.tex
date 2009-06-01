@@ -531,7 +531,7 @@ of course, but ultimately there are constraints on how much any
 computer can do.
 
 \subsection{Details of the event queue}
-
+\label{event queue}
 The event queue itself is such a central cog in our event-pumping
 machinery that it is worth paying great attention to its form.  It is
 essentially just a double-ended queue, but as it turns out, the
@@ -623,7 +623,7 @@ computations that should be done whenever the program is not busy with
 something else.
 
 \subsection{Posting wires}
-
+\label{posting wires}
 In the dataflow graph, atomic subgraphs can be connected by
 \textit{posting wires}.  These serve to temporarily suspend execution
 while the system waits for external response, thus serving in place of
@@ -633,11 +633,68 @@ the graph, it will send a request to an external hardware unit, wait
 for a response, and then fire the destination node with the value of
 the response as the input value.  Posting wires are therefore a
 natural fit for solving the problem of sensor-requests that can
-involve waiting an indeterminate time for the response.
+involve waiting an indeterminate time for the response.  For clarity,
+in the following we shall refer to the external device as the
+\textit{sensor}, the node preceding the posting wire as the
+\textit{input node} and the node following the posting wire as the
+\textit{output node}.  The phrase \textit{send a request to the
+  sensor} denotes the act of requesting data from the sensor under the
+assumption that a reply will be received.
 
 It is not intuitively obvious what to do when a posting wire is
 reached a second time, before a response has come back from the
-previously sent request.
+previously sent request.  Several options present themselves:
+
+\begin{description}
+\item[Accumulate-Repeat:] If we are already waiting for a response
+  from the sensor for the posting wire when a value arrives at the
+  input node, we will not send another request.  Instead, we will
+  increase an internal counter, and upon receiving the sensor
+  response, fire the output node a number of times equivalent to the
+  number of times a value arrived at the input node.
+\item[Queue:] When a value arrives, queue a request to the sensor.  We
+  cannot assume that all sensor hardware supports a request queue (in
+  fact, we can be fairly certain that most will not), so we have to
+  maintain this queue in the Fladuino runtime system.  Whenever a
+  response comes back from the sensor, we fire the output node and
+  check whether there are any requests left in the queue.  If so, we
+  send it.  As the format of a request is a function of only the
+  posting wire itself, not the incoming value, such a queue could be
+  implemented as a mere integral counter, thus ignoring the problem of
+  dynamically allocating memory (and potential problems resulting from
+  such, as described in section \ref{event queue}).
+\item[Ignore:] We can also opt not to queue or accumulate anything,
+  ignore any input values sent while there is already an outstanding
+  request, and fire the output node a single time upon receiving a
+  reply from the sensor.  While appearing to be a lossy hack at first
+  glance, we argue that it is in fact the most elegant solution, that
+  its deficiencies are not important in the typical case, and that
+  they can (to a degree) be worked around, if necessary.
+\end{description}
+
+Both the \textit{Accumulate--Repeat} and \textit{Queue}--strategies
+suffer from \textit{clogging--propagation}, where the multitude of
+inputs, greater than the sensor is capable of handling, will also
+result in a large amount of activity on the output side of the posting
+wire.  Especially Accumulate-Repeat suffers badly, as the receiving of
+a sensor--reply will result in a potentially very large amount of
+work, a situation that can result in information loss if the event
+queue fills up.  And as each firing of the output node will be with
+the same value, it is in practice often unlikely that the repeated
+evaluations are appreciably different from just a single evaluation.
+
+The Queue strategy is more appealing, having the attractive property
+that every input shall result in a sensor request and an output
+(barring hardware failure or --- unlikely --- integer counter
+overflow).  The chief disadvantage is that there is no way to stop the
+execution of the queue, should it outlast the necessity for sensor
+requests.  A brief flurry of input values might translate into
+requests being sent to the sensor long after desirable.  Recall that a
+sensor request may not necessarily translate to a harmless, passive
+reading, but can be everything between reading a simple light sensor
+to transmitting a sonar pulse and detecting the echo.
+
+\subsubsection{Simulating Accumulate--Repeat and Queue with Ignore}
 
 \section{Framework for specifying peripheral drivers}
 Arduino is a flexible system for general embedded development, with no
