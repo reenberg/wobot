@@ -15,7 +15,7 @@ void setup()
   Serial.println("SET BT PAGEMODE 3 2000 1");
   Serial.println("SET BT NAME ArduinoBT");
   Serial.println("SET BT ROLE 0 f 7d00");
-//  Serial.println("SET CONTROL ECHO 0");
+  Serial.println("SET CONTROL ECHO 0");
   Serial.println("SET BT AUTH * 12345");
 
 
