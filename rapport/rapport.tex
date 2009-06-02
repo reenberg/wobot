@@ -8,6 +8,15 @@
 % anvendt af babel »12«, hvilket kan give orddelingen »h-vor«.
 \renewcommand{\englishhyphenmins}{22} 
 
+% Fix of fancyref to work with memoir. Makes references look
+% nice. Redefines memoir \fref and \Fref to \refer and \Refer.
+% \usepackage{refer}             %
+% As we dont really have any use for \fref and \Fref we just undefine what
+% memoir defined them as, so fancyref can define what it wants.
+\let\fref\undefined
+\let\Fref\undefined
+\usepackage{fancyref} % Better reference. 
+
 \usepackage{colortbl}  % Bruges til at farve celler, rækker mv. i tabeller
 \usepackage{pdflscape} % Gør landscape-environmentet tilgængeligt
 \usepackage[draft]{fixme}     % Indsæt "fixme" noter i drafts.
@@ -93,7 +102,9 @@ Troels Henriksen (athas@sigkill.dk)}
 \fixme{change $\backslash$ url to use the hyperref package so real links are
   used.}
 \fixme{check all quoted text for use of the same quotes!!!!}
-
+\fixme{Check all cites. Should there be a space between the word and cite or
+  not.}
+\fixme{Check all refs. Should be converted to vref to utilize the varioref package}
 
 \chapter{Disposition}
 \begin{itemize}
@@ -205,25 +216,21 @@ partition computer systems into:
   is required to respond to its changes (e.g. a robot).
 \end{itemize}
 
-A reactive programming language is a language with primitives for
-connecting an process this kind of ever-changing input values, often
-called signals. The choice of hardware-platform has an influence on
-how to design such a language.
+A reactive programming language is a language with primitives for connecting an
+process this kind of ever-changing input values, often called signals. The
+choice of hardware-platform has an influence on how to design such a language.
 
 We've chosen to make our language and framework target the
-Arduino-platform\footnote{\url{http://www.arduino.cc/}}.  There are
-number of reasons for why we think this platform is a good
-choice. First of all, our institute DIKU was planning on buying a
-couple of these boards for research in Human Centered Computing about
-interactive-objects.\fixme{måske en forklaring af hvorfor vi laver
-  noget andet end HCC med dem?} And they finally bought some in the
-first weeks of our project. Even better reasons is that they are cheap
-(approximately 200 DKK for an Arduino Duemilanove, at the time of
-writing) and is easily extensible. E.g. you can buy extensions for
-ethernet, bluetooth, or even small touchscreens. Finally, the Arduino
-comes with a reltively high-level C-interface, sparing us from most
-low-level programming and bit trickery.
-
+Arduino-platform\footnote{\url{http://www.arduino.cc/}}.  There are number of
+reasons for why we think this platform is a good choice. First of all, our
+institute DIKU was planning on buying a couple of these boards for research in
+Human Centered Computing about interactive-objects.\fixme{måske en forklaring af
+  hvorfor vi laver noget andet end HCC med dem?} And they finally bought some in
+the first weeks of our project. Even better reasons is that they are cheap
+(approximately 200 DKK for an Arduino Duemilanove, at the time of writing) and
+is easily extensible. E.g. you can buy extensions for ethernet, bluetooth, or
+even small touchscreens. Finally, the Arduino comes with a reltively high-level
+C-interface, sparing us from most low-level programming and bit trickery.
 
 Because the Arduino processor has a relatively limited computation capacity, we
 had to find a way of programming these systems \ldots
@@ -374,7 +381,7 @@ governed by the following requirements.
   running on an Arduino from a description of a dataflow graph.  This
   graph must be expressed in the form of a Haskell program.
 \item The C--program generated must be \textit{valid}, except for any
-  custom C included by the user.
+  custom C--code included by the user.
 \item We shall not describe the implementation of any specific
   reactive program with Fladuino, nor will we attempt to support the
   writing of any such specific program.  We shall endeavour to support
@@ -567,7 +574,7 @@ of course, but ultimately there are constraints on how much any
 computer can do.
 
 \subsection{Details of the event queue}
-
+\label{event queue}
 The event queue itself is such a central cog in our event-pumping
 machinery that it is worth paying great attention to its form.  It is
 essentially just a double-ended queue, but as it turns out, the
@@ -659,6 +666,78 @@ computations that should be done whenever the program is not busy with
 something else.
 
 \subsection{Posting wires}
+\label{posting wires}
+In the dataflow graph, atomic subgraphs can be connected by
+\textit{posting wires}.  These serve to temporarily suspend execution
+while the system waits for external response, thus serving in place of
+blocking operations (which are not permitted in atomic subgraphs).
+Conceptually, when a posting wire is encountered during evaluation of
+the graph, it will send a request to an external hardware unit, wait
+for a response, and then fire the destination node with the value of
+the response as the input value.  Posting wires are therefore a
+natural fit for solving the problem of sensor-requests that can
+involve waiting an indeterminate time for the response.  For clarity,
+in the following we shall refer to the external device as the
+\textit{sensor}, the node preceding the posting wire as the
+\textit{input node} and the node following the posting wire as the
+\textit{output node}.  The phrase \textit{send a request to the
+  sensor} denotes the act of requesting data from the sensor under the
+assumption that a reply will be received.
+
+It is not intuitively obvious what to do when a posting wire is
+reached a second time, before a response has come back from the
+previously sent request.  Several options present themselves:
+
+\begin{description}
+\item[Accumulate-Repeat:] If we are already waiting for a response
+  from the sensor for the posting wire when a value arrives at the
+  input node, we will not send another request.  Instead, we will
+  increase an internal counter, and upon receiving the sensor
+  response, fire the output node a number of times equivalent to the
+  number of times a value arrived at the input node.
+\item[Queue:] When a value arrives, queue a request to the sensor.  We
+  cannot assume that all sensor hardware supports a request queue (in
+  fact, we can be fairly certain that most will not), so we have to
+  maintain this queue in the Fladuino runtime system.  Whenever a
+  response comes back from the sensor, we fire the output node and
+  check whether there are any requests left in the queue.  If so, we
+  send it.  As the format of a request is a function of only the
+  posting wire itself, not the incoming value, such a queue could be
+  implemented as a mere integral counter, thus ignoring the problem of
+  dynamically allocating memory (and potential problems resulting from
+  such, as described in section \ref{event queue}).
+\item[Ignore:] We can also opt not to queue or accumulate anything,
+  ignore any input values sent while there is already an outstanding
+  request, and fire the output node a single time upon receiving a
+  reply from the sensor.  While appearing to be a lossy hack at first
+  glance, we argue that it is in fact the most elegant solution, that
+  its deficiencies are not important in the typical case, and that
+  they can (to a degree) be worked around, if necessary.
+\end{description}
+
+Both the \textit{Accumulate--Repeat} and \textit{Queue}--strategies
+suffer from \textit{clogging--propagation}, where the multitude of
+inputs, greater than the sensor is capable of handling, will also
+result in a large amount of activity on the output side of the posting
+wire.  Especially Accumulate-Repeat suffers badly, as the receiving of
+a sensor--reply will result in a potentially very large amount of
+work, a situation that can result in information loss if the event
+queue fills up.  And as each firing of the output node will be with
+the same value, it is in practice often unlikely that the repeated
+evaluations are appreciably different from just a single evaluation.
+
+The Queue strategy is more appealing, having the attractive property
+that every input shall result in a sensor request and an output
+(barring hardware failure or --- unlikely --- integer counter
+overflow).  The chief disadvantage is that there is no way to stop the
+execution of the queue, should it outlast the necessity for sensor
+requests.  A brief flurry of input values might translate into
+requests being sent to the sensor long after desirable.  Recall that a
+sensor request may not necessarily translate to a harmless, passive
+reading, but can be everything between reading a simple light sensor
+to transmitting a sonar pulse and detecting the echo.
+
+\subsubsection{Simulating Accumulate--Repeat and Queue with Ignore}
 
 \section{Framework for specifying peripheral drivers}
 Arduino is a flexible system for general embedded development, with no
@@ -847,6 +926,10 @@ between them at generation--time, and an event may carry a data
 that can be found in most (if not all) events, is the device that the
 event is associated with.  All events stem from external sources of
 input, and a given event is such intrinsically linked to some specific
+device, though it is possible to define events that are not connected
+to Arduino's notion of a logical device --- for example, by hardcoding
+the I/O pins directly into the implementation of the event.  In this
+section, however, we shall assume that all events are connected to a
 device.  Not all events have payloads (or rather, some events have
 payloads of the information--less type \textit{unit}): an event
 indicating the press of a pushbutton has no payload, and contains no
@@ -1432,12 +1515,56 @@ when searching to Bluetooth devices is configured by the \textit{SET BT NAME}
 command, and the PIN is configured by\texttt{SET BT AUTH *} command. Other iWRAP
 commands and their definitions can be seen in the ``iWRAP User Guide''.
 
-\subsection{Communication with the Atmega chip without Bluetooth}
+\subsection{Communication without Bluetooth}
 
-If for some reason the Arduino BT board refuses to accept connections after
-binding has been done. 
+If the WT11 chip is configured in a way such that it refuses connections or in
+some other way that the Atmega chip cannot be programmed, you need to reset to
+factory settings (by doing a firmware update) or by changing the individual
+settings back to something that works. 
 
-\fixme{not done}
+Before settings on the WT11 chip can be changed, they must be directly sent to
+it. This can be done by using a 3.3v USB to RS-232 serial converter\footnote{E.g. a
+  breakout board with FTDI's FT232RL chip, which is widely available and can be
+  used to update the firmware using the DFU protocol as well.
+  \url{http://www.sparkfun.com/commerce/product_info.php?products_id=718}} and
+connect it to the WT11 chips \texttt{RX} and \texttt{TX} pins which can be
+located at the two solder points \texttt{JP1} directly underneth the WT11 chip
+on the bottom side of the Arduino board. As \texttt{RX} is the receive line and
+\texttt{TX} is the transmit, it is important to cross these two\footnote{Serial
+  converter RX goes to WT11 TX and serial converter TX goes to WT11 RX} when
+connecting the serial converter and the WT11 chip. No damage will happen if the
+lines aren't crossed, but no communication will be able to take place.
+
+There can be some timing issues if using an external power source while using
+the serial convert, so it is highly recommended to use the serial converters
+3.3v power supply feature.
+
+The most common issues and solutions is
+
+\begin{itemize}
+\item If control echo has been enabled it will not be possible to program the
+  Atmega chip as the bootloader will receive messages from the WT11 chip at
+  bootup and thus fail when waiting for control characters. The solution to this
+  is to disable control echo by sending the command \texttt{SET CONTROL ECHO 0}.
+
+\item If the SPP (Serial Port Profile) has been disabled, no host can make a
+  serial (rfcomm) connection and thus not make any serial communication (program
+  the Atmega chip). The solution to this is to enable the SSP again by sending
+  the following command \texttt{SET PROFILE SPP on} and then reset the WT11 chip
+  by putting high on pin 7 for a short while or sending the command
+  \texttt{RESET}.
+
+\item If bluetooth connection is restored, the serial converter is still
+  connected and any attempt to program the Atmega chip fail. Solution to this is
+  that the serial converter must not be connected to the Arduino board while
+  trying to program the Atmega chip. 
+
+  In fact the serial converter interferes with the signals whether it is
+  connected to the WT11 chip or Atmega Chip (digital pins 0 and 1). This results
+  in communication only goes between the serial converter and the chip it is
+  connected to. So whenever communication between the Atmega chip and the WT11
+  chip is desired, the serial converter must be disconnected.
+\end{itemize}
 
 \subsection{iWRAP interface}
 
@@ -1455,17 +1582,100 @@ Guide\cite{iWRAP220UG}.
 
 \subsubsection{iWRAP modes}
 
-iWRAP can be in two different modes: command mode and data mode. Before sending
-any commands to the iWRAP interface it must be in command mode. The iWRAP
-interface is always in command mode when there is no active connections. When
-there is active connections then the mode can be switched by waiting at least
-one second, sending the sequence \texttt{esc esc esc} and wait at least one
-second, where \texttt{esc} is the defined escape character. When in command mode
-the \texttt{SELECT} command will also change to data mode after changing the
-specified connection to be the current active connection. This is discussed in
-section 3 ``IWRAP MODES'' of the iWRAP 2.2.0 User Guide\cite{iWRAP220UG}.
+iWRAP can be in three different modes: command,data and mux mode (multiplexing
+mode).
 
-\fixme {Mention the mux mode.}
+Command and data mode are the default behaviour. Before sending any commands to
+the iWRAP interface it must be in command mode. The iWRAP interface is always in
+command mode when there is no active connections. When a connection is made
+iWRAP automatically switches to data mode on this connection.  The mode can be
+switched back to command mode by waiting at least one second, sending the
+sequence \texttt{esc esc esc} and wait at least one second (\texttt{esc} is the
+defined escape character\footnote{The escape character is defined by the iWRAP
+  command \texttt{SET CONTROL ESCAPE}}). When in command mode the \texttt{LIST}
+command will list all active connections and \texttt{SELECT} \textit{link\_id}
+command will switch to data mode on the specified connection. Command/data mode
+has the advantage of being easy and fairly intuitive when operating one a small
+amount of active connections (preferably only one connection) but when multiple
+connections is used the mode switching becomes quite a bottleneck as iWRAP needs
+to be in data mode on the desired connection to receiving data and if it is in
+command mode or data mode on another connection the data is stored in a buffer
+and thus could potentially be lost if the buffer overflows before the connection
+is selected.
+
+This can however be solved by using multiplexing mode. In multiplexing mode data
+and command mode is melted into one mode and it uses a special protocol which
+doesn't accept normal iWRAP ASCII commands. Instead the multiplexing protocol is
+a ASCII list of space separated hex values that contains some control segments
+which defines whether the data part is a control (iWRAP command) sequence or
+which connection the data sequence should be sent to or is received
+from. \Fref{tab:multiplexing_protocol} illustrates the multiplexing frame
+format.
+
+\begin{table}[h!]
+  \centering
+  \textsf{
+    \begin{tabular}{|l|l|l|l|}
+      \hline
+      \textbf{Length:} & \textbf{Name:} & \textbf{Description:} & \textbf{Value:} \\ \hline
+      8 bits & SOF & Start of Frame & \texttt{0xBF} \\ \hline
+      8 bits & LINK & Link ID & \texttt{0x00}--\texttt{0x08} or \texttt{0xFF} for
+      control commands \\ \hline
+      6 bits & FLAGS & Frame Flags & \texttt{0x00} \\ \hline
+      10 bits & LENGTH & Size of data field in bytes & - \\ \hline
+      0-800 bits & DATA & Data & - \\ \hline 
+      8 bits & nLINK & LINK \texttt{xor} \texttt{0xFF} & - \\ \hline 
+    \end{tabular}
+  }
+  \caption{Multiplexing frame format as described in Table 4 of the iWRAP 2.2.0 User
+    Guide}
+  \label{tab:multiplexing_protocol}
+
+\end{table}
+
+When multiplexing mode is enabled\footnote{To enable multiplexing mode send the
+  iWRAP command \texttt{SET CONTROL MUX 1}}, it can be disable by the following
+sequence \texttt{BF FF 00 11 53 45 54 20 43 4f 4e 54 52 4f 4c 20 4d 55 58 20 30
+  00} which should be send as its ASCII representation without spaces. A python
+script that demonstrates this can be seen in \fref{sec:python-demux-script}.
+
+The sequence breaks down to the following
+
+\begin{center}
+  \begin{tabular}{|l|p{300pt}|}
+    \hline 
+    \textbf{Name:} & \textbf{Description:} \\ \hline
+    \textsf{SOF} & Is always \texttt{0xBF} \\ \hline
+    \textsf{LINK} & Is \texttt{0xFF} as it is a control command \\ \hline
+    \textsf{FLAGS} & Is always \texttt{0x00} \\ \hline
+    \textsf{LENGTH} & Is \texttt{11} (length of data is 17 characters) \\ \hline
+    \textsf{DATA} & Is \texttt{53 45 54 20 43 4F 4E 54 52 4F 4C 20 4D 55 58 20
+      30} which is the hex representation of \texttt{SET CONTROL MUX 0} \\ \hline
+    \textsf{nLINK} & is \texttt{0x00} as \texttt{0xFF xor 0xFF = 0x00} \\ \hline
+  \end{tabular}
+\end{center}
+ 
+iWRAP commands should not end with ``$\backslash$r'' or
+``$\backslash$r$\backslash$n'' when used in a multiplexing frame.
+
+The iWRAP 2.2.0 User Guide states that there can be used four simultaneous
+connections in multiplexing mode, though iWRAP 3.0.0 User Guide\cite{iWRAP300UG}
+states in section 6.20.3 on page 120 that 
+
+\begin{quote}
+  In MUX mode the processor of the module is highly utilised and on the edge of
+  its performance. This may be seen as a instability of Bluetooth connections,
+  especially if 3 or more connections are used or data rate is high.
+\end{quote}
+
+\noindent
+and suggests to use \texttt{SNIFF} mode and optimise the bluetooth packet size
+by using the MTU option in the \texttt{CALL} command to leave more time for the
+processor to parse the multiplexing protocol. 
+
+Section 3 of the iWRAP 2.2.0/3.0.0 User Guide covers the three iWRAP modes in
+depth.
+
 
 \subsubsection{Firmaware update}
 
@@ -1509,6 +1719,7 @@ Bluegiga Technologies recommends to buy or build\cite{oik_chematic} a OIK
 alternative schematic\cite{oik_chematic_arduino}.
 
 \fixme{this section needs restructuring.}
+\fixme{this section is outdated. Firmware update has been done another way.}
 
 \chapter{Guide to electronics}
 
@@ -1516,6 +1727,25 @@ alternative schematic\cite{oik_chematic_arduino}.
   component are drawn in a diagram, if we are going to use diagrams in
   the article). }
 
+\chapter{Code snippets}
 
+\section{Python demux script}
+\label{sec:python-demux-script}
+
+This is a python script that sends the iWRAP command \texttt{SET CONTROL MUX 0}
+to disable multiplexing mode. This assumes that the breakout board is connected
+to the WT11 chips serial communication pins and connected to the computer at
+\textit{/dev/ttyUSB0}.
+
+\begin{verbatim}
+#!/usr/bin/python
+
+# sets str to '\xbf\xff\x00\x11SET CONTROL MUX 0\x00'
+str = 'BFFF001153455420434f4e54524f4c204d5558203000'.decode("hex")
+
+f = open('/dev/ttyUSB0', 'w')
+f.write(str)
+f.close()
+\end{verbatim}
 
 \end{document}
