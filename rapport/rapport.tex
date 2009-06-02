@@ -639,7 +639,9 @@ in the following we shall refer to the external device as the
 \textit{input node} and the node following the posting wire as the
 \textit{output node}.  The phrase \textit{send a request to the
   sensor} denotes the act of requesting data from the sensor under the
-assumption that a reply will be received.
+assumption that a reply will be received.  Note that ``output node''
+is a lossless abstraction, as several nodes may be on the receiving
+end of the posting wire.
 
 It is not intuitively obvious what to do when a posting wire is
 reached a second time, before a response has come back from the
@@ -684,17 +686,26 @@ the same value, it is in practice often unlikely that the repeated
 evaluations are appreciably different from just a single evaluation.
 
 The Queue strategy is more appealing, having the attractive property
-that every input shall result in a sensor request and an output
-(barring hardware failure or --- unlikely --- integer counter
-overflow).  The chief disadvantage is that there is no way to stop the
-execution of the queue, should it outlast the necessity for sensor
-requests.  A brief flurry of input values might translate into
-requests being sent to the sensor long after desirable.  Recall that a
-sensor request may not necessarily translate to a harmless, passive
-reading, but can be everything between reading a simple light sensor
-to transmitting a sonar pulse and detecting the echo.
+that every input eventually results in a sensor request and a value
+sent to the output node (barring hardware failure or --- unlikely ---
+integer counter overflow).  The chief disadvantage is that there is no
+way to stop the execution of the queue, should it outlast the
+necessity for sensor requests.  A brief flurry of input values might
+translate into requests being sent to the sensor long after desirable.
+Recall that a sensor request may not necessarily translate to a
+harmless, passive reading, but can be everything between reading a
+simple light sensor to transmitting a sonar pulse and detecting the
+environmental echo.  The Ignore strategy only causes consecutive
+requests to be sent to the sensor if the input node keeps receiving
+input.  Thus, a posting wire can be considered an abstraction that is
+activated as long as it keeps receiving input values, and outputs a
+continuous stream of sensor readings as long as it is activated.
 
 \subsubsection{Simulating Accumulate--Repeat and Queue with Ignore}
+
+Through clever construction of the graph surrounding the posting wire
+we can mostly simulate the Accumulate--Repeat and Queue strategies
+through a posting wire implementation using the Ignore strategy.
 
 \section{Framework for specifying peripheral drivers}
 Arduino is a flexible system for general embedded development, with no
