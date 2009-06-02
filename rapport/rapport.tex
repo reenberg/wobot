@@ -684,7 +684,12 @@ in the following we shall refer to the external device as the
   sensor} denotes the act of requesting data from the sensor under the
 assumption that a reply will be received.  Note that ``output node''
 is a lossless abstraction, as several nodes may be on the receiving
-end of the posting wire.
+end of the posting wire.  A fundamental simplifying assumption we make
+in the following section is that the structure of the sensor request
+is a function only of the identity of the posting wire, and is notably
+not based on the value that arrived at the input node.  This rule,
+which is also present in Flask, grants us much more leeway in the
+implementation of posting wires.
 
 It is not intuitively obvious what to do when a posting wire is
 reached a second time, before a response has come back from the
@@ -745,7 +750,6 @@ activated as long as it keeps receiving input values, and outputs a
 continuous stream of sensor readings as long as it is activated.
 
 \subsubsection{Simulating Accumulate--Repeat and Queue with Ignore}
-\fixme {Reference sloop} 
 
 Through clever construction of the graph surrounding the posting wire
 we can mostly simulate the Accumulate--Repeat and Queue strategies
@@ -756,15 +760,43 @@ When receiving a value from the input node, an internal counter will
 be increased by one.  When receiving a value (the sensor reading) from
 the output node, the value will be packaged up with the counter into a
 tuple and sent to successors of the accumulator node, after which the
-counter will then be reset to zero.  This does not in itself implement
-the ``repeat''--portion of Accumulate--Repeat, but we have removed the
-loss of information, and can thus trivially take whatever action
-repeated firings of the output node would have resulted in.
+counter will then be reset to zero.  Said successors will be the nodes
+that would normally follow the output node.  This does not in itself
+implement the ``repeat''--portion of Accumulate--Repeat, but we have
+removed the loss of information, and can thus trivially take whatever
+action repeated firings of the output node would have resulted in.
 
 \begin{figure}
   \label{accum-repeat-with-ignore}
   \includegraphics[width=0.9\textwidth]{images/accum-repeat-with-ignore}
   \caption{Simulating Accumulate--Repeat}
+  \centering
+\end{figure}
+
+Simulating the Queue behavior is significantly more complicated and
+requires a somewhat clumsy use of events (see
+\ref{sec:events_design}).  Values received at the input--node are sent
+on to a \textit{counter node}, where we check whether we are still
+waiting for the sensor to reply to a previously sent request.  If so,
+we increment an internal counter and send nothing further.  When the
+reply is received, by being sent to the output node, we will send a
+value to the counter node, telling it to send another request to the
+sensor if the counter is nonzero.  The problem in this scheme is the
+wire from the output node to the accumulator node --- this graph edge
+would form a cycle, something that is expressly forbidden.  On figure
+\ref{queue-with-ignore}, we solve this issue by an \textit{event node}
+that listens to a discrete event broadcast by the output node (the
+Fladuino event system is described in detail in
+\Fref{sec:events_design}).  Using the event system in such a way is
+technically feasible, but violates the spirit of the design.  The
+connection from output to event node can be considered to be a
+particularly weak kind of posting wire --- informally, they are to
+real posting wires as software interrupts are to hardware interrupts.
+
+\begin{figure}
+  \label{queue-with-ignore}
+  \includegraphics[width=0.9\textwidth]{images/queue-with-ignore}
+  \caption{Simulating Queue}
   \centering
 \end{figure}
 
@@ -936,7 +968,7 @@ interact with them.  Indeed, this solution is mostly satisfactory, as
 long as the devices are (almost) identical in their interface.
 
 \subsection{Events}
-
+\label{sec:events_design}
 A central aspect of any embedded system is responding to external,
 asynchronous events.  The hardware feature enabling this functionality
 --- asynchronous interrupts --- is primitive and hard to use, leading
