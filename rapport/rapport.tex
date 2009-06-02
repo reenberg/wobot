@@ -722,11 +722,11 @@ suffer from \textit{clogging--propagation}, where the multitude of
 inputs, greater than the sensor is capable of handling, will also
 result in a large amount of activity on the output side of the posting
 wire.  Especially Accumulate-Repeat suffers badly, as the receiving of
-a sensor--reply will result in a potentially very large amount of
-work, a situation that can result in information loss if the event
-queue fills up.  And as each firing of the output node will be with
-the same value, it is in practice often unlikely that the repeated
-evaluations are appreciably different from just a single evaluation.
+a sensor--reply will result in a potentially large amount of work, a
+situation that can result in information loss if the event queue fills
+up.  And as each firing of the output node will be with the same
+value, it is in practice often unlikely that the repeated evaluations
+are appreciably different from just a single evaluation.
 
 The Queue strategy is more appealing, having the attractive property
 that every input eventually results in a sensor request and a value
@@ -745,10 +745,28 @@ activated as long as it keeps receiving input values, and outputs a
 continuous stream of sensor readings as long as it is activated.
 
 \subsubsection{Simulating Accumulate--Repeat and Queue with Ignore}
+\fixme {Reference sloop} 
 
 Through clever construction of the graph surrounding the posting wire
 we can mostly simulate the Accumulate--Repeat and Queue strategies
-through a posting wire implementation using the Ignore strategy.
+through a posting wire implementation using the Ignore strategy.  For
+Accumulate--Repeat, we can connect both input and output nodes to an
+\textit{accumulator node} that distinguishes between its two inputs.
+When receiving a value from the input node, an internal counter will
+be increased by one.  When receiving a value (the sensor reading) from
+the output node, the value will be packaged up with the counter into a
+tuple and sent to successors of the accumulator node, after which the
+counter will then be reset to zero.  This does not in itself implement
+the ``repeat''--portion of Accumulate--Repeat, but we have removed the
+loss of information, and can thus trivially take whatever action
+repeated firings of the output node would have resulted in.
+
+\begin{figure}
+  \label{accum-repeat-with-ignore}
+  \includegraphics[width=0.9\textwidth]{images/accum-repeat-with-ignore}
+  \caption{Simulating Accumulate--Repeat}
+  \centering
+\end{figure}
 
 \section{Framework for specifying peripheral drivers}
 Arduino is a flexible system for general embedded development, with no
