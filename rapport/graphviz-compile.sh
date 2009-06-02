@@ -1,3 +1,8 @@
 #!/bin/sh
-dot -Tpng -oimages/flask-simple.png flask-simple.dot
-dot -Tpng -oimages/flask-design.png flask-design.dot
+
+for DOTFILE in `ls -d dotfiles/*`
+do 
+    dot -Tpdf -oimages/`basename $DOTFILE .dot`.pdf $DOTFILE
+done
+
+

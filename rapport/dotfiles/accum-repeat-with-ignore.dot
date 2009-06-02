@@ -1,0 +1,15 @@
+digraph G
+{
+                node [fontname="Times Roman", shape=rectangle]
+                edge [color=black, fontname="Times Roman"]
+                InputNode [label="Input node"]
+                OutputNode [label="Output node"]
+                AccumulatorNode [label="Accumulator node"]
+
+                {rank=same; InputNode AccumulatorNode}
+                
+                InputNode->OutputNode [style=dashed]
+                InputNode->AccumulatorNode [label="Increase accumulator"]
+                OutputNode->AccumulatorNode [label="Send data and reset accumulator"]
+                
+}
