@@ -398,12 +398,19 @@ governed by the following requirements.
   platforms that differ significantly from our built-ins (for example,
   using a different microcontroller) will not be possible without
   modifying the Fladuino libraries themselves, however.
+\item It is not required that we attempt to handle all error
+  conditions.  We accept that hardware constraints pose certain hard
+  restrictions (such as memory limits, integer counter overflow and
+  CPU time starvation), and declare that writing a program with
+  Fladuino that exceeds these constraints will result in information
+  loss or undefined behaviour.  We shall, however, endeavour to design
+  Fladuino so as to reduce the likelihood of these errors.
 \end{itemize}
 
 \section{Terminology and basic \textit{modus operandi}}
 
 As in Flask, Fladuino is implemented as a set of Haskell modules that
-provides facilities for expressing the structure and behavior of a
+provides facilities for expressing the structure and behaviour of a
 \textit{dataflow graph}, connecting \textit{dataflow operators}
 through value-carrying directed graph edges (\textit{wires}).  The
 programmer writes a Haskell program, called the \textit{generator
@@ -464,7 +471,7 @@ parts can be divided into the following:
   sense, the dynamic part of a Fladuino program happens at
   compile--time.
 \item A compiler is supplied for the Haskell-like programming language
-  Red, which is used to tailor the behavior of stream operators.
+  Red, which is used to tailor the behaviour of stream operators.
 \item A module that encapsulates the hardware facilities offered by
   the target platform and provides the ability to check whether the
   requirements made by the users program can be fulfilled.  Arduino is
@@ -594,7 +601,7 @@ risk of the stack growing across the event queue and corrupting its
 data, causing great harm when the main loop gets around to processing
 these now invalid elements.  In conclusion, we cannot permit the stack
 to grow uncontrollably.  An additional problem with using dynamic
-memory is the unpredictable runtime behavior of \texttt{malloc()},
+memory is the unpredictable runtime behaviour of \texttt{malloc()},
 something that is undesirable in an interrupt handler, as described in
 the preceding section.
 
@@ -769,7 +776,7 @@ action repeated firings of the output node would have resulted in.
   \centering
 \end{figure}
 
-Simulating the Queue behavior is significantly more complicated and
+Simulating the Queue behaviour is significantly more complicated and
 requires a somewhat clumsy use of events (see
 \ref{sec:events_design}).  Values received at the input--node are sent
 on to a \textit{counter node}, where we check whether we are still
@@ -955,7 +962,7 @@ reserve exclusive access to the hardware resource that they refer to:
 
 Some measure of power is lost by restricting devices to exclusive
 access to pins.  However, the fragility of having devices share these
-I/O pathways require detailed knowledge of exact device behavior
+I/O pathways require detailed knowledge of exact device behaviour
 anyway, in order to ensure that they will not be incompatible.  Given
 this knowledge, the user can merely connect several physical devices
 to the same IO pin (for example, multiple diodes to the same digital
@@ -1023,7 +1030,7 @@ program, thus making problems of this sort likely to appear during
 initial testing, and not lay dormant until after deployment.  Of
 course, this bound is dependent on the implementation of the
 user--defined predicate and value functions --- if these have
-unpredictable runtime behavior (or worse: block), we cannot guarantee
+unpredictable runtime behaviour (or worse: block), we cannot guarantee
 anything.
 
 Events initiate dataflow at nodes marked as \textit{listeners} for the
