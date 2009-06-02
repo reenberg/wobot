@@ -88,7 +88,7 @@ Troels Henriksen (athas@sigkill.dk)}
   huge (isolated) parts of the code is left unchanged. Our
   contribution includes functionality suitable for the robot domain,
   including a framework for specifying interfaces to peripherals (like
-  sensors, motors or LCD-displays), primitives for event-handling and
+  sensors, motors or displays), primitives for event-handling and
   (\ldots).
 \end{abstract}
 
@@ -185,7 +185,7 @@ autonomous behavior. A simpler definition, says that a robot is any
 programmable electronic system that is equipped with sensors and
 actuators. The second definition is more general, in that it applies
 to almost any programmable electronic system, and the autonomous
-behavior will often could be achieved programmatically. 
+behavior will often be achieved programmatically. 
 
 \fixme{something about how robots are normally programmed, maybe a bit
   specific about arduino}
@@ -200,8 +200,8 @@ autonomous robots.
 
 Robots are reactive systems. We've found the best description of what
 distinguishes a reactive system in Zhanyong Wan's PhD
-thesis "`Functional Reactive Programming for Real-Time reactive
-systems"'. \fixme{make this a latex-cite} As he explains we can
+thesis ``Functional Reactive Programming for Real-Time reactive
+systems'' \cite{Chambers1992}.  As he explains we can
 partition computer systems into:
 \begin{itemize}
 \item Transitional systems, that takes some data as input, does some
@@ -216,26 +216,29 @@ partition computer systems into:
   is required to respond to its changes (e.g. a robot).
 \end{itemize}
 
-A reactive programming language is a language with primitives for connecting an
-process this kind of ever-changing input values, often called signals. The
-choice of hardware-platform has an influence on how to design such a language.
+A reactive programming language is a language with primitives for connecting
+processes (a kind of ever-changing input values, often called signals). 
 
-We've chosen to make our language and framework target the
-Arduino-platform\footnote{\url{http://www.arduino.cc/}}.  There are number of
-reasons for why we think this platform is a good choice. First of all, our
-institute DIKU was planning on buying a couple of these boards for research in
-Human Centered Computing about interactive-objects.\fixme{måske en forklaring af
-  hvorfor vi laver noget andet end HCC med dem?} And they finally bought some in
-the first weeks of our project. Even better reasons is that they are cheap
-(approximately 200 DKK for an Arduino Duemilanove, at the time of writing) and
-is easily extensible. E.g. you can buy extensions for ethernet, bluetooth, or
-even small touchscreens. Finally, the Arduino comes with a reltively high-level
+The choice of hardware-platform has an influence on how to design such a
+language. We've chosen to make our language and framework target the
+Arduino-platform \cite{arduino}.  There are number of reasons for why we think
+this platform is a good choice. First of all, our institute DIKU was planning on
+buying a couple of these boards for research in Human Centered Computing about
+interactive-objects.\fixme{måske en forklaring af hvorfor vi laver noget andet
+  end HCC med dem?} And they finally bought some in the first weeks of our
+project. \fixme{Det er da fuldstændig ligegyldigt om HCC gruppen havde planer om
+  at købe disse} Even better reasons is that they are cheap (approximately 200 DKK for
+an Arduino Duemilanove, at the time of writing) and is easily
+extensible. E.g. you can buy extensions for ethernet, bluetooth, or even small
+touchscreens. Finally, the Arduino comes with a reltively high-level
 C-interface, sparing us from most low-level programming and bit trickery.
 
 Because the Arduino processor has a relatively limited computation capacity, we
 had to find a way of programming these systems \ldots
 
 \fixme{flask, dataflow, etc.}
+
+\fixme{Introduktion til resten af rapporten. Hvad forklarer de forskellige chapters.}
 
 \section{A note on Arduino}
 
@@ -291,21 +294,19 @@ Example dataflow graph from the Flask paper:
 \end{figure}
 
 Flask provides two object-languages: NesC and Red. Having NesC as an
-object-language, allows the user to write all programs that's
-expressible in NesC. Red is an amputated Haskell, without recursion,
-recursive datatypes, most of the standard library and curried
-functions. It allows you to write concise functions for simple tasks
-instead of having to deal with NesC. The reason for disallowing these
-things are the same as for not compiling Haskell directly to the
-sensor nodes in the first place: the Haskell runtime is too huge to
-fit in the limited memory of a sensor node.
+object-language, allows the user to write all programs that's expressible in
+NesC. Red is an amputated Haskell language, without recursion, recursive
+datatypes, most of the standard library and curried functions. It allows you to
+write concise functions for simple tasks instead of having to deal with
+NesC. The reason for disallowing these things are the same as for not compiling
+Haskell directly to the sensor nodes in the first place: the Haskell runtime is
+too huge to fit in the limited memory of a sensor node.
 
-Both languages are integrated into Flask using the quasiquotation
-library \cite{quasiquote07}, also written by the Flask author. This
-allows you to write the object languages in their original syntax
-inside the Flask/Haskell environment. And it allows you to intersperse
-generation time variables (which results in compile time constants)
-into object language code.
+Both languages are integrated into Flask using the quasiquotation library
+\cite{quasiquote07}, written by the Flask author Geoffrey Mainland. This allows
+you to write the object languages in their original syntax inside the
+Flask/Haskell environment. And it allows you to intersperse generation time
+variables (which results in compile time constants) into object language code.
 
 
 \begin{verbatim}
@@ -942,6 +943,8 @@ still make its own choice whether to propagate a value or not.
 It is worth nothing that a value need not contain any information
 apart from its existence; \texttt{()} is perfectly valid as a signal.
 
+
+
 \subsection{Implementation of posting wires}
 
 \subsection{On blocking and busywaiting}
@@ -951,6 +954,46 @@ apart from its existence; \texttt{()} is perfectly valid as a signal.
 \subsection{Defining new devices}
 
 \subsection{Defining new events}
+
+\section{Something about arduino external interrupt handling}
+\fixme{Lav rigtigt overskrift.}
+
+The default behaviour of the Atmega chip platform when interrupts occur is that
+the GIE (Global Interrupt Enable) bit\footnote{which is the L-bit in the SREG
+  (Status Register)} is cleared and thus all interrupt are disabled. The GIE bit
+is automatically set again when the IHF (Interrupt Handler Function) returns,
+using the RETI instruction. The software running on the chip could however
+enable the GIE bit when the IHF is called, thus allowing nested interrupts. If
+interrupts triggers when GIE is disabled, their individual flag bits is set and
+when GIE is enabled again those interrupts will trigger in the order the flags
+is located in the registers, and not necessarily in the order the interrupts
+happened. When GIE is disabled and the same interrupt happens multiple times,
+only the first one set the flag and thus it is not possible to know how many
+times the interrupt actually occurred \cite[Section 4.7 page 14]{atmel8p}
+
+\subsection{Types of interrupts}
+
+The Atmega chip support two types of interrupts. The sophisticated INT0..1 pins
+and the simple PCI0..2 which controls the PCINT0..23 pins. The sophisticated
+interrupts supports low level, logical change, falling edge and rising edge,
+though Fladuino only supports the logical change on any of the interrupt
+types. These interrupts are triggered if the INT0..1 bit is enabled in the
+EIMSK (External Interrupt Mask) Register and the GIE bit is set.
+
+The simple interrupts only support logical change and doesn't directly support
+separate IHF's for each PCINT pins but only for each of the three PCI0..2. These
+interrupts are triggered if the GIE bit is set, either of the PCIE0..2 bits is
+enabled in the PCICR (Pin Change Interrupt Control Register) and any of the
+PCINT0..7, PCINT8..14, PCINT16..23 bits respectively, is enabled in the
+PCMSK0..2 (Pin Change Mask) register. As any logical change to any of the
+PCINT0..7 pins will only trigger the PCI0 IHF, this function must then see
+which of the enabled PCINT0..7 pins that has changed its value since last time, by
+keeping a track of their state, and then trigger the defined IHF for each of the
+changed pins and so fourth for all the PCI0..2. An example of this can be seen
+on the Arduino Playerground
+\footnote{\url{http://www.arduino.cc/playground/Main/PcInt}, last checked 23rd
+  June 2009} which have been modified to work on all the supported platforms in
+Fladuino system \cite[Section 10 page 70]{atmel8p}.
 
 \chapter{Example programs}
 
