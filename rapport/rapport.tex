@@ -547,7 +547,7 @@ approach is unacceptable for several reasons:
 \end{itemize}
 
 As a result, our basic program evaluation is as follows.  We maintain
-an ordered \textit{event queue}, each element containing information
+an ordered \textit{sec:event_queue}, each element containing information
 about an atomic subgraph (actually, an entry node to the subgraph)
 that should be called, as well as the input value that caused the
 input wire to fire.  The generated program consists of a loop that
@@ -570,7 +570,7 @@ of course, but ultimately there are constraints on how much any
 computer can do.
 
 \subsection{Details of the event queue}
-\label{event queue}
+\label{sec:event_queue}
 The event queue itself is such a central cog in our event-pumping
 machinery that it is worth paying great attention to its form.  It is
 essentially just a double-ended queue, but as it turns out, the
@@ -703,7 +703,7 @@ previously sent request.  Several options present themselves:
   posting wire itself, not the incoming value, such a queue could be
   implemented as a mere integral counter, thus ignoring the problem of
   dynamically allocating memory (and potential problems resulting from
-  such, as described in section \ref{event queue}).
+  such, as described in section \ref{sec:event_queue}).
 \item[Ignore:] We can also opt not to queue or accumulate anything,
   ignore any input values sent while there is already an outstanding
   request, and fire the output node a single time upon receiving a
@@ -1128,7 +1128,20 @@ Fladuino system \cite[Section 10 page 70]{atmel8p}.
 
 \subsection{Defining a pushbutton}
 
+
 \subsection{Defining a potentiometer}
+
+\begin{verbatim}
+data Potentiometer = Potentiometer Integer
+                     deriving (Eq, Show)
+
+instance Device Potentiometer where
+    usages (Potentiometer pin) = [APinUsage pin []]
+
+instance AnalogInputDevice Potentiometer where
+    genReadCode (Potentiometer pin) resultvar = [[$cstm|$id:resultvar = analogRead($int:pin);|]]
+\end{verbatim}
+
 
 \subsection{Defining a servomotor}
 
