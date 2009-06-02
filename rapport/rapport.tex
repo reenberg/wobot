@@ -32,7 +32,7 @@
 
 %\overfullrule=5pt
 %\setsecnumdepth{part}
-\setcounter{secnumdepth}{0} % Sæt overskriftsnummereringsdybde. Disable = -1.
+\setcounter{secnumdepth}{1} % Sæt overskriftsnummereringsdybde. Disable = -1.
 \chapterstyle{hangnum} % changes style of chapters, to look nice.
 
 \makeatletter
@@ -258,24 +258,45 @@ and Pololu 3pi\footnote{\url{http://www.pololu.com/catalog/product/975}}.
 
 \chapter{Flask}
 Flask is a domain specific language embedded in Haskell for
-programming sensor networks. A fundamental thing in when learning
-Flask is understanding its compilation-strategy. The basic idea is to
-use Haskell as a metalanguage for several object languages, and
-generate a code in a sensor network language called NesC\footnote{NesC
-  is an extension to C, with some additional constructs suitable for
-  low-level sensor network programming for TinyOS.} when running the
-Haskell program. The generated NesC code can then be translated by an
-ordinary compiler NesC compiler to machine code running on the nodes
-in the sensor network.
+programming sensor networks. Flask is based on the idea of writing
+\textit{dataflows} that express the overall flow of data in the
+program. The basic task in writing a Flask program is thus to connect
+incoming streams of sensor data to outgoing streams of data (e.g. to
+other nodes in the network) with some eventual data processing in
+between. A program thus takes form of an acyclic graph.
+
+A fundamental thing in Flask is its compilation and
+execution-strategy. A Flask program is a description of the before
+mentioned dataflow-graph written in Haskell, using specialized
+Haskell-operators (dataflow-operators, stream-combinators,
+stream-operators or signal-functions) for connecting and manipulating
+the streams. Some of the these stream-operators also accepts some
+node-level code which should be inserted into the dataflow.
+
+and code written in one of several object-languages (where Haskell is
+the meta-language) for manipulating node-level values. When compiling
+this Haskell program, you end up with an executable that generates and
+outputs code in a sensor network language called NesC\footnote{NesC is
+  an extension to C, with some additional constructs suitable for
+  low-level sensor network programming for TinyOS.} when executed.
+
+The generated NesC code can then be translated by an ordinary
+NesC compiler to machine code running on the nodes in the
+sensor network.  Thus, when you write a Flask-program, you use
+ordinary Haskell constructs to manipulate which NesC-code should
+ultimately be generated.
 
 \begin{nonfloatingfigure}
   \includegraphics[width=0.9\textwidth]{images/flask-simple}
   \centering
 \end{nonfloatingfigure}
 
-Thus, when you write a Flask-program, you use ordinary Haskell
-constructs to manipulate which NesC-code should ultimately be
-generated. A program is a description of the flow of data from inputs
+\section{Streams, node-level values and dataflow-operators}
+
+
+
+
+A program is a description of the flow of data from inputs
 (e.g. hardware sensor) to outputs (e.g. another node) in the specific
 sensor node. The description takes the form of an acyclic graph
 connecting inputs to outputs, with some optional processing in
@@ -291,14 +312,14 @@ Example dataflow graph from the Flask paper:
 \end{figure}
 
 Flask provides two object-languages: NesC and Red. Having NesC as an
-object-language, allows the user to write all programs that's
-expressible in NesC. Red is an amputated Haskell, without recursion,
-recursive datatypes, most of the standard library and curried
-functions. It allows you to write concise functions for simple tasks
-instead of having to deal with NesC. The reason for disallowing these
-things are the same as for not compiling Haskell directly to the
-sensor nodes in the first place: the Haskell runtime is too huge to
-fit in the limited memory of a sensor node.
+object-language, allows the user to write any program expressible in
+NesC. Red is very restricted Haskell, without recursion, recursive
+datatypes, most of the standard library and curried functions. It
+allows you to write concise functions for simple tasks instead of
+having to deal with NesC. The reason for restricting Haskell down to
+Red, are the same as for not compiling Haskell directly to the sensor
+nodes in the first place: the Haskell runtime is too huge to fit in
+the limited memory of a sensor node.
 
 Both languages are integrated into Flask using the quasiquotation
 library \cite{quasiquote07}, also written by the Flask author. This
@@ -322,10 +343,32 @@ More on:
 \end{verbatim}
 
 \section{Streams and node--level values}
+\texttt{smap} (\textit{some Red or NesC code})
 
 \subsection{\texttt{Reify}/\texttt{LiftN}}
 
 \section{Red --- a restricted node--level language}
+Red is an object-language from Flask that is meant to be used for
+writing node--level mapping functions, like predicates or conversion
+functions. It takes it syntax from Haskell, but is restricted to a
+very small subset of what is normally expressible in Haskell.  As
+mentioned before\fixme{I hope this is mentioned in the introduction},
+the Haskell runtimes are too large to fit on the Arduino an therefore
+we can't allow uses of features that e.g.  requires a garbage
+collector. Flask disallows the following Haskell '98-features from Red:
+\begin{itemize}
+\item Recursive function
+\item Recursive datatypes
+\item Higher-order functions
+\item Type classes
+\item Laziness
+\item Modules
+\end{itemize}
+
+And the only a very small subset of the Standard Prelude is included
+in Flask. Type classes should be possible to implement though, since
+it's a compile-time thing.
+
 
 \chapter{Design of the Fladuino system}
 
