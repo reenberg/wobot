@@ -787,7 +787,7 @@ Fladuino event system is described in detail in
 technically feasible, but violates the spirit of the design.  The
 connection from output to event node can be considered to be a
 particularly weak kind of posting wire --- informally, they are to
-real posting wires as software interrupts are to hardware interrupts.
+real posting wires, as software interrupts are to hardware interrupts.
 
 \begin{figure}
   \label{queue-with-ignore}
@@ -999,7 +999,7 @@ As an example, assume that $p_1$ is a pushbutton device connected to
 digital pin 1, $d_2$ a diode connected to pin 2, and $\sigma(e,d)$ a
 dataflow graph node that fires whenever the given device $d$ triggers
 event $e$.  We can then construct a dataflow graph such as
-$\sigma(pushdown,p_1) \Rightarrow toggle(d_2)$, connecting the input
+$\sigma(pushdown,p_1) \rightarrow toggle(d_2)$, connecting the input
 of pressing a button to the action of toggling the state of a diode.
 
 In the definition of an event, a list of Arduino pins (see \ref{pins})
@@ -1027,7 +1027,58 @@ unpredictable runtime behavior (or worse: block), we cannot guarantee
 anything.
 
 Events initiate dataflow at nodes marked as \textit{listeners} for the
-specific event.
+specific event.  Design--wise there is nothing that prevents these
+listeners from being successors of other nodes in some atomic
+subgraph, but have not been able to identify a use for such a
+structure during our work.  As a result, we generally consider an
+event--listening node to have no way of firing except for the
+triggering of one of the events that the node is listening for.  A
+single node can listen to multiple different events (though again, we
+have not been able to identify a practical need), as long as the
+payloads are of the same type.
+
+\begin{figure}
+\label{fig:devicedef}
+\begin{verbatim}
+data PushButton = PushButton Integer
+                  deriving (Eq, Show)
+
+instance Device PushButton where
+    usages (PushButton pin) = [DPinUsage pin ["interrupt"] DigitalInput]
+
+data PushButtonPressEvent = PushButtonPressEvent PushButton
+                            deriving (Eq, Show)
+
+instance Event PushButtonPressEvent () where
+    setupEvent e@(PushButtonPressEvent (d@(PushButton pin))) = 
+     do addDevice d
+        pv <- statevar d "press_predicate" 
+        let v = H.Var (mkName pv)
+        addCImport pv [$ty|() -> Bool|] [$cexp|$id:pv|]
+        addCFundef [$cedecl|int $id:pv () {
+                              return (digitalRead($int:pin) == HIGH);
+                            }|]
+        return $ mkEvent e Nothing (Just v)
+    interruptPins (PushButtonPressEvent (PushButton pin)) = [DPin pin]
+
+data PushButtonReleaseEvent = PushButtonReleaseEvent PushButton
+                              deriving (Eq, Show)
+
+instance Event PushButtonReleaseEvent () where
+    setupEvent e@(PushButtonReleaseEvent (d@(PushButton pin))) = 
+     do addDevice d 
+        pv <- statevar d "rel_predicate" 
+        let v = H.Var (mkName pv)
+        addCImport pv [$ty|() -> Bool|] [$cexp|$id:pv|]
+        addCFundef [$cedecl|int $id:pv () {
+                              return (digitalRead($int:pin) == LOW);
+                            }|]
+        return $ mkEvent e Nothing (Just v)
+    interruptPins (PushButtonReleaseEvent (PushButton pin)) = [DPin pin]
+\end{verbatim}
+\caption{Example Haskell code for defining the interface to a simple
+  pushbutton in Fladuino}
+\end{figure}
 
 \chapter{Implementation}
 
