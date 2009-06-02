@@ -315,7 +315,6 @@ Example dataflow graph from the Flask paper:
 \end{figure}
 
 Flask provides two object-languages: NesC and Red. Having NesC as an
-<<<<<<< HEAD:rapport/rapport.tex
 object-language, allows the user to write all programs that's expressible in
 NesC. Red is an amputated Haskell language, without recursion, recursive
 datatypes, most of the standard library and curried functions. It allows you to
@@ -329,23 +328,7 @@ Both languages are integrated into Flask using the quasiquotation library
 you to write the object languages in their original syntax inside the
 Flask/Haskell environment. And it allows you to intersperse generation time
 variables (which results in compile time constants) into object language code.
-=======
-object-language, allows the user to write any program expressible in
-NesC. Red is very restricted Haskell, without recursion, recursive
-datatypes, most of the standard library and curried functions. It
-allows you to write concise functions for simple tasks instead of
-having to deal with NesC. The reason for restricting Haskell down to
-Red, are the same as for not compiling Haskell directly to the sensor
-nodes in the first place: the Haskell runtime is too huge to fit in
-the limited memory of a sensor node.
 
-Both languages are integrated into Flask using the quasiquotation
-library \cite{quasiquote07}, also written by the Flask author. This
-allows you to write the object languages in their original syntax
-inside the Flask/Haskell environment. And it allows you to intersperse
-generation time variables (which results in compile time constants)
-into object language code.
->>>>>>> 9786cb028d63f25fd0368e7a517ec6b3795b18fd:rapport/rapport.tex
 
 
 \begin{verbatim}
