@@ -271,14 +271,15 @@ mentioned dataflow-graph written in Haskell, using specialized
 Haskell-operators (dataflow-operators, stream-combinators,
 stream-operators or signal-functions) for connecting and manipulating
 the streams. Some of the these stream-operators also accepts some
-node-level code which should be inserted into the dataflow.
+node-level code which should be inserted into the dataflow. This
+node-level code is written in one of several object-languages (where Haskell is
+the meta-language) for manipulating node-level values. 
 
-and code written in one of several object-languages (where Haskell is
-the meta-language) for manipulating node-level values. When compiling
-this Haskell program, you end up with an executable that generates and
-outputs code in a sensor network language called NesC\footnote{NesC is
-  an extension to C, with some additional constructs suitable for
-  low-level sensor network programming for TinyOS.} when executed.
+When compiling the Haskell program description of the dataflow graph,
+you end up with an executable that generates and outputs code in a
+sensor network language called NesC\footnote{NesC is an extension to
+  C, with some additional constructs suitable for low-level sensor
+  network programming for TinyOS.}.
 
 The generated NesC code can then be translated by an ordinary
 NesC compiler to machine code running on the nodes in the
@@ -326,46 +327,7 @@ library \cite{quasiquote07}, also written by the Flask author. This
 allows you to write the object languages in their original syntax
 inside the Flask/Haskell environment. And it allows you to intersperse
 generation time variables (which results in compile time constants)
-into object language code.
-
-
-\begin{verbatim}
-More on:
-  Tilsvining af Red. Mangler:
-    - Type-klasser (hvilket betyder at konstanter f.eks. "`0"' ikke
-                    kan opfattes som både heltal og flydendetal afhængigt af konteksten)
-    - Højereordens funktioner
-    - Største delen af standard biblioteket
-    - 
-    - 
-  Typechecking
-  Dataflow
-\end{verbatim}
-
-\section{Streams and node--level values}
-\texttt{smap} (\textit{some Red or NesC code})
-
-\subsection{\texttt{Reify}/\texttt{LiftN}}
-
-\section{Red --- a restricted node--level language}
-Red is an object-language from Flask that is meant to be used for
-writing node--level mapping functions, like predicates or conversion
-functions. It takes it syntax from Haskell, but is restricted to a
-very small subset of what is normally expressible in Haskell.  As
-mentioned before\fixme{I hope this is mentioned in the introduction},
-the Haskell runtimes are too large to fit on the Arduino an therefore
-we can't allow uses of features that e.g.  requires a garbage
-collector. Flask disallows the following Haskell '98-features from Red:
-\begin{itemize}
-\item Recursive function
-\item Recursive datatypes
-\item Higher-order functions
-\item Type classes
-\item Laziness
-\item Modules
-\end{itemize}
-
-And the only a very small subset of the Standard Prelude is included
+into object language code.And the only a very small subset of the Standard Prelude is included
 in Flask. Type classes should be possible to implement though, since
 it's a compile-time thing.
 
@@ -1720,6 +1682,24 @@ alternative schematic\cite{oik_chematic_arduino}.
 
 \fixme{this section needs restructuring.}
 \fixme{this section is outdated. Firmware update has been done another way.}
+
+\chapter{Problems in Flask}
+We've detected a few Flask problems, that we think should be fixed.
+
+\begin{itemize}
+\item Pattern-matching isn't handled correctly. The following program
+  is compiled as if the two first cases where overlapping (i.e. the
+  second case would be ignored)
+\begin{verbatim}
+f (1, (1, x)) = 2
+f (1, (2, x)) = 3
+f (2, _) = 3
+\end{verbatim}
+
+\item Lack of type-classes in Red
+\item In Red, negation with \texttt{negate} and \texttt{(-)} only works for
+  integers. (Probably related to the lack of type-classes).
+\end{itemize}
 
 \chapter{Guide to electronics}
 
