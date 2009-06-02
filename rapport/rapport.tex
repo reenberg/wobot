@@ -970,6 +970,9 @@ output pin) and use a single logical device in the Fladuino program to
 interact with them.  Indeed, this solution is mostly satisfactory, as
 long as the devices are (almost) identical in their interface.
 
+See \Fref{sec:pushbuttondef} for an example of how to define a device
+via these abstractions.
+
 \subsection{Events}
 \label{sec:events_design}
 A central aspect of any embedded system is responding to external,
@@ -1031,7 +1034,7 @@ initial testing, and not lay dormant until after deployment.  Of
 course, this bound is dependent on the implementation of the
 user--defined predicate and value functions --- if these have
 unpredictable runtime behaviour (or worse: block), we cannot guarantee
-anything.
+anything.  See \Fref{sec:pushbuttondef} for example code.
 
 Events initiate dataflow at nodes marked as \textit{listeners} for the
 specific event.  Design--wise there is nothing that prevents these
@@ -1043,49 +1046,6 @@ triggering of one of the events that the node is listening for.  A
 single node can listen to multiple different events (though again, we
 have not been able to identify a practical need), as long as the
 payloads are of the same type.
-
-\begin{figure}
-\label{fig:devicedef}
-\begin{verbatim}
-data PushButton = PushButton Integer
-                  deriving (Eq, Show)
-
-instance Device PushButton where
-    usages (PushButton pin) = [DPinUsage pin ["interrupt"] DigitalInput]
-
-data PushButtonPressEvent = PushButtonPressEvent PushButton
-                            deriving (Eq, Show)
-
-instance Event PushButtonPressEvent () where
-    setupEvent e@(PushButtonPressEvent (d@(PushButton pin))) = 
-     do addDevice d
-        pv <- statevar d "press_predicate" 
-        let v = H.Var (mkName pv)
-        addCImport pv [$ty|() -> Bool|] [$cexp|$id:pv|]
-        addCFundef [$cedecl|int $id:pv () {
-                              return (digitalRead($int:pin) == HIGH);
-                            }|]
-        return $ mkEvent e Nothing (Just v)
-    interruptPins (PushButtonPressEvent (PushButton pin)) = [DPin pin]
-
-data PushButtonReleaseEvent = PushButtonReleaseEvent PushButton
-                              deriving (Eq, Show)
-
-instance Event PushButtonReleaseEvent () where
-    setupEvent e@(PushButtonReleaseEvent (d@(PushButton pin))) = 
-     do addDevice d 
-        pv <- statevar d "rel_predicate" 
-        let v = H.Var (mkName pv)
-        addCImport pv [$ty|() -> Bool|] [$cexp|$id:pv|]
-        addCFundef [$cedecl|int $id:pv () {
-                              return (digitalRead($int:pin) == LOW);
-                            }|]
-        return $ mkEvent e Nothing (Just v)
-    interruptPins (PushButtonReleaseEvent (PushButton pin)) = [DPin pin]
-\end{verbatim}
-\caption{Example Haskell code for defining the interface to a simple
-  pushbutton in Fladuino}
-\end{figure}
 
 \chapter{Implementation}
 
@@ -1217,6 +1177,59 @@ Fladuino system \cite[Section 10 page 70]{atmel8p}.
 \section{Building on the abstractions}
 
 \subsection{Defining a pushbutton}
+
+The following Haskell code defines the abstract Fladuino interface for
+a simple digital pushbutton.  We have omitted the module imports for
+brevity.
+
+\label{sec:pushbuttondef}
+\begin{verbatim}
+data PushButton = PushButton Integer
+                  deriving (Eq, Show)
+
+instance Device PushButton where
+    usages (PushButton pin) = [DPinUsage pin ["interrupt"] DigitalInput]
+
+data PushButtonPressEvent = PushButtonPressEvent PushButton
+                            deriving (Eq, Show)
+
+instance Event PushButtonPressEvent () where
+    setupEvent e@(PushButtonPressEvent (d@(PushButton pin))) = 
+     do addDevice d
+        pv <- statevar d "press_predicate" 
+        let v = H.Var (mkName pv)
+        addCImport pv [$ty|() -> Bool|] [$cexp|$id:pv|]
+        addCFundef [$cedecl|int $id:pv () {
+                              return (digitalRead($int:pin) == HIGH);
+                            }|]
+        return $ mkEvent e Nothing (Just v)
+    interruptPins (PushButtonPressEvent (PushButton pin)) = [DPin pin]
+
+data PushButtonReleaseEvent = PushButtonReleaseEvent PushButton
+                              deriving (Eq, Show)
+
+instance Event PushButtonReleaseEvent () where
+    setupEvent e@(PushButtonReleaseEvent (d@(PushButton pin))) = 
+     do addDevice d 
+        pv <- statevar d "rel_predicate" 
+        let v = H.Var (mkName pv)
+        addCImport pv [$ty|() -> Bool|] [$cexp|$id:pv|]
+        addCFundef [$cedecl|int $id:pv () {
+                              return (digitalRead($int:pin) == LOW);
+                            }|]
+        return $ mkEvent e Nothing (Just v)
+    interruptPins (PushButtonReleaseEvent (PushButton pin)) = [DPin pin]
+\end{verbatim}
+
+With this definition, we can define programs such as:
+
+\begin{verbatim}
+onEvent (PushButtonPressEvent $ PushButton 3) >>> (toggle $ diode 13 True)
+\end{verbatim}
+
+This program will toggle the state of a diode connected to digital pin
+13 (a default device on almost all Arduino boards) whenever the
+pushbutton attached to digital pin 3 is pressed.
 
 \subsection{Defining a potentiometer}
 
