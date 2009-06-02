@@ -1,0 +1,17 @@
+digraph G
+{
+                node [fontname="Times Roman", shape=rectangle]
+                edge [color=black, fontname="Times Roman"]
+
+                InputNode [label="Input node"]
+                OutputNode [label="Output node"]
+                CounterNode [label="Accumulator node"]
+                EventNode [label="Event node"]
+
+
+                
+                CounterNode->OutputNode [style=dashed]
+                InputNode->CounterNode [label="Increase counter if sensor-reply is pending"]
+                EventNode->CounterNode [label="Decrease counter and send new request"]
+                OutputNode->EventNode [label="Asynchronously notify the event listening node", style=dotted]
+}

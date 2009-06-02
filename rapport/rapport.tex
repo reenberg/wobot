@@ -432,12 +432,19 @@ governed by the following requirements.
   platforms that differ significantly from our built-ins (for example,
   using a different microcontroller) will not be possible without
   modifying the Fladuino libraries themselves, however.
+\item It is not required that we attempt to handle all error
+  conditions.  We accept that hardware constraints pose certain hard
+  restrictions (such as memory limits, integer counter overflow and
+  CPU time starvation), and declare that writing a program with
+  Fladuino that exceeds these constraints will result in information
+  loss or undefined behaviour.  We shall, however, endeavour to design
+  Fladuino so as to reduce the likelihood of these errors.
 \end{itemize}
 
 \section{Terminology and basic \textit{modus operandi}}
 
 As in Flask, Fladuino is implemented as a set of Haskell modules that
-provides facilities for expressing the structure and behavior of a
+provides facilities for expressing the structure and behaviour of a
 \textit{dataflow graph}, connecting \textit{dataflow operators}
 through value-carrying directed graph edges (\textit{wires}).  The
 programmer writes a Haskell program, called the \textit{generator
@@ -498,7 +505,7 @@ parts can be divided into the following:
   sense, the dynamic part of a Fladuino program happens at
   compile--time.
 \item A compiler is supplied for the Haskell-like programming language
-  Red, which is used to tailor the behavior of stream operators.
+  Red, which is used to tailor the behaviour of stream operators.
 \item A module that encapsulates the hardware facilities offered by
   the target platform and provides the ability to check whether the
   requirements made by the users program can be fulfilled.  Arduino is
@@ -628,7 +635,7 @@ risk of the stack growing across the event queue and corrupting its
 data, causing great harm when the main loop gets around to processing
 these now invalid elements.  In conclusion, we cannot permit the stack
 to grow uncontrollably.  An additional problem with using dynamic
-memory is the unpredictable runtime behavior of \texttt{malloc()},
+memory is the unpredictable runtime behaviour of \texttt{malloc()},
 something that is undesirable in an interrupt handler, as described in
 the preceding section.
 
@@ -714,7 +721,12 @@ in the following we shall refer to the external device as the
   sensor} denotes the act of requesting data from the sensor under the
 assumption that a reply will be received.  Note that ``output node''
 is a lossless abstraction, as several nodes may be on the receiving
-end of the posting wire.
+end of the posting wire.  A fundamental simplifying assumption we make
+in the following section is that the structure of the sensor request
+is a function only of the identity of the posting wire, and is notably
+not based on the value that arrived at the input node.  This rule,
+which is also present in Flask, grants us much more leeway in the
+implementation of posting wires.
 
 It is not intuitively obvious what to do when a posting wire is
 reached a second time, before a response has come back from the
@@ -775,7 +787,6 @@ activated as long as it keeps receiving input values, and outputs a
 continuous stream of sensor readings as long as it is activated.
 
 \subsubsection{Simulating Accumulate--Repeat and Queue with Ignore}
-\fixme {Reference sloop} 
 
 Through clever construction of the graph surrounding the posting wire
 we can mostly simulate the Accumulate--Repeat and Queue strategies
@@ -786,15 +797,43 @@ When receiving a value from the input node, an internal counter will
 be increased by one.  When receiving a value (the sensor reading) from
 the output node, the value will be packaged up with the counter into a
 tuple and sent to successors of the accumulator node, after which the
-counter will then be reset to zero.  This does not in itself implement
-the ``repeat''--portion of Accumulate--Repeat, but we have removed the
-loss of information, and can thus trivially take whatever action
-repeated firings of the output node would have resulted in.
+counter will then be reset to zero.  Said successors will be the nodes
+that would normally follow the output node.  This does not in itself
+implement the ``repeat''--portion of Accumulate--Repeat, but we have
+removed the loss of information, and can thus trivially take whatever
+action repeated firings of the output node would have resulted in.
 
 \begin{figure}
   \label{accum-repeat-with-ignore}
   \includegraphics[width=0.9\textwidth]{images/accum-repeat-with-ignore}
   \caption{Simulating Accumulate--Repeat}
+  \centering
+\end{figure}
+
+Simulating the Queue behaviour is significantly more complicated and
+requires a somewhat clumsy use of events (see
+\ref{sec:events_design}).  Values received at the input--node are sent
+on to a \textit{counter node}, where we check whether we are still
+waiting for the sensor to reply to a previously sent request.  If so,
+we increment an internal counter and send nothing further.  When the
+reply is received, by being sent to the output node, we will send a
+value to the counter node, telling it to send another request to the
+sensor if the counter is nonzero.  The problem in this scheme is the
+wire from the output node to the accumulator node --- this graph edge
+would form a cycle, something that is expressly forbidden.  On figure
+\ref{queue-with-ignore}, we solve this issue by an \textit{event node}
+that listens to a discrete event broadcast by the output node (the
+Fladuino event system is described in detail in
+\Fref{sec:events_design}).  Using the event system in such a way is
+technically feasible, but violates the spirit of the design.  The
+connection from output to event node can be considered to be a
+particularly weak kind of posting wire --- informally, they are to
+real posting wires, as software interrupts are to hardware interrupts.
+
+\begin{figure}
+  \label{queue-with-ignore}
+  \includegraphics[width=0.9\textwidth]{images/queue-with-ignore}
+  \caption{Simulating Queue}
   \centering
 \end{figure}
 
@@ -957,7 +996,7 @@ reserve exclusive access to the hardware resource that they refer to:
 
 Some measure of power is lost by restricting devices to exclusive
 access to pins.  However, the fragility of having devices share these
-I/O pathways require detailed knowledge of exact device behavior
+I/O pathways require detailed knowledge of exact device behaviour
 anyway, in order to ensure that they will not be incompatible.  Given
 this knowledge, the user can merely connect several physical devices
 to the same IO pin (for example, multiple diodes to the same digital
@@ -965,8 +1004,11 @@ output pin) and use a single logical device in the Fladuino program to
 interact with them.  Indeed, this solution is mostly satisfactory, as
 long as the devices are (almost) identical in their interface.
 
-\subsection{Events}
+See \Fref{sec:pushbuttondef} for an example of how to define a device
+via these abstractions.
 
+\subsection{Events}
+\label{sec:events_design}
 A central aspect of any embedded system is responding to external,
 asynchronous events.  The hardware feature enabling this functionality
 --- asynchronous interrupts --- is primitive and hard to use, leading
@@ -1001,7 +1043,7 @@ As an example, assume that $p_1$ is a pushbutton device connected to
 digital pin 1, $d_2$ a diode connected to pin 2, and $\sigma(e,d)$ a
 dataflow graph node that fires whenever the given device $d$ triggers
 event $e$.  We can then construct a dataflow graph such as
-$\sigma(pushdown,p_1) \Rightarrow toggle(d_2)$, connecting the input
+$\sigma(pushdown,p_1) \rightarrow toggle(d_2)$, connecting the input
 of pressing a button to the action of toggling the state of a diode.
 
 In the definition of an event, a list of Arduino pins (see \ref{pins})
@@ -1025,11 +1067,19 @@ program, thus making problems of this sort likely to appear during
 initial testing, and not lay dormant until after deployment.  Of
 course, this bound is dependent on the implementation of the
 user--defined predicate and value functions --- if these have
-unpredictable runtime behavior (or worse: block), we cannot guarantee
-anything.
+unpredictable runtime behaviour (or worse: block), we cannot guarantee
+anything.  See \Fref{sec:pushbuttondef} for example code.
 
 Events initiate dataflow at nodes marked as \textit{listeners} for the
-specific event.
+specific event.  Design--wise there is nothing that prevents these
+listeners from being successors of other nodes in some atomic
+subgraph, but have not been able to identify a use for such a
+structure during our work.  As a result, we generally consider an
+event--listening node to have no way of firing except for the
+triggering of one of the events that the node is listening for.  A
+single node can listen to multiple different events (though again, we
+have not been able to identify a practical need), as long as the
+payloads are of the same type.
 
 \chapter{Implementation}
 
@@ -1161,6 +1211,59 @@ Fladuino system \cite[Section 10 page 70]{atmel8p}.
 \section{Building on the abstractions}
 
 \subsection{Defining a pushbutton}
+
+The following Haskell code defines the abstract Fladuino interface for
+a simple digital pushbutton.  We have omitted the module imports for
+brevity.
+
+\label{sec:pushbuttondef}
+\begin{verbatim}
+data PushButton = PushButton Integer
+                  deriving (Eq, Show)
+
+instance Device PushButton where
+    usages (PushButton pin) = [DPinUsage pin ["interrupt"] DigitalInput]
+
+data PushButtonPressEvent = PushButtonPressEvent PushButton
+                            deriving (Eq, Show)
+
+instance Event PushButtonPressEvent () where
+    setupEvent e@(PushButtonPressEvent (d@(PushButton pin))) = 
+     do addDevice d
+        pv <- statevar d "press_predicate" 
+        let v = H.Var (mkName pv)
+        addCImport pv [$ty|() -> Bool|] [$cexp|$id:pv|]
+        addCFundef [$cedecl|int $id:pv () {
+                              return (digitalRead($int:pin) == HIGH);
+                            }|]
+        return $ mkEvent e Nothing (Just v)
+    interruptPins (PushButtonPressEvent (PushButton pin)) = [DPin pin]
+
+data PushButtonReleaseEvent = PushButtonReleaseEvent PushButton
+                              deriving (Eq, Show)
+
+instance Event PushButtonReleaseEvent () where
+    setupEvent e@(PushButtonReleaseEvent (d@(PushButton pin))) = 
+     do addDevice d 
+        pv <- statevar d "rel_predicate" 
+        let v = H.Var (mkName pv)
+        addCImport pv [$ty|() -> Bool|] [$cexp|$id:pv|]
+        addCFundef [$cedecl|int $id:pv () {
+                              return (digitalRead($int:pin) == LOW);
+                            }|]
+        return $ mkEvent e Nothing (Just v)
+    interruptPins (PushButtonReleaseEvent (PushButton pin)) = [DPin pin]
+\end{verbatim}
+
+With this definition, we can define programs such as:
+
+\begin{verbatim}
+onEvent (PushButtonPressEvent $ PushButton 3) >>> (toggle $ diode 13 True)
+\end{verbatim}
+
+This program will toggle the state of a diode connected to digital pin
+13 (a default device on almost all Arduino boards) whenever the
+pushbutton attached to digital pin 3 is pressed.
 
 \subsection{Defining a potentiometer}
 
