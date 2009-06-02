@@ -24,6 +24,7 @@
 
 \usepackage[format=hang]{caption,subfig}
 \usepackage{graphicx}
+\usepackage{stmaryrd}
 
 \renewcommand{\ttdefault}{pcr} % Bedre typewriter font
 %\usepackage[sc]{mathpazo}     % Palatino font
@@ -238,7 +239,12 @@ had to find a way of programming these systems \ldots
 
 \fixme{flask, dataflow, etc.}
 
-\fixme{Introduktion til resten af rapporten. Hvad forklarer de forskellige chapters.}
+
+In the following section we will go through the existing Flask
+system. It's design and how you write sensor-network programs in
+it. After that we will look at what isn't already in Flask, that is
+needed when programming robots, and we will talk about how we have
+extended Flask to Fladuino.
 
 \section{A note on Arduino}
 
@@ -268,6 +274,18 @@ incoming streams of sensor data to outgoing streams of data (e.g. to
 other nodes in the network) with some eventual data processing in
 between. A program thus takes form of an acyclic graph.
 
+
+On figure \ref{ewma-example} we show an example of a dataflow graph
+taken from the paper "`Flask: Staged Functional Programming for Sensor
+Networks"':
+
+\begin{figure}
+\label{ewma-example}
+  % ewma example, figure 1 in the icfp08 paper
+\end{figure}
+
+Later we will examine how this is written in Flask.
+
 A fundamental thing in Flask is its compilation and
 execution-strategy. A Flask program is a description of the before
 mentioned dataflow-graph written in Haskell, using specialized
@@ -275,8 +293,8 @@ Haskell-operators (dataflow-operators, stream-combinators,
 stream-operators or signal-functions) for connecting and manipulating
 the streams. Some of the these stream-operators also accepts some
 node-level code which should be inserted into the dataflow. This
-node-level code is written in one of several object-languages (where Haskell is
-the meta-language) for manipulating node-level values. 
+node-level code is written in one of several object-languages (where
+Haskell is the meta-language) for manipulating node-level values.
 
 When compiling the Haskell program description of the dataflow graph,
 you end up with an executable that generates and outputs code in a
@@ -295,34 +313,11 @@ ultimately be generated.
   \centering
 \end{nonfloatingfigure}
 
-\section{Streams, node-level values and dataflow-operators}
 
-
-
-
-A program is a description of the flow of data from inputs
-(e.g. hardware sensor) to outputs (e.g. another node) in the specific
-sensor node. The description takes the form of an acyclic graph
-connecting inputs to outputs, with some optional processing in
-between. For specifying this \textit{dataflow graph}, Flask provides
-some general \textit{signal functions} that can be combined with
-\textit{node-level code} (code that is actually getting to run on the
-sensor-nodes) written in one of the object-languages.
-
-Example dataflow graph from the Flask paper: 
-
-\begin{figure}
-  % ewma example
-\end{figure}
 
 Flask provides two object-languages: NesC and Red. Having NesC as an
 object-language, allows the user to write all programs that's expressible in
-NesC. Red is an amputated Haskell language, without recursion, recursive
-datatypes, most of the standard library and curried functions. It allows you to
-write concise functions for simple tasks instead of having to deal with
-NesC. The reason for disallowing these things are the same as for not compiling
-Haskell directly to the sensor nodes in the first place: the Haskell runtime is
-too huge to fit in the limited memory of a sensor node.
+NesC. The other language Red, is described below.
 
 Both languages are integrated into Flask using the quasiquotation library
 \cite{quasiquote07}, written by the Flask author Geoffrey Mainland. This allows
@@ -330,31 +325,28 @@ you to write the object languages in their original syntax inside the
 Flask/Haskell environment. And it allows you to intersperse generation time
 variables (which results in compile time constants) into object language code.
 
+Red is a restricted subset of Haskell, without recursion, recursive
+datatypes, most of the standard library and curried functions. It allows you to
+write concise functions for simple tasks instead of having to deal with
+NesC. 
 
-
-\begin{verbatim}
-More on:
-  Typechecking
-  Dataflow
-\end{verbatim}
-
-\section{Streams and node--level values}
-\texttt{smap} (\textit{some Red or NesC code})
-
-\subsection{\texttt{Reify}/\texttt{LiftN}}
 
 \section{Red --- a restricted node--level language}
 Red is an object-language from Flask that is meant to be used for
 writing node--level mapping functions, like predicates or conversion
-functions. It takes it syntax from Haskell, but is restricted to a
-very small subset of what is normally expressible in Haskell.  As
-mentioned before\fixme{I hope this is mentioned in the introduction},
-the Haskell runtimes are too large to fit on the Arduino an therefore
-we can't allow uses of features that e.g.  requires a garbage
-collector. Flask disallows the following Haskell '98-features from Red:
+functions, without having to deal with NesC. It takes it syntax from
+Haskell, but is restricted to a very small subset of what is normally
+expressible in Haskell. The reason for disallowing these things are
+the same as for not compiling Haskell directly to the sensor nodes in
+the first place: the existing Haskell runtimes are too huge to fit on
+the limited memory of a sensor node. Therefore we can't allow uses of
+features that e.g.  requires a garbage collector. Flask disallows the
+following Haskell '98-features (with probably some more, that we have
+overlooked) from Red:
 \begin{itemize}
 \item Recursive function
 \item Recursive datatypes
+\item Curried functions
 \item Higher-order functions
 \item Type classes
 \item Laziness
@@ -364,6 +356,48 @@ collector. Flask disallows the following Haskell '98-features from Red:
 And the only a very small subset of the Standard Prelude is included
 in Flask. Type classes should be possible to implement though, since
 it's a compile-time thing.
+
+
+\section{Streams, node-level values and dataflow-operators}
+
+
+
+
+
+
+\subsection{Streamoperators}
+A description of the Flask stream-operators follows. 
+\begin{description}
+\item[\texttt{> > >}]\hfill \\ Connects a stream with a stream
+  combinator.
+\item[\texttt{\&\&\&} and \texttt{szip}]\hfill \\ 
+\item[\texttt{sconst}]\hfill \\ 
+\item[\texttt{smap}] \hfill \\ Maps a node-level function over all stream-values,
+  creating a stream of the resulting output values.
+\item[\texttt{sintegrate}] \hfill \\ When supplied with an initial node-level state value
+  and a node-level function that takes the current state and the next
+  value on the input stream, returning a new state and the next value
+  to be send through to the output stream.
+\item[\texttt{sfilter}]\hfill \\ Only propagates values through to the output-stream that
+  satisfies a given node-level predicate.
+%\item[\texttt{sunzip}]\hfill \\ 
+%\item[\texttt{smerge}]\hfill \\ 
+
+\end{description}
+
+
+The data-flow graph from figure \ref{ewma-example} can now be written in Flask like below:
+\begin{verbatim}
+detect :: Double -> Double -> Double -> 
+          S Double -> S (Double, Double)
+detect low high threshold = 
+   ewma high &&& ewma low
+   >>>
+   sfilter [$exp|\(hi, lo) -> hi / lo > $flo:threshold|]
+\end{verbatim}
+
+
+\subsection{\texttt{Reify}/\texttt{LiftN}}
 
 
 \chapter{Design of the Fladuino system}
