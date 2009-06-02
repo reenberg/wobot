@@ -1186,7 +1186,7 @@ examples.
 The following is a definition of the Fladuino interface for a simple digital
 pushbutton. First the type constructor \texttt{PushButton} is defined with the
 data constructor \texttt{PushButton Integer} where the \texttt{Integer} type
-defined which pin the physical device is connected to. 
+defined which pin the physical device is connected to.
 
 \begin{verbatim}
 data PushButton = PushButton Integer
@@ -1194,10 +1194,10 @@ data PushButton = PushButton Integer
 \end{verbatim}
 
 \noindent
-Then a \texttt{Device} instance declaration on \texttt{PushButton} is done
-which registers the specified digital pin as being \texttt{DigitalInput} and
-requiring interrupt functionality. This assures that the specific pin has
-interrupt functionality and that no other devices using this pin requires
+Then a \texttt{Device} instance declaration on \texttt{PushButton} is done which
+registers the specified digital pin as being \texttt{DigitalInput} and requiring
+interrupt functionality. This assures that the specific pin has interrupt
+functionality and that no other devices using this pin requires
 \texttt{DigitalOutput} otherwise an error will occur.
 
 \begin{verbatim}
@@ -1205,9 +1205,10 @@ instance Device PushButton where
     usages (PushButton pin) = [DPinUsage pin ["interrupt"] DigitalInput]
 \end{verbatim}
 
-Since logical change interrupts occurs twice on a pushbutton (when pushed and then when
-released) it is easy and god abstraction to define a \texttt{PushButtonPressEvent}  and a
-\texttt{PushButtonReleaseEvent}, and thus the two type constructors is defined
+Since logical change interrupts occurs twice on a pushbutton (when pushed and
+then when released) it is easy and god abstraction to define a
+\texttt{PushButtonPressEvent} and a \texttt{PushButtonReleaseEvent}, and thus
+the two type constructors is defined
 
 \begin{verbatim}
 data PushButtonPressEvent = PushButtonPressEvent PushButton
@@ -1252,7 +1253,7 @@ instance Event PushButtonReleaseEvent () where
     interruptPins (PushButtonReleaseEvent (PushButton pin)) = [DPin pin]
 \end{verbatim}
 
-With this definition, we can define programs such as:
+With this definition, we can define programs such as
 
 \begin{verbatim}
 onEvent (PushButtonPressEvent $ PushButton 3) >>> (toggle $ diode 13 True)
@@ -1264,7 +1265,9 @@ pushbutton attached to digital pin 3 is pressed.
 
 \subsection{Defining a potentiometer}
 
-Here the 
+A potentiometer interface can be defined in Fladuino quite easily as it doesn't
+make any sense to define any events upon this as its value needs to be pulled
+once in a vile to know if it has changed and/or to act upon that.
 
 \begin{verbatim}
 data Potentiometer = Potentiometer Integer
@@ -1277,7 +1280,7 @@ instance AnalogInputDevice Potentiometer where
     genReadCode (Potentiometer pin) resultvar = [[$cstm|$id:resultvar = analogRead($int:pin);|]]
 \end{verbatim}
 
-This allows programs to pull value of the potentiometer as this one
+This allows programs such as
 
 \begin{verbatim}
 idle >>> (valueOf $ Potentiometer 0) >>> smap [$exp|(/4)|] >>> (setValue $ AnalogOutputPin 10 0)
@@ -1289,7 +1292,13 @@ write values between 0 and 256 unless explicitley changed. The mapping 0 to 1024
 when reading analog values is from GND to AREF which is nomally 0v and 5v
 respectively though AREF can be explicitley changed.
 
-\subsection{Defining a servomotor}
+\subsection{Defining a servo motor}
+
+
+Stupid example. Rather use the 3pi instead.
+
+
+
 
 \subsection{Defining a new platform}
 
