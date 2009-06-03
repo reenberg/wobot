@@ -1,0 +1,14 @@
+digraph G
+{
+                node [fontname="Times Roman", shape=rectangle]
+                edge [color=black, fontname="Times Roman"]
+
+                FromNode [label="", color=white]
+                InputNode [label="Input node, counter = 2"]
+                OutputNode [label="Output node"]
+
+                {rank=same; FromNode InputNode OutputNode}
+                
+                FromNode->InputNode [label="Another value arrives at input node\nwhile we are still waiting for\n a response to the prior request"]
+                InputNode->OutputNode [label="Counter is set to 2,\nno request is sent to the sensor", style=dashed]
+}

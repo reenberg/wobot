@@ -737,7 +737,8 @@ previously sent request.  Several options present themselves:
   input node, we will not send another request.  Instead, we will
   increase an internal counter, and upon receiving the sensor
   response, fire the output node a number of times equivalent to the
-  number of times a value arrived at the input node.
+  number of times a value arrived at the input node.  See
+  \Fref{fig:accum-repeat} for a visualisation.
 \item[Queue:] When a value arrives, queue a request to the sensor.  We
   cannot assume that all sensor hardware supports a request queue (in
   fact, we can be fairly certain that most will not), so we have to
@@ -748,7 +749,8 @@ previously sent request.  Several options present themselves:
   posting wire itself, not the incoming value, such a queue could be
   implemented as a mere integral counter, thus ignoring the problem of
   dynamically allocating memory (and potential problems resulting from
-  such, as described in section \ref{sec:event_queue}).
+  such, as described in section \ref{sec:event_queue}).  See
+  \Fref{fig:queue} for a visualisation.
 \item[Ignore:] We can also opt not to queue or accumulate anything,
   ignore any input values sent while there is already an outstanding
   request, and fire the output node a single time upon receiving a
@@ -757,6 +759,24 @@ previously sent request.  Several options present themselves:
   its deficiencies are not important in the typical case, and that
   they can (to a degree) be worked around, if necessary.
 \end{description}
+
+\begin{figure}
+  \label{fig:accum-repeat}
+  \includegraphics[width=0.9\textwidth]{images/accumulate-repeat-1}
+  \includegraphics[width=0.9\textwidth]{images/accumulate-repeat-2}
+  \includegraphics[width=0.9\textwidth]{images/accumulate-repeat-3}
+  \caption{Visualisation of Accumulate-Repeat}
+  \centering
+\end{figure}
+
+\begin{figure}
+  \label{fig:queue}
+  \includegraphics[width=0.9\textwidth]{images/queue-1}
+  \includegraphics[width=0.9\textwidth]{images/queue-2}
+  \includegraphics[width=0.9\textwidth]{images/queue-3}
+  \caption{Visualisation of Queue}
+  \centering
+\end{figure}
 
 Both the \textit{Accumulate--Repeat} and \textit{Queue}--strategies
 suffer from \textit{clogging--propagation}, where the multitude of
