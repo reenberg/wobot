@@ -548,7 +548,7 @@ and tradeoffs in Fladuino.  In particular, the low amount of available
 main memory, and the comparatively large amount of available flash
 memory for program code, suggests that we optimise for low memory
 usage over low code size.  Indeed, as we shall see in
-\ref{dataflowtranslation}, we have opted to directly express much of
+\ref{sec:dataflowtranslation}, we have opted to directly express much of
 the control flow in the code itself, where a typical program, with
 plenty of available memory, might instead opt a more data-driven
 approach.  This choice was also made in Flask itself, and as
@@ -581,6 +581,14 @@ parts can be divided into the following:
 \item A compiler is supplied for the Haskell-like programming language
   Red (see section \ref{sec:red}), which is used to tailor the
   behaviour of stream operators.
+\item A \textit{stream generator} that takes a description of a
+  dataflow graph and generates object code (in the case of Fladuino,
+  C).
+\item The \textit{Fladuino runtime system}, consisting of code written
+  in C implementing the runtime facilities used by the generated code.
+  The most notable part of the runtime system is the event loop and
+  its supporting machinery, which is the subject of
+  \Fref{sec:dataflowevaluationstrategy}.
 \item A module that encapsulates the hardware facilities offered by
   the target platform and provides the ability to check whether the
   requirements made by the users program can be fulfilled.  Arduino is
@@ -611,22 +619,35 @@ parts can be divided into the following:
   sanity-checked.
 \end{itemize}
 
+Except for the last module, this structure has been adopted from
+Flask.  Additionally, Flask defines additional facilities (such as
+\textit{Flows} for communicating between devices) that build heavily
+upon the TinyOS--platform for sensor networks, a platform that is not
+available to us.  We have thus not adapted all of these facilities in
+our work, though posting wires (see \Fref{sec:posting wires}) have
+their own novel implementation in Fladuino.
+
 \section{Dataflow evaluation strategy}
+\label{sec:dataflowevaluationstrategy}
 As in Flask, the dataflow graph is divided into \textit{atomic
   subgraphs} consisting of a set of nodes connected by normal wires.
 Evaluating such a subgraph consists of supplying a value on the input
 wire, retrieving any values that may show up on output wires, then
 setting up to evaluate any of the successor atomic subgraphs with
-these values (see \ref{dataflowtranslation} for the implementation
+these values (see \ref{sec:dataflowtranslation} for the implementation
 details).  The notion of an atomic subgraph serves the purpose of
 dividing the dataflow graph into parts that can be evaluated
-atomically without blocking.  While this is conceptually and
-implementation--wise simple, it leaves open the question of what to do
-with the asynchronous events that are the heart of reactive
-programming.  Since events are fundamentally connected to the concept
-of a hardware interrupt (though we do not reject the ability for sinks
-to manually signal events), we cannot at any time predict, or control,
-their arrival.
+atomically without blocking.  Translating a dataflow graph into object
+code is referred to as \textit{stream generation}.  Translating an
+atomic subgraph is relatively straightforward, and the subject of
+\Fref{sec:dataflowtranslation}, while it is far more interesting to
+contemplate the question of what to do with the asynchronous events
+that are the heart of reactive programming.  Indeed, we have to
+analyse the constraints of our target platform(s) in order to reach an
+adequate solution.  Since events are fundamentally connected to the
+concept of a hardware interrupt (though we do not reject the ability
+for sinks to manually signal events), we cannot at any time predict,
+or control, their arrival.
 
 The simplest strategy would be to, upon arrival of an event via an
 asynchronous hardware-level interrupt, immediately evaluate all atomic
@@ -660,98 +681,40 @@ approach is unacceptable for several reasons:
   subgraphs, namely atomicity of computation.
 \end{itemize}
 
-As a result, our basic program evaluation is as follows.  We maintain
-an ordered \textit{event queue}, each element containing information
-about an atomic subgraph (actually, an entry node to the subgraph)
-that should be called, as well as the input value that caused the
-input wire to fire.  The generated program consists of a loop that
-continuously checks for the presence of an element in the queue, and
-if so, removes it and computes the subgraph indicated by it.  Hardware
-interrupts are handled by checking all events that may be signalled by
-the given interrupt (the details of this check are defined
-individually by each type of event), and if the check is positive, an
-element is added to the event queue requesting the evaluation of all
-listeners of that event.  It is important that the event--check, as
-well as the computation of the value of the event, is done in the
-interrupt handler itself, as the value may depend on the hardware
-state (such as the voltage on an input pin) as of that moment, and it
-cannot be guaranteed that this state will not have changed by the time
-the main loop retrieves the element from the event queue.  This means
-that we cannot provide any strict guarantees about the resource usage
-of interrupt handlers, but this is a hardware issue that is
-fundamentally unsolvable in software.  Optimisations can be performed,
-of course, but ultimately there are constraints on how much any
-computer can do.
+As a result, our basic program evaluation is as follows.  We shall
+maintain an ordered \textit{event queue}, each element containing
+information about an atomic subgraph (actually, an entry node to the
+subgraph) that should be called, as well as the input value that
+caused the input wire to fire.  The generated program consists of a
+loop that continuously checks for the presence of an element in the
+queue, and if so, removes it and computes the subgraph indicated by
+it.  Hardware interrupts are handled by checking all events that may
+be signalled by the given interrupt (the details of this check are
+defined individually by each type of event), and if the check is
+positive, an element is added to the event queue requesting the
+evaluation of all listeners of that event.  It is important that the
+event--check, as well as the computation of the value of the event, is
+done in the interrupt handler itself, as the value may depend on the
+hardware state (such as the voltage on an input pin) as of that
+moment, and it cannot be guaranteed that this state will not have
+changed by the time the main loop retrieves the element from the event
+queue.  This means that we cannot provide any strict guarantees about
+the resource usage of interrupt handlers, but this is a hardware issue
+that is fundamentally unsolvable in software.  Optimisations can be
+performed, of course, but ultimately there are constraints on how much
+any computer can do.
 
-\subsection{Details of the event queue}
-\label{sec:event_queue}
-The event queue itself is such a central cog in our event-pumping
-machinery that it is worth paying great attention to its form.  It is
-essentially just a double-ended queue, but as it turns out, the
-textbook implementation of this data structure is undesirable in
-Fladuino.  Normally, one would construct a double-ended queue as a
-linked list or array\footnote{In Fladuino, we would use a linked list
-  rather than an array, as reserving large contiguous blocks of memory
-  on the heap will often not be feasible on the memory-constrained
-  Arduino platform.}, requesting additional memory from the heap as
-necessary, but this runs the risk of the event--queue ballooning to
-great size, especially if the program has an input source that
-constantly triggers new events every few milliseconds.  Since the
-stack and heap share the same memory space, we would run the risk of a
-collision, causing data corruption possibly severe enough to
-completely crash the program (eg. if the procedure return address on
-the topmost stack frame was modified).  While we could modify the
-event queue to perform a check for imminent collision whenever an
-element was about to be added (and if so, ignore the event), we cannot
-do the same whenever we expand the program stack, so we would run the
-risk of the stack growing across the event queue and corrupting its
-data, causing great harm when the main loop gets around to processing
-these now invalid elements.  In conclusion, we cannot permit the stack
-to grow uncontrollably.  An additional problem with using dynamic
-memory is the unpredictable runtime behaviour of \texttt{malloc()},
-something that is undesirable in an interrupt handler, as described in
-the preceding section.
-
-The design of our event queue thus has the following constraints:
-
-\begin{itemize}
-\item There must be a limit on the amount of memory it can occupy.
-\item It must not waste too much memory.
-\item Adding an element must have a predictable (and low) runtime
-  cost.
-\end{itemize}
-
-The third constraint also prevents us from being too clever for our
-own good, and for example storing the event-queue in the EEPROM
-available on all Arduino variants in order to avoid using the same
-memory as the program stack.  While an interesting idea, EEPROM writes
-require unacceptable multi-millisecond delays.
-
-Thus, our event queue consists of a statically allocated
-(compile--time fixed-size) array that is not too big, and in which
-element insertions have hard real-time runtime guarantees.  If an
-attempt is made to insert an element into a full event queue, the
-result will be a silent failure.  This is a tradeoff: as mentioned in
-a previous section, we have to accept that it is possible for the
-Arduino to be swamped with more work per time unit (or asked to store
-more data) than it is physically able to do.  All we can do is to
-design Fladuino such that the fatal error conditions are rare, and the
-most common error conditions are survivable.  Stack (or heap)
-corruption will in most cases result in the complete malfunction of
-the program, and are thus the least desirable error case.  In
-Fladuino, use of the heap is limited (and in fact bounded by the
-static maximum size of the event queue), and stack/heap corruption
-will in practice only occur if the program is large enough to consume
-all available memory with its stack.  The most common error case, on
-the other hand, will be attempting to add an element to a full event
-queue, resulting in a silent failure.  There are many cases where this
-is not desirable, of course, but many reactive programs will not
-experience catastrophic failure if they lose even important events,
-such as button presses.  Still, we recognise that not all event loss
-can be brushed aside as merely an unimportant UI deficiency, and
-therefore we provide a facility, termed \textit{idle waiters}, meant
-to reduce the average load on the event queue and reduce the risk of
-filling it up.
+\begin{figure}
+\label{fig:eventloopcode}
+\begin{verbatim}
+while (1)
+  if (event_available())
+    handle_event(pop_event())
+  endif
+endwhile
+\end{verbatim}
+\caption{Pseudocode for the event loop}
+\end{figure}
 
 \subsection{Idle waiters}
 
@@ -776,7 +739,7 @@ computations that should be done whenever the program is not busy with
 something else.
 
 \subsection{Posting wires}
-\label{posting wires}
+\label{sec:posting wires}
 In the dataflow graph, atomic subgraphs can be connected by
 \textit{posting wires}.  These serve to temporarily suspend execution
 while the system waits for external response, thus serving in place of
@@ -1180,6 +1143,33 @@ single node can listen to multiple different events (though again, we
 have not been able to identify a practical need), as long as the
 payloads are of the same type.
 
+\section{Design of the runtime system}
+
+Fladuino is not only a code--generator, it also contains a runtime
+system that implements much of the complex behaviour that the
+generated code expresses.  This runtime system not only has to respect
+the constraints imposed by the Arduino hardware, but also run
+sufficiently fast while implementing the facilities necessary for the
+Fladuino--generated code.  We need several facilities apart from what
+is provided by the Arduino libraries themselves:
+
+\begin{itemize}
+\item We must have a \textit{timer} capable of at least
+  microsecond-precision in order to support programs that use the
+  clock as an input source.  This precision has been adopted verbatim
+  from Flask, as we see no reason to deviate.
+\item An \textit{event queue} must be provided that supports the
+  operations mentioned in \Fref{sec:dataflowevaluationstrategy}.
+\item An \textit{interrupt abstraction} built on top of the
+  microcontrollers own hardware interrupts.  The Arduino libraries own
+  interrupt support is too restricted for our purposes, as it only
+  supports a restricted number of I/O pins.  The microcontroller
+  itself supports \textit{pin change interrupts} on a much larger
+  selection of I/O--pins, but the programming interface is much more
+  complicated.  Hence, our runtime system defines a convenient wrapper
+  library.
+\end{itemize}
+
 \chapter{Implementation}
 \label{chapter:implementation}
 
@@ -1194,13 +1184,13 @@ Flask chooses the same approach, in that it produces NesC--code for
 running on sensor motes, likely for the same reasons.
 
 \section{Dataflow translation}
-\label{dataflowtranslation}
+\label{sec:dataflowtranslation}
 At their heart, both Flask and Fladuino--programs consist of an
-acyclic dataflow graph.  A core part of the system involves the
-translation of this high-level description of the passage of data into
-the procedural target environment.  Fladuino adopts Flask's
-implementation almost verbatim, the details of which will be explained
-within this chapter.
+acyclic dataflow graph.  A core part of the system (the \textit{stream
+  generator}) involves the translation of this high-level description
+of the passage of data into the procedural target environment.
+Fladuino adopts Flask's implementation almost verbatim, the details of
+which will be explained within this chapter.
 
 As in Flask, the graph is divided into \textit{atomic subgraphs},
 sections that can be executed without blocking
@@ -1260,6 +1250,83 @@ subsystem offers no compelling advantages over an implementation via
 abstractions built on the existing event--dispatch infrastructure.
 
 \subsection{On blocking and busywaiting}
+
+\section{Implementation of the runtime system}
+
+In this section we will describe the implementation of the
+runtime--facilities used in the code generated by Fladuino.  It is
+combined with the user--generated code at generation--time by
+Fladuino.
+
+\subsection{Implementation of the event queue}
+\label{sec:event_queue}
+The event queue itself is such a central cog in our event-pumping
+machinery that it is worth paying great attention to its form.  It is
+essentially just a double-ended queue, but as it turns out, the
+textbook implementation of this data structure is undesirable in
+Fladuino.  Normally, one would construct a double-ended queue as a
+linked list or array\footnote{In Fladuino, we would use a linked list
+  rather than an array, as reserving large contiguous blocks of memory
+  on the heap will often not be feasible on the memory-constrained
+  Arduino platform.}, requesting additional memory from the heap as
+necessary, but this runs the risk of the event--queue ballooning to
+great size, especially if the program has an input source that
+constantly triggers new events every few milliseconds.  Since the
+stack and heap share the same memory space, we would run the risk of a
+collision, causing data corruption possibly severe enough to
+completely crash the program (eg. if the procedure return address on
+the topmost stack frame was modified).  While we could modify the
+event queue to perform a check for imminent collision whenever an
+element was about to be added (and if so, ignore the event), we cannot
+do the same whenever we expand the program stack, so we would run the
+risk of the stack growing across the event queue and corrupting its
+data, causing great harm when the main loop gets around to processing
+these now invalid elements.  In conclusion, we cannot permit the stack
+to grow uncontrollably.  An additional problem with using dynamic
+memory is the unpredictable runtime behaviour of \texttt{malloc()},
+something that is undesirable in an interrupt handler, as described in
+the preceding section.
+
+The design of our event queue thus has the following constraints:
+
+\begin{itemize}
+\item There must be a limit on the amount of memory it can occupy.
+\item It must not waste too much memory.
+\item Adding an element must have a predictable (and low) runtime
+  cost.
+\end{itemize}
+
+The third constraint also prevents us from being too clever for our
+own good, and for example storing the event-queue in the EEPROM
+available on all Arduino variants in order to avoid using the same
+memory as the program stack.  While an interesting idea, EEPROM writes
+require unacceptable multi-millisecond delays.
+
+Thus, our event queue consists of a statically allocated
+(compile--time fixed-size) array that is not too big, and in which
+element insertions have hard real-time runtime guarantees.  If an
+attempt is made to insert an element into a full event queue, the
+result will be a silent failure.  This is a tradeoff: as mentioned in
+a previous section, we have to accept that it is possible for the
+Arduino to be swamped with more work per time unit (or asked to store
+more data) than it is physically able to do.  All we can do is to
+design Fladuino such that the fatal error conditions are rare, and the
+most common error conditions are survivable.  Stack (or heap)
+corruption will in most cases result in the complete malfunction of
+the program, and are thus the least desirable error case.  In
+Fladuino, use of the heap is limited (and in fact bounded by the
+static maximum size of the event queue), and stack/heap corruption
+will in practice only occur if the program is large enough to consume
+all available memory with its stack.  The most common error case, on
+the other hand, will be attempting to add an element to a full event
+queue, resulting in a silent failure.  There are many cases where this
+is not desirable, of course, but many reactive programs will not
+experience catastrophic failure if they lose even important events,
+such as button presses.  Still, we recognise that not all event loss
+can be brushed aside as merely an unimportant UI deficiency, and
+therefore we provide a facility, termed \textit{idle waiters}, meant
+to reduce the average load on the event queue and reduce the risk of
+filling it up.
 
 \section{User--extensible abstractions with typeclasses}
 
