@@ -245,6 +245,9 @@ instance AnalogInputDevice Potentiometer where
     genReadCode (Potentiometer pin) resultvar = [[$cstm|$id:resultvar = analogRead($int:pin);|]]
 
 
+-- This actually make no sence, as the atmega interrupt system is not sensitive
+-- enough.  It only triggers logical change interrupts when the messured voltage
+-- changes aprox > 50% of the supply voltage.
 data PotentiometerChangeEvent = PotentiometerChangeEvent Potentiometer
                                 deriving (Eq, Show)
 
@@ -252,20 +255,7 @@ instance Event PotentiometerChangeEvent () where
     setupEvent e@(PotentiometerChangeEvent (d@(Potentiometer pin))) = 
                                                  return $ mkEvent e Nothing Nothing
     interruptPins (PotentiometerChangeEvent (Potentiometer pin)) = [APin pin]
-
-{-
-
-instance Event PotetiometerChangeEvent () where
-    setupEvent e@(PotentiometerChangeEvent (d@(Potentiometer pin)) change) = 
-                                          do addDevice d
-                                             pv <- statevar d "change_predicate"
-                                             let v = H.var (mkName pv)
-                                             addCImport pv [$ty|() -> Bool|] [$cexp|$id:pv|]
-                                             addCFundef [$cedecl|
-                                             return $ mkEvent e Nothing (Just v)
-    interruptPins (PotentiometerChangeEvent (PushButton pin)) = [pin]                                                    
-
--}                   
+                   
 
 -- Simple Interrupt Event --
 data InterruptEvent = InterruptEvent Integer
