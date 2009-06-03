@@ -589,15 +589,14 @@ approach is unacceptable for several reasons:
   significant, especially if we receive yet another event while
   evaluating one of $s_n$.  There is no upper bound on the number of
   events we can be forced to handle within each other, and the storage
-  spent on saving the state of each computation can be very
-  significant on such memory-constrained devices as the Arduino
-  platform.
+  spent on saving the state of each computation can be significant on
+  such memory-constrained devices as the Arduino platform.
 \item Doing large computations (in space or time) within interrupt
   handlers is generally a bad idea.  Not only are additional
   interrupts disabled while running the handler (and making them
   re--entrant is nontrivial), but the already running code may already
   tie up an arbitrary amount of the memory resources.  As a result,
-  interrupt handlers should ideally terminate swiftly and use very few
+  interrupt handlers should ideally terminate swiftly and use few
   resources, which cannot be guaranteed for evaluation of arbitrary
   atomic subgraphs.
 \item Most importantly, the subgraph computation already in progress
@@ -688,7 +687,7 @@ design Fladuino such that the fatal error conditions are rare, and the
 most common error conditions are survivable.  Stack (or heap)
 corruption will in most cases result in the complete malfunction of
 the program, and are thus the least desirable error case.  In
-Fladuino, use of the heap is very limited (and in fact bounded by the
+Fladuino, use of the heap is limited (and in fact bounded by the
 static maximum size of the event queue), and stack/heap corruption
 will in practice only occur if the program is large enough to consume
 all available memory with its stack.  The most common error case, on
@@ -830,20 +829,25 @@ continuous stream of sensor readings as long as it is activated.
 
 \subsubsection{Simulating Accumulate--Repeat and Queue with Ignore}
 
-Through clever construction of the graph surrounding the posting wire
-we can mostly simulate the Accumulate--Repeat and Queue strategies
-through a posting wire implementation using the Ignore strategy.  For
-Accumulate--Repeat, we can connect both input and output nodes to an
-\textit{accumulator node} that distinguishes between its two inputs.
-When receiving a value from the input node, an internal counter will
-be increased by one.  When receiving a value (the sensor reading) from
-the output node, the value will be packaged up with the counter into a
-tuple and sent to successors of the accumulator node, after which the
-counter will then be reset to zero.  Said successors will be the nodes
-that would normally follow the output node.  This does not in itself
-implement the ``repeat''--portion of Accumulate--Repeat, but we have
-removed the loss of information, and can thus trivially take whatever
-action repeated firings of the output node would have resulted in.
+Should the behaviour exhibited by the Accumulate--Repeat and
+Queue--strategies truly be necessary for some application, we will
+show that it is possible to mostly simulate their behaviour via the
+Ignore strategy.  We shall not delve into the gory technical details
+(such as the error handling necessary to avoid fragility), but
+merely show the structure of the solution.
+
+For Accumulate--Repeat, we can connect both input and output nodes to
+an \textit{accumulator node} that distinguishes between its two
+inputs.  When receiving a value from the input node, an internal
+counter will be increased by one.  When receiving a value (the sensor
+reading) from the output node, the value will be packaged up with the
+counter into a tuple and sent to successors of the accumulator node,
+after which the counter will then be reset to zero.  Said successors
+will be the nodes that would normally follow the output node.  This
+does not in itself implement the ``repeat''--portion of
+Accumulate--Repeat, but we have removed the loss of information, and
+can thus trivially take whatever action repeated firings of the output
+node would have resulted in.
 
 \begin{figure}
   \label{accum-repeat-with-ignore}
@@ -983,10 +987,10 @@ following reasons, we believe we made the right choice:
 \end{itemize}
 
 Abstractions aside, each pin is not only defined by its number, but
-also by a set of \textit{capabilities}, very much like the ones that
-cover the entire platform.  For example, a given pin may support such
-things as \texttt{pin--change interrupts} (triggering an asynchronous
-signal when the input value on the pin changes) or \texttt{pulse-width
+also by a set of \textit{capabilities}, much like the ones that cover
+the entire platform.  For example, a given pin may support such things
+as \texttt{pin--change interrupts} (triggering an asynchronous signal
+when the input value on the pin changes) or \texttt{pulse-width
   modulation} (analog output).  Many hardware devices only work when
 attached to pins with special capabilities --- for example, a
 push--button must be attached to a pin supporting interrupts --- and
@@ -1132,7 +1136,7 @@ a form suitable for execution on the Arduino platform.  We have chosen
 to stop a step short, and merely generate C code meant for further
 compilation through an Arduino-specific compiler.  We have no need of
 the additional power we would gain through generating our own machine
-code, and the additional amount of work required would be very large.
+code, and the additional amount of work required would be significant.
 Flask chooses the same approach, in that it produces NesC--code for
 running on sensor motes, likely for the same reasons.
 
