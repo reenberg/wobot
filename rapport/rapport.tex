@@ -175,15 +175,22 @@ supervised by Ken Friis Larsen, assistant professor at DIKU.
 
 \chapter{Introduction}
 
-Robots has been used in the industry for decades, replacing humans in
-repetitive tasks like sewing, assembling and transportation. In the
-last years, robots have been introduced to the consumer market,
-e.g. the Roomba vacuum cleaner. This is quite probably a sign that
-robots are getting cheaper and affordable for more tasks. In the future
-we will probably see robots deployed in many other uses. But falling
-hardware prices is not everything, efficient development and
-prototyping of robot control programs is another aspect in making
-robots affordable. \fixme{code reusability}
+\section{Problem statement}
+In this report we want to present our robot programming framework
+\textit{Fladuino}. Fladuino is an adaption of the sensor network
+framework \textit{Flask} for the robot domain.
+
+Flask is a domain specific language embedded in Haskell for writing
+sensor network code. With Haskell functioning as a meta-language. The
+final result of executing a Flask program is generated code in a
+sensor network language. And our framework Fladuino follows exactly
+the same concepts as Flask though it generates C-code written
+specifically for our robots.
+
+In the following chapters we want to argue that taking our outset from
+Flask has been successful. Both in the sense that Flask was easily
+adaptable and in the sense that our result, Fladuino, is sufficient
+for many tasks in robot programming.
 
 It is the prevailing conception that robots has some sort of
 autonomous behavior. A simpler definition, says that a robot is any
@@ -192,16 +199,13 @@ actuators. The second definition is more general, in that it applies
 to almost any programmable electronic system, and the autonomous
 behavior will often be achieved programmatically. 
 
-\fixme{something about how robots are normally programmed, maybe a bit
-  specific about arduino}
-
-Our goal is to provide a framework that facilitates robot programming
-(specifically for the Arduino-platform), but such a framework also has
-to provide features for programming the kind of input-output systems
-which doesn't necessarily have any autonomous behavior. So there are
-actually two steps: making a library suitable for programming sensors,
-actuators and connecting them, and secondly facilitate programming
-autonomous robots.
+Our goal with Fladuino is to provide a framework that facilitates
+robot programming, but such a framework also has to provide features
+for programming the kind of input-output systems which doesn't
+necessarily have any autonomous behavior. So there are actually two
+steps: making a library suitable for programming sensors, actuators
+and connecting them, and secondly facilitate programming autonomous
+robots.
 
 Robots are reactive systems. We've found the best description of what
 distinguishes a reactive system in Zhanyong Wan's PhD
@@ -224,33 +228,10 @@ partition computer systems into:
 A reactive programming language is a language with primitives for connecting
 processes (a kind of ever-changing input values, often called signals). 
 
+\section{Hardware platform}
 The choice of hardware-platform has an influence on how to design such a
 language. We've chosen to make our language and framework target the
-Arduino-platform \cite{arduino}.  There are number of reasons for why we think
-this platform is a good choice. First of all, our institute DIKU was planning on
-buying a couple of these boards for research in Human Centered Computing about
-interactive-objects.\fixme{måske en forklaring af hvorfor vi laver noget andet
-  end HCC med dem?} And they finally bought some in the first weeks of our
-project. \fixme{Det er da fuldstændig ligegyldigt om HCC gruppen havde planer om
-  at købe disse} Even better reasons is that they are cheap (approximately 200 DKK for
-an Arduino Duemilanove, at the time of writing) and is easily
-extensible. E.g. you can buy extensions for ethernet, bluetooth, or even small
-touchscreens. Finally, the Arduino comes with a reltively high-level
-C-interface, sparing us from most low-level programming and bit trickery.
-
-Because the Arduino processor has a relatively limited computation capacity, we
-had to find a way of programming these systems \ldots
-
-\fixme{flask, dataflow, etc.}
-
-
-In the following section we will go through the existing Flask
-system. It's design and how you write sensor-network programs in
-it. After that we will look at what isn't already in Flask, that is
-needed when programming robots, and we will talk about how we have
-extended Flask to Fladuino.
-
-\section{A note on Arduino}
+Arduino-platform \cite{arduino}.  
 
 The term ``Arduino'' is somewhat ambiguous.  It is both a registered
 trademark of the Arduino team that can be used by licensed
@@ -261,15 +242,51 @@ This paper will use the latter meaning unless otherwise is explicitly
 mentioned.  We will use the term ``an Arduino board'' to refer to the
 physical package of microcontroller and I/O ports.
 
-Additionally, we have only had resources to test our work on the
-Arduino
+There are number of reasons for why we think this platform is a good
+choice. First of all, our institute DIKU was planning on buying a
+couple of these boards for research in Human Centered Computing about
+interactive-objects and when they heard we were interested in creating
+a framework for robot development they finally bought some and let us
+use them. Even better reasons is that they are cheap (approximately
+200 DKK for an Arduino Duemilanove, at the time of writing) and is
+easily extensible. E.g. you can buy extensions for ethernet,
+bluetooth, or even small touchscreens. Finally, the Arduino comes with
+a relatively high-level C-interface, sparing us from most low-level
+programming and bit trickery.
+
+We have only had resources to test our work on the Arduino
 Duemilanove\footnote{\url{http://www.arduino.cc/en/Main/ArduinoBoardDuemilanove}},
 Arduino BT\footnote{\url{http://www.arduino.cc/en/Guide/ArduinoBT}},
 Arduino
-Mega\footnote{\url{http://arduino.cc/en/Main/ArduinoBoardMega}},
-and Pololu 3pi\footnote{\url{http://www.pololu.com/catalog/product/975}}.
+Mega\footnote{\url{http://arduino.cc/en/Main/ArduinoBoardMega}}, and
+Pololu 3pi\footnote{\url{http://www.pololu.com/catalog/product/975}}.
+
+\section{Motivation}
+Robots has been used in the industry for decades, replacing humans in
+repetitive tasks like sewing, assembling and transportation. In the
+last years, robots have been introduced to the consumer market,
+e.g. the Roomba vacuum cleaner. This is quite probably a sign that
+robots are getting cheaper and affordable for more tasks. In the future
+we will probably see robots deployed in many other uses. But falling
+hardware prices is not everything, efficient development and
+prototyping of robot control programs is another aspect in making
+robots affordable. \fixme{code reusability}
+
+\section{Structure outline}
+In the following section (chapter \ref{chapter:Flask}) we will go
+through the existing Flask system. Its design and how you use it to
+write sensor-network programs. In chapter \ref{chapter:design} we will
+look at what isn't already in Flask, that is needed when programming
+robots and what i.e. the core design decisions.
+
+nd we will talk about how we have extended Flask to Fladuino
+
+
 
 \chapter{Flask}
+\label{chapter:Flask}
+\fixme{mangler noget om opdelingen i atomisk delgrafer}
+
 Flask is a domain specific language embedded in Haskell for
 programming sensor networks. Flask is based on the idea of writing
 \textit{dataflows} that express the overall flow of data in the
@@ -336,6 +353,7 @@ NesC.
 
 
 \section{Red --- a restricted node--level language}
+\label{sec:red}
 Red is an object-language from Flask that is meant to be used for
 writing node--level mapping functions, like predicates or conversion
 functions, without having to deal with NesC. It takes it syntax from
@@ -345,7 +363,7 @@ the same as for not compiling Haskell directly to the sensor nodes in
 the first place: the existing Haskell runtimes are too huge to fit on
 the limited memory of a sensor node. Therefore we can't allow uses of
 features that e.g.  requires a garbage collector. Flask disallows the
-following Haskell '98-features (with probably some more, that we have
+following Haskell 98-features (with probably some more, that we have
 overlooked) from Red:
 \begin{itemize}
 \item Recursive function
@@ -405,7 +423,7 @@ detect low high threshold =
 
 
 \chapter{Design of the Fladuino system}
-
+\label{chapter:design}
 Fladuino is a modification of Flask that can be used to program
 Arduino devices in a functional reactive manner.  We have set the
 following requirements for our final program: \fixme{eventuelt
@@ -521,7 +539,8 @@ parts can be divided into the following:
   sense, the dynamic part of a Fladuino program happens at
   compile--time.
 \item A compiler is supplied for the Haskell-like programming language
-  Red, which is used to tailor the behaviour of stream operators.
+  Red (see section \ref{sec:red}), which is used to tailor the
+  behaviour of stream operators.
 \item A module that encapsulates the hardware facilities offered by
   the target platform and provides the ability to check whether the
   requirements made by the users program can be fulfilled.  Arduino is
@@ -553,7 +572,6 @@ parts can be divided into the following:
 \end{itemize}
 
 \section{Dataflow evaluation strategy}
-
 As in Flask, the dataflow graph is divided into \textit{atomic
   subgraphs} consisting of a set of nodes connected by normal wires.
 Evaluating such a subgraph consists of supplying a value on the input
