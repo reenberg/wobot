@@ -445,7 +445,12 @@ governed by the following requirements.
   Fladuino so as to reduce the likelihood of these errors.
 \end{itemize}
 
-\section{Terminology and basic \textit{modus operandi}}
+\section{Design foundations}
+
+This section will summarise the basic structure of Fladuino, its
+terms, and the constraints under which the design was formed.
+
+\subsection{Terminology and basic \textit{modus operandi}}
 
 As in Flask, Fladuino is implemented as a set of Haskell modules that
 provides facilities for expressing the structure and behaviour of a
@@ -463,12 +468,26 @@ description of the problem will be printed.  Only errors that are
 violations of the Haskell type system can be caught at compile--time,
 and while we have attempted to structure the facilities provided by
 Fladuino such that invalid programs will contain type errors, this
-cannot be done for all error classes.
+cannot be done for all error classes.  When the generator program is
+run, it constructs a typed dataflow graph.  However, the types and
+connections in the graph cannot be known in advance (they may be
+determined programmatically, perhaps even by user input), hence we may
+signal type errors at generation time if the wiring of stream
+operators violate type--safety.  We do, of course, supply Haskell
+operators operating on stream representations with assigned static
+types, that guarantee the type--validity of the resulting graph, but
+certain sophisticated applications of Fladuino may desire more
+flexibility than permitted by these.  This is notably the case when
+the structure of the graph is a function of a value not known until
+generation--time (and thus can't possibly be checked by the Haskell
+compiler at compile--time).
 
-\fixme{We ought to have a little description of which types of errors is caught
-  at which point. Seems a little quick to mention it but not to clarify}
+It is intended that all static errors are caught at compile-- or
+generation--time; in particular that Fladuino will never generate
+malformed C.  This guarantee does not extend to C code manually
+included or integrated by the user, of course.
 
-\section{Hardware constraints}
+\subsection{Hardware constraints}
 
 While we do not use ``Arduino'' to refer to any specific hardware
 configuration, implementations of our target platform still share some
@@ -860,7 +879,7 @@ real posting wires, as software interrupts are to hardware interrupts.
   \centering
 \end{figure}
 
-\section{Framework for specifying peripheral drivers}
+\section{Representing peripherals}
 Arduino is a flexible system for general embedded development, with no
 specific application in mind.  The Arduino platform can therefore be
 connected to a diverse amount of peripheral devices, all with their
