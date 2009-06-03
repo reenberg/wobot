@@ -526,7 +526,7 @@ and tradeoffs in Fladuino.  In particular, the low amount of available
 main memory, and the comparatively large amount of available flash
 memory for program code, suggests that we optimise for low memory
 usage over low code size.  Indeed, as we shall see in
-\ref{dataflowtranslation}, we have opted to directly express much of
+\ref{sec:dataflowtranslation}, we have opted to directly express much of
 the control flow in the code itself, where a typical program, with
 plenty of available memory, might instead opt a more data-driven
 approach.  This choice was also made in Flask itself, and as
@@ -559,6 +559,14 @@ parts can be divided into the following:
 \item A compiler is supplied for the Haskell-like programming language
   Red (see section \ref{sec:red}), which is used to tailor the
   behaviour of stream operators.
+\item A \textit{stream generator} that takes a description of a
+  dataflow graph and generates object code (in the case of Fladuino,
+  C).
+\item The \textit{Fladuino runtime system}, consisting of code written
+  in C implementing the runtime facilities used by the generated code.
+  The most notable part of the runtime system is the event loop and
+  its supporting machinery, which is the subject of
+  \Fref{sec:dataflowevaluationstrategy}.
 \item A module that encapsulates the hardware facilities offered by
   the target platform and provides the ability to check whether the
   requirements made by the users program can be fulfilled.  Arduino is
@@ -589,22 +597,35 @@ parts can be divided into the following:
   sanity-checked.
 \end{itemize}
 
+Except for the last module, this structure has been adopted from
+Flask.  Additionally, Flask defines additional facilities (such as
+\textit{Flows} for communicating between devices) that build heavily
+upon the TinyOS--platform for sensor networks, a platform that is not
+available to us.  We have thus not adapted all of these facilities in
+our work, though posting wires (see \Fref{sec:posting wires}) have
+their own novel implementation in Fladuino.
+
 \section{Dataflow evaluation strategy}
+\label{sec:dataflowevaluationstrategy}
 As in Flask, the dataflow graph is divided into \textit{atomic
   subgraphs} consisting of a set of nodes connected by normal wires.
 Evaluating such a subgraph consists of supplying a value on the input
 wire, retrieving any values that may show up on output wires, then
 setting up to evaluate any of the successor atomic subgraphs with
-these values (see \ref{dataflowtranslation} for the implementation
+these values (see \ref{sec:dataflowtranslation} for the implementation
 details).  The notion of an atomic subgraph serves the purpose of
 dividing the dataflow graph into parts that can be evaluated
-atomically without blocking.  While this is conceptually and
-implementation--wise simple, it leaves open the question of what to do
-with the asynchronous events that are the heart of reactive
-programming.  Since events are fundamentally connected to the concept
-of a hardware interrupt (though we do not reject the ability for sinks
-to manually signal events), we cannot at any time predict, or control,
-their arrival.
+atomically without blocking.  Translating a dataflow graph into object
+code is referred to as \textit{stream generation}.  Translating an
+atomic subgraph is relatively straightforward, and the subject of
+\Fref{sec:dataflowtranslation}, while it is far more interesting to
+contemplate the question of what to do with the asynchronous events
+that are the heart of reactive programming.  Indeed, we have to
+analyse the constraints of our target platform(s) in order to reach an
+adequate solution.  Since events are fundamentally connected to the
+concept of a hardware interrupt (though we do not reject the ability
+for sinks to manually signal events), we cannot at any time predict,
+or control, their arrival.
 
 The simplest strategy would be to, upon arrival of an event via an
 asynchronous hardware-level interrupt, immediately evaluate all atomic
@@ -754,7 +775,7 @@ computations that should be done whenever the program is not busy with
 something else.
 
 \subsection{Posting wires}
-\label{posting wires}
+\label{sec:posting wires}
 In the dataflow graph, atomic subgraphs can be connected by
 \textit{posting wires}.  These serve to temporarily suspend execution
 while the system waits for external response, thus serving in place of
@@ -1171,13 +1192,13 @@ Flask chooses the same approach, in that it produces NesC--code for
 running on sensor motes, likely for the same reasons.
 
 \section{Dataflow translation}
-\label{dataflowtranslation}
+\label{sec:dataflowtranslation}
 At their heart, both Flask and Fladuino--programs consist of an
-acyclic dataflow graph.  A core part of the system involves the
-translation of this high-level description of the passage of data into
-the procedural target environment.  Fladuino adopts Flask's
-implementation almost verbatim, the details of which will be explained
-within this chapter.
+acyclic dataflow graph.  A core part of the system (the \textit{stream
+  generator}) involves the translation of this high-level description
+of the passage of data into the procedural target environment.
+Fladuino adopts Flask's implementation almost verbatim, the details of
+which will be explained within this chapter.
 
 As in Flask, the graph is divided into \textit{atomic subgraphs},
 sections that can be executed without blocking
