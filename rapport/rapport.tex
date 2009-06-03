@@ -297,7 +297,7 @@ Flask is a domain specific language embedded in Haskell for
 programming sensor networks. Flask is based on the idea of writing
 \textit{dataflow graphs} that express the overall flow of data in the
 program. The basic task in writing a Flask program is thus to connect
-(or \textit{wirering}) incoming streams of sensor data to outgoing
+(or \textit{wiring}) incoming streams of sensor data to outgoing
 streams of data (e.g. to other nodes in the network) with some
 eventual data processing in between. A program thus takes form of an
 acyclic graph.
@@ -315,7 +315,19 @@ seismometer values.
   \caption{Flask dataflow graph}
 \end{nonfloatingfigure}
 
-Later we will examine how this is written in Flask.
+Later we will examine how this is written in Flask, but looking at it
+we see that this is a single connected graph\footnote{This is actually
+  two different \textit{atomic subgraphs} because of the posting wire
+  required to use the sensor, but for simplicity we wont discuss this
+  now. Refer to \cite{flask06} or our section on posting wires,
+  \ref{sec:posting wires}.}. Many Flask programs will though consist
+of several \textit{atomic subgraphs}. That they are atomic means that
+when we start to execute it (when it receives an input value), we have
+to run it to completion before we can go on to the next action. This
+point is actually easier to explain when talking about Fladuino. The
+good example here is that we might want two different \textit{atomic
+  subgraphs} to execute depending on whether a button on our circuit
+was pushed or released.
 
 \section{From Flask to sensor network-code}
 A fundamental thing in Flask is its compilation and
@@ -359,9 +371,10 @@ time constants) into object-language code.
 
 Figure \ref{fig:mainloop} illustrates this, showing a simplified
 version of the main loop and initialization code from Fladuino.
-\texttt{cdefs\_toc} and \texttt{cstms\_toc} are compile--time values
-(lists of C statements), which are inserted into the syntax tree of
-the parsed C-code at generation--time.
+\texttt{cdefs\_toc} and \texttt{cstms\_toc} are compile-time values
+(lists of C statements). And \texttt{\$edecls} and
+\texttt{\$stms} are anti-quoters which job is two put the values into
+the correct position in the C syntax tree at generation-time.
 
 \begin{figure}
 \begin{verbatim}
@@ -414,12 +427,11 @@ in Flask. Type classes should be possible to implement though, since
 it's a compile-time thing.
 
 Figure \ref{fig:redqq} is an example of a quasiquoted function in Red,
-which increments a value at every iteration until it surpasses another
-input value. This is taken from the our example of a binary counter.
+which determines whether a ratio between two values is below a certain
+compile-time determined threshold. 
 \begin{figure}
 \begin{verbatim}
-[$exp|\(x, s) -> if s > x then (0, 0) 
-                          else (s+1, s+1)|]
+[$exp|\(hi, lo) -> hi / lo > $flo:threshold|]
 \end{verbatim}
   \caption{Example of quasiquoted Red function}
   \label{fig:redqq}
@@ -442,7 +454,7 @@ Arrow syntax.
 In Flask a stream of values with type $\alpha$ has the type $S\
 \alpha$. The arguably simplest way to generate such a stream is the
 \texttt{clock :: Int -> S ()} Flask-function, which given a time
-interval in milliseconds generates an empty signal on the resulting
+interval in milliseconds generates a unit signal on the resulting
 stream. \texttt{clock 1000} is signalling every second. This isn't
 very useful by itself, some data processing needs to occur, and for
 this Flask provides a set of stream operators, as mentioned before.
@@ -475,7 +487,8 @@ decide whether it should be passed on to its output stream or not.
 
 \subsection{Streamoperators}
 Now we will list a description of most of the stream-operators and
-signal functions that Flask provides.
+signal functions that Flask provides. \fixme{Add type signatures and
+  improve explanations}
 \begin{description}
 \item[\texttt{sconst}]\hfill \\ 
 \item[$\ggg$]\hfill \\ Connects a stream with a stream operator.
