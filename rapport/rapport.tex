@@ -1076,8 +1076,9 @@ anything.  See \Fref{sec:pushbuttondef} for example code.
 Events initiate dataflow at nodes marked as \textit{listeners} for the
 specific event.  Design--wise there is nothing that prevents these
 listeners from being successors of other nodes in some atomic
-subgraph, but have not been able to identify a use for such a
-structure during our work.  As a result, we generally consider an
+subgraph, but have not been able to identify a general use for such a
+structure during our work (though see \Fref{sec:postingwireimpl} for a
+notable exception).  As a result, we generally consider an
 event--listening node to have no way of firing except for the
 triggering of one of the events that the node is listening for.  A
 single node can listen to multiple different events (though again, we
@@ -1154,9 +1155,13 @@ still make its own choice whether to propagate a value or not.
 It is worth nothing that a value need not contain any information
 apart from its existence; \texttt{()} is perfectly valid as a signal.
 
-
-
 \subsection{Implementation of posting wires}
+\label{sec:postingwireimpl}
+We have opted to implement posting wires as a thin layer of
+abstraction on top of events, with a unique event value associated
+with each posting wire.  Implementing posting wires as a separate
+subsystem offers no compelling advantages over an implementation via
+abstractions built on the existing event--dispatch infrastructure.
 
 \subsection{On blocking and busywaiting}
 

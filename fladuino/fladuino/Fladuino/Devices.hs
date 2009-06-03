@@ -110,12 +110,12 @@ instance Device AnalogOutputPin where
 modDev :: forall a d. (Reify a, Device d) => String -> d -> (d -> String -> String -> ([Param], [Exp]) -> Definition) -> S a -> S ()
 modDev name d f a = S $ do
     sa   <- unS a
-    addDevice d
     addStream name
               unitTy
               (DeviceWrite sa $ uniqueId d ++ "_" ++ name)
               genHs
               genC $ \this -> do
+    addDevice d
     connect sa this tau (varIn this "")
   where
     tau :: H.Type
@@ -194,12 +194,12 @@ class (Device a) => AnalogInputDevice a where
 valueOf :: forall a d. (Reify a, AnalogInputDevice d) => d -> S a -> S Integer
 valueOf d a = S $ do
     sa   <- unS a
-    addDevice d
     addStream "valueOf"
               tau_b
               (DeviceRead sa $ uniqueId d)
               genHs
               genC $ \this -> do
+    addDevice d
     connect sa this tau (varIn this "")
   where
     tau :: H.Type
