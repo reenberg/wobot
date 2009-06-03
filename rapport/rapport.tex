@@ -357,7 +357,34 @@ original syntax inside the Flask/Haskell environment. And it allows
 you to intersperse generation time variables (which results in compile
 time constants) into object-language code.
 
+Figure \ref{fig:mainloop} illustrates this, showing a simplified
+version of the main loop and initialization code from Fladuino.
+\texttt{cdefs\_toc} and \texttt{cstms\_toc} are compile--time values
+(lists of C statements), which are inserted into the syntax tree of
+the parsed C-code at generation--time.
 
+\begin{figure}
+\begin{verbatim}
+[$cunit|
+$edecls:cdefs_toc
+
+void setup()
+{
+    $stms:cstms_toc
+}
+
+void loop()
+{
+    if (event_available()) {
+        handle_event(pop_event());
+    }
+}
+|]
+\end{verbatim}
+\caption{Simplified version of the Fladuino main-loop and
+  initialization code}
+\label{fig:mainloop}
+\end{figure}
 
 \section{Red --- a restricted node--level language}
 \label{sec:red}
@@ -386,44 +413,88 @@ And the only a very small subset of the Standard Prelude is included
 in Flask. Type classes should be possible to implement though, since
 it's a compile-time thing.
 
+Figure \ref{fig:redqq} is an example of a quasiquoted function in Red,
+which increments a value at every iteration until it surpasses another
+input value. This is taken from the our example of a binary counter.
+\begin{figure}
+\begin{verbatim}
+[$exp|\(x, s) -> if s > x then (0, 0) 
+                          else (s+1, s+1)|]
+\end{verbatim}
+  \caption{Example of quasiquoted Red function}
+  \label{fig:redqq}
+\end{figure}
+
 
 \section{Streams, node-level values and dataflow-operators}
-Writing dataflow graphs in Haskell is something solved by the Arrows
-library. But this isn't a strategy that fits in with Flask, because
+Writing dataflow graphs in Haskell is normally done by using the
+Arrows library. But this isn't a strategy that fits Flask, because
 arrows requires that an arbitrary Haskell function can be lifted to a
-signal function. This isn't possible here, because signal functions
-should run on the sensor nodes and therefore aren't real Haskell
-functions, but instead some Haskell representation of the node-level
-code that should be generated. Flask takes a little simpler approach,
-and defines some of the same operators as in the arrows library,
-though with different type signatures.
+signal function. This isn't possible here, because Flask signal
+functions are meant for being executed on the sensor nodes and
+therefore aren't Haskell functions, but instead a representation of of
+the node-level code that should be generated. Flask instead defines
+some of the same operators as in the arrows library, though with
+different type signatures. It therefore feels like you can use the
+arrows library without really using it, but you won't get the special
+Arrow syntax.
 
 In Flask a stream of values with type $\alpha$ has the type $S\
 \alpha$. The arguably simplest way to generate such a stream is the
-\texttt{clock :: Int -> S ()} Flask-function, which given an interval
-in milliseconds generates a unit value on the resulting
-stream. \texttt{clock 1000} is signalling every second.  This isn't
-very useful by itself, ... something about node level values ($N\
-\alpha$) etc.
+\texttt{clock :: Int -> S ()} Flask-function, which given a time
+interval in milliseconds generates an empty signal on the resulting
+stream. \texttt{clock 1000} is signalling every second. This isn't
+very useful by itself, some data processing needs to occur, and for
+this Flask provides a set of stream operators, as mentioned before.
 
+
+\subsection{\texttt{Reify} and \texttt{LiftN}}
+To explain the stream operators we need to discuss the two type
+classes: Reify and LiftN.  Instances of the Reify type classes are
+Haskell types that has node-level equivalents. An instance has to
+provide a function reify that given a Haskell value returns a
+representation of its node-level type.
+
+LiftN is a multi parameter type class\footnote{This requires the GHC
+  language extension MultiParamTypeClasses}. \texttt{LiftN eta
+  Integer} represents that the Haskell value of type can be lifted
+to a node-level \textit{Integer}.
+
+Now to one of the Flask stream operators, \texttt{sfilter}. It's type
+signature is:
+
+\begin{verbatim}
+sfilter :: forall a eta . (Reify a, LiftN eta (a -> Bool))
+              => eta -> S a -> S a
+\end{verbatim}
+
+Thus the stream operator \texttt{sfilter} takes a node-level predicate
+as the first argument (type eta), and returns a signal function
+(\texttt{S a -> S a}) that for each input value uses the predicate to
+decide whether it should be passed on to its output stream or not.
 
 \subsection{Streamoperators}
-A description of the Flask stream-operators follows. 
+Now we will list a description of most of the stream-operators and
+signal functions that Flask provides.
 \begin{description}
-\item[\texttt{clock}] 
-\item[$\ggg$]\hfill \\ Connects a stream with a stream
-  combinator.
+\item[\texttt{sconst}]\hfill \\ 
+\item[$\ggg$]\hfill \\ Connects a stream with a stream operator.
+  E.g. \texttt{clock 10 $\ggg$ sconst (liftN [\$exp|42|])} is a stream
+  of 42 values, that is passed on every 10th millisecond.
 \item[\texttt{\&\&\&} and \texttt{szip}]\hfill \\ 
   
-\item[\texttt{sconst}]\hfill \\ 
-\item[\texttt{smap}] \hfill \\ Maps a node-level function over all stream-values,
-  creating a stream of the resulting output values.
-\item[\texttt{sintegrate}] \hfill \\ When supplied with an initial node-level state value
-  and a node-level function that takes the current state and the next
-  value on the input stream, returning a new state and the next value
-  to be send through to the output stream.
-\item[\texttt{sfilter}]\hfill \\ Only propagates values through to the output-stream that
-  satisfies a given node-level predicate.
+  
+\item[\texttt{smap}] \hfill \\ Maps a node-level function over all
+  stream-values, creating a stream of the resulting output values.
+\item[\texttt{sintegrate}] \hfill \\ When supplied with an initial
+  (node-level) state value and a node-level function that takes the
+  current state and the next value on the input stream, returning a
+  new state and the next value to be send through to the output
+  stream.
+\item[\texttt{clock :: Int -> S ()}] Creates a stream of unit-values
+  that is fired with the given interval (specified in milliseconds).
+\item[\texttt{sfilter}]\hfill \\ Only propagates values through to the
+  output-stream that satisfies a given node-level predicate.
 %\item[\texttt{sunzip}]\hfill \\ 
 %\item[\texttt{smerge}]\hfill \\ 
 
@@ -441,9 +512,6 @@ detect low high threshold =
 \end{verbatim}
 
 
-\subsection{\texttt{Reify}/\texttt{LiftN}}
-
-
 \chapter{Design of the Fladuino system}
 \label{chapter:design}
 Fladuino is a modification of Flask that can be used to program
@@ -455,7 +523,7 @@ following requirements for our final program: \fixme{eventuelt
 \item The design of Fladuino must mirror similar core design choices
   in Flask.
 \item Fladuino must be able to generate a C--program suitable for
-  running on an Arduino from a description of a dataflow graph.  This
+  running on an Arduino from a description of a dataflow graph. This
   graph must be expressed in the form of a Haskell program.
   \textit{This requirement stems from the platform selection (see
     section ...
@@ -707,11 +775,11 @@ any computer can do.
 \begin{figure}
 \label{fig:eventloopcode}
 \begin{verbatim}
-while (1)
+repeat forever
   if (event_available())
     handle_event(pop_event())
   endif
-endwhile
+endrepeat
 \end{verbatim}
 \caption{Pseudocode for the event loop}
 \end{figure}
