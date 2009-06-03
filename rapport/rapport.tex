@@ -69,7 +69,10 @@ Troels Henriksen (athas@sigkill.dk)}
 
 \begin{document}
 
+\frontmatter
+
 \maketitle
+\thispagestyle{empty}
 
 \begin{abstract}
   Robots are conventionally programmed in low-level imperative
@@ -94,8 +97,19 @@ Troels Henriksen (athas@sigkill.dk)}
 \end{abstract}
 
 \clearpage 
+\chapter*{Preface}
+This report is a 15 ECTS Bachelor project at the Computer Science
+Department (DIKU), University of Copenhagen. The authors are Martin
+Dybdal, Troels Henriksen and Jesper Reenberg. The project is
+supervised by Ken Friis Larsen, assistant professor at DIKU.
+
+\fixme{maybe add thanks to Flask-guys}
+
+\clearpage
 
 \tableofcontents*
+
+\mainmatter
 
 \fixme{remove all uses of "`very"'}
 \fixme{change bibtex style to one that includes URL's in the generated list,
@@ -107,7 +121,7 @@ Troels Henriksen (athas@sigkill.dk)}
   not.}
 \fixme{Check all refs. Should be converted to vref to utilize the varioref package}
 
-\chapter{Disposition}
+\chapter*{Disposition}
 \begin{itemize}
 \item Abstract
 
@@ -157,16 +171,6 @@ Troels Henriksen (athas@sigkill.dk)}
   \item Small guide to Arduino and electronics
   \end{itemize}
 \end{itemize}  
-
-
-
-\chapter{Preface}
-This report is a 15 ECTS Bachelor project at the Computer Science
-Department (DIKU), University of Copenhagen. The authors are Martin
-Dybdal, Troels Henriksen and Jesper Reenberg. The project is
-supervised by Ken Friis Larsen, assistant professor at DIKU.
-
-\fixme{maybe add thanks to Flask-guys}
 
 
 \chapter{Introduction}
@@ -475,8 +479,7 @@ Fladuino such that invalid programs will contain type errors, this
 cannot be done for all error classes.
 
 \fixme{We ought to have a little description of which types of errors is caught
-  at which point. Seems a little quick to mention it but not to
-  clarify}
+  at which point. Seems a little quick to mention it but not to clarify}
 
 \section{Hardware constraints}
 
@@ -624,7 +627,7 @@ of course, but ultimately there are constraints on how much any
 computer can do.
 
 \subsection{Details of the event queue}
-\label{event queue}
+\label{sec:event_queue}
 The event queue itself is such a central cog in our event-pumping
 machinery that it is worth paying great attention to its form.  It is
 essentially just a double-ended queue, but as it turns out, the
@@ -751,7 +754,8 @@ previously sent request.  Several options present themselves:
   input node, we will not send another request.  Instead, we will
   increase an internal counter, and upon receiving the sensor
   response, fire the output node a number of times equivalent to the
-  number of times a value arrived at the input node.
+  number of times a value arrived at the input node.  See
+  \Fref{fig:accum-repeat} for a visualisation.
 \item[Queue:] When a value arrives, queue a request to the sensor.  We
   cannot assume that all sensor hardware supports a request queue (in
   fact, we can be fairly certain that most will not), so we have to
@@ -762,7 +766,8 @@ previously sent request.  Several options present themselves:
   posting wire itself, not the incoming value, such a queue could be
   implemented as a mere integral counter, thus ignoring the problem of
   dynamically allocating memory (and potential problems resulting from
-  such, as described in section \ref{event queue}).
+  such, as described in section \ref{sec:event_queue}).  See
+  \Fref{fig:queue} for a visualisation.
 \item[Ignore:] We can also opt not to queue or accumulate anything,
   ignore any input values sent while there is already an outstanding
   request, and fire the output node a single time upon receiving a
@@ -771,6 +776,24 @@ previously sent request.  Several options present themselves:
   its deficiencies are not important in the typical case, and that
   they can (to a degree) be worked around, if necessary.
 \end{description}
+
+\begin{figure}
+  \label{fig:accum-repeat}
+  \includegraphics[width=0.9\textwidth]{images/accumulate-repeat-1}
+  \includegraphics[width=0.9\textwidth]{images/accumulate-repeat-2}
+  \includegraphics[width=0.9\textwidth]{images/accumulate-repeat-3}
+  \caption{Visualisation of Accumulate-Repeat}
+  \centering
+\end{figure}
+
+\begin{figure}
+  \label{fig:queue}
+  \includegraphics[width=0.9\textwidth]{images/queue-1}
+  \includegraphics[width=0.9\textwidth]{images/queue-2}
+  \includegraphics[width=0.9\textwidth]{images/queue-3}
+  \caption{Visualisation of Queue}
+  \centering
+\end{figure}
 
 Both the \textit{Accumulate--Repeat} and \textit{Queue}--strategies
 suffer from \textit{clogging--propagation}, where the multitude of
@@ -1086,8 +1109,9 @@ anything.  See \Fref{sec:pushbuttondef} for example code.
 Events initiate dataflow at nodes marked as \textit{listeners} for the
 specific event.  Design--wise there is nothing that prevents these
 listeners from being successors of other nodes in some atomic
-subgraph, but have not been able to identify a use for such a
-structure during our work.  As a result, we generally consider an
+subgraph, but have not been able to identify a general use for such a
+structure during our work (though see \Fref{sec:postingwireimpl} for a
+notable exception).  As a result, we generally consider an
 event--listening node to have no way of firing except for the
 triggering of one of the events that the node is listening for.  A
 single node can listen to multiple different events (though again, we
@@ -1164,9 +1188,13 @@ still make its own choice whether to propagate a value or not.
 It is worth nothing that a value need not contain any information
 apart from its existence; \texttt{()} is perfectly valid as a signal.
 
-
-
 \subsection{Implementation of posting wires}
+\label{sec:postingwireimpl}
+We have opted to implement posting wires as a thin layer of
+abstraction on top of events, with a unique event value associated
+with each posting wire.  Implementing posting wires as a separate
+subsystem offers no compelling advantages over an implementation via
+abstractions built on the existing event--dispatch infrastructure.
 
 \subsection{On blocking and busywaiting}
 
@@ -1223,23 +1251,58 @@ Fladuino system \cite[Section 10 page 70]{atmel8p}.
 
 \section{Building on the abstractions}
 
+In the following sections different Haskell code is shown as examples of how
+different Fladuino interfaces, which utilises various parts of framework such as
+events, are constructed. For brevity, module imports has been omitted in all the
+examples.
+
 \subsection{Defining a pushbutton}
-
-The following Haskell code defines the abstract Fladuino interface for
-a simple digital pushbutton.  We have omitted the module imports for
-brevity.
-
 \label{sec:pushbuttondef}
+
+The following is a definition of the Fladuino interface for a simple digital
+pushbutton. First the type constructor \texttt{PushButton} is defined with the
+data constructor \texttt{PushButton Integer} where the \texttt{Integer} type
+defined which pin the physical device is connected to.
+
 \begin{verbatim}
 data PushButton = PushButton Integer
                   deriving (Eq, Show)
+\end{verbatim}
 
+\noindent
+Then a \texttt{Device} instance declaration on \texttt{PushButton} is done which
+registers the specified digital pin as being \texttt{DigitalInput} and requiring
+interrupt functionality. This assures that the specific pin has interrupt
+functionality and that no other devices using this pin requires
+\texttt{DigitalOutput} otherwise an error will occur.
+
+\begin{verbatim}
 instance Device PushButton where
     usages (PushButton pin) = [DPinUsage pin ["interrupt"] DigitalInput]
+\end{verbatim}
 
+Since logical change interrupts occurs twice on a pushbutton (when pushed and
+then when released) it is easy and god abstraction to define a
+\texttt{PushButtonPressEvent} and a \texttt{PushButtonReleaseEvent}, and thus
+the two type constructors is defined
+
+\begin{verbatim}
 data PushButtonPressEvent = PushButtonPressEvent PushButton
                             deriving (Eq, Show)
+data PushButtonReleaseEvent = PushButtonReleaseEvent PushButton
+                              deriving (Eq, Show)
+\end{verbatim}
 
+\noindent
+Next a \texttt{Event} instance declaration on the two \texttt{PushButton} events
+is needed. The \texttt{Event} type class needs definitions for the operations
+\texttt{setupEvent} and \texttt{interruptPins} which are both self
+explanatory. To distinguish these two events from each other, the value on the
+pin associated with the physical pushbutton is read and if the value is
+\texttt{HIGH} it is treated as a press event and if it is \texttt{LOW} it is
+treated as release event.
+
+\begin{verbatim}
 instance Event PushButtonPressEvent () where
     setupEvent e@(PushButtonPressEvent (d@(PushButton pin))) = 
      do addDevice d
@@ -1252,8 +1315,6 @@ instance Event PushButtonPressEvent () where
         return $ mkEvent e Nothing (Just v)
     interruptPins (PushButtonPressEvent (PushButton pin)) = [DPin pin]
 
-data PushButtonReleaseEvent = PushButtonReleaseEvent PushButton
-                              deriving (Eq, Show)
 
 instance Event PushButtonReleaseEvent () where
     setupEvent e@(PushButtonReleaseEvent (d@(PushButton pin))) = 
@@ -1268,7 +1329,7 @@ instance Event PushButtonReleaseEvent () where
     interruptPins (PushButtonReleaseEvent (PushButton pin)) = [DPin pin]
 \end{verbatim}
 
-With this definition, we can define programs such as:
+With this definition, we can define programs such as
 
 \begin{verbatim}
 onEvent (PushButtonPressEvent $ PushButton 3) >>> (toggle $ diode 13 True)
@@ -1280,7 +1341,40 @@ pushbutton attached to digital pin 3 is pressed.
 
 \subsection{Defining a potentiometer}
 
-\subsection{Defining a servomotor}
+A potentiometer interface can be defined in Fladuino quite easily as it doesn't
+make any sense to define any events upon this as its value needs to be pulled
+once in a vile to know if it has changed and/or to act upon that.
+
+\begin{verbatim}
+data Potentiometer = Potentiometer Integer
+                     deriving (Eq, Show)
+
+instance Device Potentiometer where
+    usages (Potentiometer pin) = [APinUsage pin []]
+
+instance AnalogInputDevice Potentiometer where
+    genReadCode (Potentiometer pin) resultvar = [[$cstm|$id:resultvar = analogRead($int:pin);|]]
+\end{verbatim}
+
+This allows programs such as
+
+\begin{verbatim}
+idle >>> (valueOf $ Potentiometer 0) >>> smap [$exp|(/4)|] >>> (setValue $ AnalogOutputPin 10 0)
+\end{verbatim}
+
+The reason why the pulled value is devided by 4 is that the Atmega chip by
+default returns values between 0 and 1024 when doing analog reads but can only
+write values between 0 and 256 unless explicitley changed. The mapping 0 to 1024
+when reading analog values is from GND to AREF which is nomally 0v and 5v
+respectively though AREF can be explicitley changed.
+
+\subsection{Defining a servo motor}
+
+
+Stupid example. Rather use the 3pi instead.
+
+
+
 
 \subsection{Defining a new platform}
 
@@ -1318,6 +1412,9 @@ Lidt idéer:
 \chapter{The past}
 Discussion about related robot programming tools (Frob, Yampa, Atom,
 Lustre, etc.).
+
+\section{Partiel evaluation / specialisation} 
+\fixme{reference to arne glenstrup}
 
 \chapter{Conclusions}
 \textit{Opsummering på hvad vi har opnået}

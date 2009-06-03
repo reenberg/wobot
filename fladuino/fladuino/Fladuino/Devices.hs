@@ -110,12 +110,12 @@ instance Device AnalogOutputPin where
 modDev :: forall a d. (Reify a, Device d) => String -> d -> (d -> String -> String -> ([Param], [Exp]) -> Definition) -> S a -> S ()
 modDev name d f a = S $ do
     sa   <- unS a
-    addDevice d
     addStream name
               unitTy
               (DeviceWrite sa $ uniqueId d ++ "_" ++ name)
               genHs
               genC $ \this -> do
+    addDevice d
     connect sa this tau (varIn this "")
   where
     tau :: H.Type
@@ -194,12 +194,12 @@ class (Device a) => AnalogInputDevice a where
 valueOf :: forall a d. (Reify a, AnalogInputDevice d) => d -> S a -> S Integer
 valueOf d a = S $ do
     sa   <- unS a
-    addDevice d
     addStream "valueOf"
               tau_b
               (DeviceRead sa $ uniqueId d)
               genHs
               genC $ \this -> do
+    addDevice d
     connect sa this tau (varIn this "")
   where
     tau :: H.Type
@@ -245,6 +245,9 @@ instance AnalogInputDevice Potentiometer where
     genReadCode (Potentiometer pin) resultvar = [[$cstm|$id:resultvar = analogRead($int:pin);|]]
 
 
+-- This actually make no sence, as the atmega interrupt system is not sensitive
+-- enough.  It only triggers logical change interrupts when the messured voltage
+-- changes aprox > 50% of the supply voltage.
 data PotentiometerChangeEvent = PotentiometerChangeEvent Potentiometer
                                 deriving (Eq, Show)
 
@@ -252,20 +255,7 @@ instance Event PotentiometerChangeEvent () where
     setupEvent e@(PotentiometerChangeEvent (d@(Potentiometer pin))) = 
                                                  return $ mkEvent e Nothing Nothing
     interruptPins (PotentiometerChangeEvent (Potentiometer pin)) = [APin pin]
-
-{-
-
-instance Event PotetiometerChangeEvent () where
-    setupEvent e@(PotentiometerChangeEvent (d@(Potentiometer pin)) change) = 
-                                          do addDevice d
-                                             pv <- statevar d "change_predicate"
-                                             let v = H.var (mkName pv)
-                                             addCImport pv [$ty|() -> Bool|] [$cexp|$id:pv|]
-                                             addCFundef [$cedecl|
-                                             return $ mkEvent e Nothing (Just v)
-    interruptPins (PotentiometerChangeEvent (PushButton pin)) = [pin]                                                    
-
--}                   
+                   
 
 -- Simple Interrupt Event --
 data InterruptEvent = InterruptEvent Integer

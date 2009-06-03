@@ -1,0 +1,15 @@
+digraph G
+{
+                node [fontname="Times Roman", shape=rectangle]
+                edge [color=black, fontname="Times Roman"]
+
+                ToNode [label="", color=white]
+                InputNode [label="Input node, counter = 2"]
+                OutputNode [label="Output node"]
+
+                {rank=same; InputNode OutputNode}
+                
+                InputNode->OutputNode [label="Response arrives from the sensor", style=dashed]
+                OutputNode->ToNode [label="Value passed on to the\n  receiving side of the posting wire"]
+                OutputNode->OutputNode [label="Wire out is fired a number of times\n equivalent with the counter value\n(2 in this case)"]
+}

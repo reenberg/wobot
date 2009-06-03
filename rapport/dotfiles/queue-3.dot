@@ -1,0 +1,13 @@
+digraph G
+{
+                node [fontname="Times Roman", shape=rectangle]
+                edge [color=black, fontname="Times Roman"]
+
+                ToNode [label="", color=white]
+                InputNode [label="Input node, counter = 1"]
+                OutputNode [label="Output node"]
+
+                InputNode->OutputNode [label="  Response arrives from the sensor", style=dashed]
+                OutputNode->ToNode [label="Value passed on to the\n  receiving side of the posting wire"]
+                OutputNode->InputNode [label="We decrement the counter,\n  and as it is still nonzero, we send\n another request to the sensor"]
+}
