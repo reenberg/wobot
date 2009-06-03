@@ -25,6 +25,7 @@
 \usepackage[format=hang]{caption,subfig}
 \usepackage{graphicx}
 \usepackage{stmaryrd}
+\usepackage{amssymb}
 
 \renewcommand{\ttdefault}{pcr} % Bedre typewriter font
 %\usepackage[sc]{mathpazo}     % Palatino font
@@ -275,13 +276,18 @@ robots affordable. \fixme{code reusability}
 \section{Structure outline}
 In the following section (chapter \ref{chapter:Flask}) we will go
 through the existing Flask system. Its design and how you use it to
-write sensor-network programs. In chapter \ref{chapter:design} we will
-look at what isn't already in Flask, that is needed when programming
-robots and what i.e. the core design decisions.
+write sensor-network programs. 
 
-nd we will talk about how we have extended Flask to Fladuino
+In chapter \ref{chapter:design} we will look at what is needed when
+programming robots that isn't already in Flask and how this should be
+done (i.e. the core design decisions).
 
+In chapter \ref{chapter:implementation} we will talk about the
+technically modification we have made to transform Flask to Fladuino.
 
+In chapter \ref{chapter:evaluation} we will make an evaluation on
+Fladuino. With a discussion of benefits and disadvantages of our
+strategy, pros and cons.
 
 \chapter{Flask}
 \label{chapter:Flask}
@@ -289,28 +295,33 @@ nd we will talk about how we have extended Flask to Fladuino
 
 Flask is a domain specific language embedded in Haskell for
 programming sensor networks. Flask is based on the idea of writing
-\textit{dataflows} that express the overall flow of data in the
+\textit{dataflow graphs} that express the overall flow of data in the
 program. The basic task in writing a Flask program is thus to connect
-incoming streams of sensor data to outgoing streams of data (e.g. to
-other nodes in the network) with some eventual data processing in
-between. A program thus takes form of an acyclic graph.
-
+(or \textit{wirering}) incoming streams of sensor data to outgoing
+streams of data (e.g. to other nodes in the network) with some
+eventual data processing in between. A program thus takes form of an
+acyclic graph.
 
 On figure \ref{ewma-example} we show an example of a dataflow graph
-taken from the paper "`Flask: Staged Functional Programming for Sensor
-Networks"':
+taken from the paper "`Flask: A Language for Data-driven Sensor
+Network Programs"'. The graph represents a program for detecting earth
+quakes with two exponentially weighted moving averages (EWMA) of the
+seismometer values.
 
-\begin{figure}
+\begin{nonfloatingfigure}
 \label{ewma-example}
-  % ewma example, figure 1 in the icfp08 paper
-\end{figure}
+  \includegraphics[width=0.9\textwidth]{images/flask-ewma}
+  \centering
+  \caption{Flask dataflow graph}
+\end{nonfloatingfigure}
 
 Later we will examine how this is written in Flask.
 
+\section{From Flask to sensor network-code}
 A fundamental thing in Flask is its compilation and
 execution-strategy. A Flask program is a description of the before
 mentioned dataflow-graph written in Haskell, using specialized
-Haskell-operators (dataflow-operators, stream-combinators,
+Haskell operators (dataflow-operators, stream-combinators,
 stream-operators or signal-functions) for connecting and manipulating
 the streams. Some of the these stream-operators also accepts some
 node-level code which should be inserted into the dataflow. This
@@ -332,39 +343,35 @@ ultimately be generated.
 \begin{nonfloatingfigure}
   \includegraphics[width=0.9\textwidth]{images/flask-simple}
   \centering
+  \caption{High-level illustration of the Flask compilation strategy.}
 \end{nonfloatingfigure}
-
-
 
 Flask provides two object-languages: NesC and Red. Having NesC as an
 object-language, allows the user to write all programs that's expressible in
 NesC. The other language Red, is described below.
 
-Both languages are integrated into Flask using the quasiquotation library
-\cite{quasiquote07}, written by the Flask author Geoffrey Mainland. This allows
-you to write the object languages in their original syntax inside the
-Flask/Haskell environment. And it allows you to intersperse generation time
-variables (which results in compile time constants) into object language code.
+Both languages are integrated into Flask using the GHC quasiquotation
+library \cite{quasiquote07}, written by the Flask author Geoffrey
+Mainland. This allows you to write the object languages in their
+original syntax inside the Flask/Haskell environment. And it allows
+you to intersperse generation time variables (which results in compile
+time constants) into object-language code.
 
-Red is a restricted subset of Haskell, without recursion, recursive
-datatypes, most of the standard library and curried functions. It allows you to
-write concise functions for simple tasks instead of having to deal with
-NesC. 
 
 
 \section{Red --- a restricted node--level language}
 \label{sec:red}
-Red is an object-language from Flask that is meant to be used for
-writing node--level mapping functions, like predicates or conversion
-functions, without having to deal with NesC. It takes it syntax from
-Haskell, but is restricted to a very small subset of what is normally
-expressible in Haskell. The reason for disallowing these things are
-the same as for not compiling Haskell directly to the sensor nodes in
-the first place: the existing Haskell runtimes are too huge to fit on
-the limited memory of a sensor node. Therefore we can't allow uses of
-features that e.g.  requires a garbage collector. Flask disallows the
-following Haskell 98-features (with probably some more, that we have
-overlooked) from Red:
+Red is an object-language from Flask that allows you to write concise
+node--level mapping functions, like predicates or conversion functions
+for simple tasks, without having to deal with NesC. It takes it syntax
+from Haskell, but is restricted to a very small subset of what is
+normally expressible in Haskell. The reason for disallowing these
+things are the same as for not compiling Haskell directly to the
+sensor nodes in the first place: the existing Haskell runtimes are too
+huge to fit on the limited memory of a sensor node. Therefore we can't
+allow uses of features that e.g.  requires a garbage collector. Flask
+disallows the following Haskell 98-features (with probably some more,
+that we have overlooked) from Red:
 \begin{itemize}
 \item Recursive function
 \item Recursive datatypes
@@ -381,18 +388,33 @@ it's a compile-time thing.
 
 
 \section{Streams, node-level values and dataflow-operators}
+Writing dataflow graphs in Haskell is something solved by the Arrows
+library. But this isn't a strategy that fits in with Flask, because
+arrows requires that an arbitrary Haskell function can be lifted to a
+signal function. This isn't possible here, because signal functions
+should run on the sensor nodes and therefore aren't real Haskell
+functions, but instead some Haskell representation of the node-level
+code that should be generated. Flask takes a little simpler approach,
+and defines some of the same operators as in the arrows library,
+though with different type signatures.
 
-
-
-
+In Flask a stream of values with type $\alpha$ has the type $S\
+\alpha$. The arguably simplest way to generate such a stream is the
+\texttt{clock :: Int -> S ()} Flask-function, which given an interval
+in milliseconds generates a unit value on the resulting
+stream. \texttt{clock 1000} is signalling every second.  This isn't
+very useful by itself, ... something about node level values ($N\
+\alpha$) etc.
 
 
 \subsection{Streamoperators}
 A description of the Flask stream-operators follows. 
 \begin{description}
-\item[\texttt{> > >}]\hfill \\ Connects a stream with a stream
+\item[\texttt{clock}] 
+\item[$\ggg$]\hfill \\ Connects a stream with a stream
   combinator.
 \item[\texttt{\&\&\&} and \texttt{szip}]\hfill \\ 
+  
 \item[\texttt{sconst}]\hfill \\ 
 \item[\texttt{smap}] \hfill \\ Maps a node-level function over all stream-values,
   creating a stream of the resulting output values.
@@ -1159,6 +1181,7 @@ have not been able to identify a practical need), as long as the
 payloads are of the same type.
 
 \chapter{Implementation}
+\label{chapter:implementation}
 
 The essence of Fladuino can be condensed to a single, conceptually
 simple problem: translate a high-level functional reactive program to
@@ -1421,6 +1444,8 @@ Stupid example. Rather use the 3pi instead.
 \subsection{Defining Saturn V--nozzle control}
 
 \chapter{Evaluation}
+\label{chapter:evaluation}
+
 \begin{itemize}
 \item Is this for any practical use?
 \item What was easy and hard when writing the example-programs?
