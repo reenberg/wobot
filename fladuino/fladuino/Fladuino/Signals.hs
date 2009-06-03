@@ -540,31 +540,19 @@ sink :: forall a . (Reify a) => S a -> S ()
 sink a = S $ do
     sa   <- unS a
     addStream "ssink"
-              tau
-              (SBlackbox $ show $ s_id sa)
+              unitTy
+              (GenericSRep sa "ssink")
               genHs
-              genC $ \this -> do
+              (const (return ())) $ \this -> do
     connect sa this tau (varIn this "")
   where
     tau :: H.Type
     tau = reify (undefined :: a)
 
-    
     genHs :: SCode m -> FladuinoM ()
-    genHs this =
-        addCImport c_v_in [$ty|$ty:tau -> ()|] [$cexp|$id:c_v_in|]
+    genHs this = addDecls [$decls|$var:v_in _ = ()|]
        where
-         v_in    = varIn this ""
-         c_v_in = show v_in
-
-    genC :: SCode m -> FladuinoM ()
-    genC this = do
-        tauf <- toF tau
-        (params, ce_params) <- ToC.flattenParams tauf
-        addCFundef [$cedecl|void $id:c_v_in($params:params) { return; } |]
-        where
-          v_in    = varIn this ""
-          c_v_in = show v_in
+         v_in   = varIn this ""
 
 digitalWrite :: S (Integer, Integer) -> S ()
 digitalWrite a = S $ do
@@ -882,17 +870,45 @@ serialWrite string from = S $ do
           c_v_in = show v_in
 
 class (Reify a) => NShow a where
-    nshow :: a -> String -> [Stm]
+    nshow :: a -> Exp -> String -> Stm
 
-cToString :: (NShow a) => a -> String -> Stm
-cToString a s = let stms = nshow a s
-                in [$cstm|{ $stms:stms; }|]
-{-(params_stm, params) <- newScope False $ do
-            (params, params_ce) <- ToC.flattenParams tauf_f_out
-            [ce_b, ce_state]    <- ToC.dataMembers undefined params_ce
-                                   >>= mapM ToC.concrete
-            ce_out              <- hcall v_out $
-                                   ToC.CLowered tauf_b ce_b
-            addCStm [$cstm|$id:state = $exp:ce_state;|]
-            addCStm [$cstm|$exp:ce_out;|]
-            return params-}
+instance NShow Integer where
+    nshow _ valexp strid = [$cstm|{
+                              $id:strid = (char*)malloc(log10($exp:valexp)+1);
+                              sprintf($id:strid, "%d", $exp:valexp);
+                            }|]
+
+serialPrint :: forall a. (NShow a) => S a -> S ()
+serialPrint from = S $ do
+    sfrom <- unS from
+    addStream "serialPrint"
+              unitTy
+              (GenericSRep sfrom "serialPrint")
+              genHs
+              genC $ \this -> do
+    connect sfrom this tau_a (varIn this "")
+  where
+    tau_a :: H.Type
+    tau_a = reify (undefined :: a)
+
+    genHs :: SCode m -> FladuinoM ()
+    genHs this =
+        addCImport c_v_in [$ty|$ty:tau_a -> ()|] [$cexp|$id:c_v_in|]
+        where
+          v_in   = varIn this ""
+          c_v_in = show v_in    
+
+    genC :: SCode m -> FladuinoM ()
+    genC this = do
+      tauf_a <- toF tau_a
+      (params, ce_params) <- ToC.flattenParams tauf_a
+      e <- ToC.concrete ce_params
+      let stm = nshow (undefined :: a) e "result"
+      addCFundef [$cedecl|void $id:c_v_in($params:params) 
+                                   { char* result;
+                                     $stm:stm;
+                                     serialWrite(result);
+                                   }|]
+        where
+          v_in    = varIn this ""
+          c_v_in = show v_in
