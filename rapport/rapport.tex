@@ -174,8 +174,8 @@ supervised by Ken Friis Larsen, assistant professor at DIKU.
 Robots has been used in the industry for decades, replacing humans in
 repetitive tasks like sewing, assembling and transportation. In the
 last years, robots have been introduced to the consumer market,
-e.g. the Roomba vacuum cleaner. This is quite probably be a sign that
-robots are getting cheaper an affordable for more tasks. In the future
+e.g. the Roomba vacuum cleaner. This is quite probably a sign that
+robots are getting cheaper and affordable for more tasks. In the future
 we will probably see robots deployed in many other uses. But falling
 hardware prices is not everything, efficient development and
 prototyping of robot control programs is another aspect in making
@@ -403,22 +403,22 @@ detect low high threshold =
 \chapter{Design of the Fladuino system}
 
 Fladuino is a modification of Flask that can be used to program
-Arduino devices in a functional reactive manner.  Our final program is
-governed by the following requirements.
+Arduino devices in a functional reactive manner.  We have set the
+following requirements for our final program: \fixme{eventuelt
+  reference til synopsisen}
 
 \begin{itemize}
+\item The design of Fladuino must mirror similar core design choices
+  in Flask.
 \item Fladuino must be able to generate a C--program suitable for
   running on an Arduino from a description of a dataflow graph.  This
   graph must be expressed in the form of a Haskell program.
+  \textit{This requirement stems from the platform selection (see
+    section ...
+    \fixme{ref til introduktion}) of Arduino and from the above
+    requirement of mirroring Flask.}
 \item The C--program generated must be \textit{valid}, except for any
   custom C--code included by the user.
-\item We shall not describe the implementation of any specific
-  reactive program with Fladuino, nor will we attempt to support the
-  writing of any such specific program.  We shall endeavour to support
-  functionality outside our core requirements only insofar as it is
-  useful for evaluating Fladuino as a whole.
-\item The design of Fladuino must mirror similar core design choices
-  in Flask.
 \item To the extent that it is possible, we must statically analyse
   the program for validity (type or logic errors).
 \item It must be possible to define interfaces to external devices
@@ -432,6 +432,16 @@ governed by the following requirements.
   platforms that differ significantly from our built-ins (for example,
   using a different microcontroller) will not be possible without
   modifying the Fladuino libraries themselves, however.
+\end{itemize}
+
+And we set the following limitations of our project scope:
+\begin{itemize}
+\item We shall not describe the implementation of any specific
+  reactive program with Fladuino, nor will we attempt to support the
+  writing of any such specific program.  We shall endeavour to support
+  functionality outside our core requirements only insofar as it is
+  useful for evaluating Fladuino as a whole.  \fixme{jeg tror ikke
+    dette behøves}
 \item It is not required that we attempt to handle all error
   conditions.  We accept that hardware constraints pose certain hard
   restrictions (such as memory limits, integer counter overflow and
@@ -439,14 +449,17 @@ governed by the following requirements.
   Fladuino that exceeds these constraints will result in information
   loss or undefined behaviour.  We shall, however, endeavour to design
   Fladuino so as to reduce the likelihood of these errors.
+\item We won't add primitives for writing real time systems.
 \end{itemize}
+
 
 \section{Terminology and basic \textit{modus operandi}}
 
 As in Flask, Fladuino is implemented as a set of Haskell modules that
 provides facilities for expressing the structure and behaviour of a
 \textit{dataflow graph}, connecting \textit{dataflow operators}
-through value-carrying directed graph edges (\textit{wires}).  The
+through value-carrying directed graph edges (\textit{wires}).
+\fixme{The following should be described in the Flask chapter} The
 programmer writes a Haskell program, called the \textit{generator
   program}, or just the \textit{program}.  We shall refer to the
 compilation of the program as \textit{compile--time}, and execution of
