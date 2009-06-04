@@ -332,14 +332,14 @@ was pushed or released.
 \section{From Flask to sensor network-code}
 A fundamental thing in Flask is its compilation and
 execution-strategy. A Flask program is a description of the prior
-mentioned dataflow--graph written in Haskell, using specialised
-Haskell operators (dataflow--operators, stream--combinators,
-stream--operators or signal--functions) for connecting and
-manipulating the streams. Some of the these stream--operators also
-accepts some node--level code which should be inserted into the
-dataflow. This node--level code is written in one of several
-object--languages (where Haskell is the meta-language) for
-manipulating node--level values.
+mentioned dataflow-graph written in Haskell, using specialised
+Haskell operators (dataflow-operators, stream-combinators,
+stream-operators or signal-functions) for connecting and
+manipulating the streams. Some of the these stream-operators also
+accepts some node-level code which should be inserted into the
+dataflow. This node-level code is written in one of several
+object-languages (where Haskell is the meta-language) for
+manipulating node-level values.
 
 When compiling the Haskell program description of the dataflow graph,
 you end up with an executable that generates and outputs code in a
@@ -349,7 +349,7 @@ sensor network language called NesC\footnote{NesC is an extension to
 
 The generated NesC code can then be translated by an ordinary
 NesC compiler to machine code running on the nodes in the
-sensor network.  Thus, when you write a Flask--program, you use
+sensor network.  Thus, when you write a Flask-program, you use
 ordinary Haskell constructs to manipulate which NesC-code should
 ultimately be generated.
 
@@ -375,7 +375,7 @@ Figure \ref{fig:mainloop} illustrates this, showing a simplified
 version of the main loop and initialisation code from Fladuino.
 \texttt{cdefs\_toc} and \texttt{cstms\_toc} are compile-time values
 (lists of C statements). And \texttt{\$edecls} and
-\texttt{\$stms} are anti--quoters which job is two put the values into
+\texttt{\$stms} are anti-quoters which job is two put the values into
 the correct position in the C syntax tree at generation-time.
 
 \begin{figure}
@@ -401,10 +401,10 @@ void loop()
 \label{fig:mainloop}
 \end{figure}
 
-\section{Red --- a restricted node--level language}
+\section{Red --- a restricted node-level language}
 \label{sec:red}
-Red is an object--language from Flask that allows you to write concise
-node--level mapping functions, like predicates or conversion functions
+Red is an object-language from Flask that allows you to write concise
+node-level mapping functions, like predicates or conversion functions
 for simple tasks, without having to deal with NesC. It takes it syntax
 from Haskell, but is restricted to a small subset of what is
 normally expressible in Haskell. The reason for disallowing these
@@ -560,14 +560,14 @@ A summary of the most important requirements for our system follows:
   same statically typed stream operator (and event) interface as any
   built-in part of Fladuino.
 \item It must be possible to define simple variations on Arduino
-  boards in terms of I/O--pin availability and custom capabilities,
+  boards in terms of I/O-pin availability and custom capabilities,
   without having to modify Fladuino itself.  Implementing support for
   platforms that differ significantly from our built-ins (for example,
   using a different microcontroller) will not be possible without
   modifying the Fladuino libraries themselves, however.
 \item We want to statically analyse and validate the program for
   certain classes of type and logic errors.
-\item Fladuino must be able to generate a valid C--program suitable for
+\item Fladuino must be able to generate a valid C-program suitable for
   running on an Arduino from a description of a dataflow graph. This
   graph must be expressed in the form of a Haskell program.
   \textit{This requirement stems from the platform selection (see
@@ -604,14 +604,14 @@ through value-carrying directed graph edges (\textit{wires}).
 \fixme{The following should be described in the Flask chapter} The
 programmer writes a Haskell program, called the \textit{generator
   program}, or just the \textit{program}.  We shall refer to the
-compilation of the program as \textit{compile--time}, and execution of
-the program as \textit{generation--time}.  At generation--time, the
+compilation of the program as \textit{compile-time}, and execution of
+the program as \textit{generation-time}.  At generation-time, the
 output will be a program source file suitable for further compilation
 with the Arduino tools, but these are not part of the Fladuino system.
-Generation--time may also terminate erroneously if the program
+Generation-time may also terminate erroneously if the program
 contains static errors: in this case, an error message with a
 description of the problem will be printed.  Only errors that are
-violations of the Haskell type system can be caught at compile--time,
+violations of the Haskell type system can be caught at compile-time,
 and while we have attempted to structure the facilities provided by
 Fladuino such that invalid programs will contain type errors, this
 cannot be done for all error classes.  When the generator program is
@@ -619,17 +619,17 @@ run, it constructs a typed dataflow graph.  However, the types and
 connections in the graph cannot be known in advance (they may be
 determined programmatically, perhaps even by user input), hence we may
 signal type errors at generation time if the wiring of stream
-operators violate type--safety.  We do, of course, supply Haskell
+operators violate type-safety.  We do, of course, supply Haskell
 operators operating on stream representations with assigned static
-types, that guarantee the type--validity of the resulting graph, but
+types, that guarantee the type-validity of the resulting graph, but
 certain sophisticated applications of Fladuino may desire more
 flexibility than permitted by these.  This is notably the case when
 the structure of the graph is a function of a value not known until
-generation--time (and thus can't possibly be checked by the Haskell
-compiler at compile--time).
+generation-time (and thus can't possibly be checked by the Haskell
+compiler at compile-time).
 
-It is intended that all static errors are caught at compile-- or
-generation--time; in particular that Fladuino will never generate
+It is intended that all static errors are caught at compile- or
+generation-time; in particular that Fladuino will never generate
 malformed C.  This guarantee does not extend to C code manually
 included or integrated by the user, of course.
 
@@ -649,14 +649,14 @@ approach.  This choice was also made in Flask itself, and as
 \cite{flask08} observes, such static dataflow is not a problem for a
 large class of applications.  Additionally, we recover much of the
 lost flexibility through programmatic wiring of the dataflow graph at
-generation--time.
+generation-time.
 
 \section{Structural overview}
 
 Fladuino consists of several interconnected parts combined to form a
 domain-specific language embedded in Haskell.\footnote{We do however
   make heavy use of Glasgow Haskell language extensions, such as
-  multi--parameter typeclasses and existential types, so Fladuino will
+  multi-parameter typeclasses and existential types, so Fladuino will
   not run in a standard implementation of Haskell 98.}  As in Flask,
 this takes the form of providing facilities to express the structure
 of a \textit{dataflow graph}, connecting \textit{dataflow operators}
@@ -671,7 +671,7 @@ parts can be divided into the following:
   highly static at run-time, the generating program should be written
   to support easy configuration and modification.  In a very real
   sense, the dynamic part of a Fladuino program happens at
-  compile--time.
+  compile-time.
 \item A compiler is supplied for the Haskell-like programming language
   Red (see section \ref{sec:red}), which is used to tailor the
   behaviour of stream operators.
@@ -716,7 +716,7 @@ parts can be divided into the following:
 Except for the last module, this structure has been adopted from
 Flask.  Additionally, Flask defines additional facilities (such as
 \textit{Flows} for communicating between devices) that build heavily
-upon the TinyOS--platform for sensor networks, a platform that is not
+upon the TinyOS-platform for sensor networks, a platform that is not
 available to us.  We have thus not adapted all of these facilities in
 our work, though posting wires (see \Fref{sec:posting wires}) have
 their own novel implementation in Fladuino.
@@ -761,7 +761,7 @@ approach is unacceptable for several reasons:
 \item Doing large computations (in space or time) within interrupt
   handlers is generally a bad idea.  Not only are additional
   interrupts disabled while running the handler (and making them
-  re--entrant is nontrivial), but the already running code may already
+  re-entrant is nontrivial), but the already running code may already
   tie up an arbitrary amount of the memory resources.  As a result,
   interrupt handlers should ideally terminate swiftly and use few
   resources, which cannot be guaranteed for evaluation of arbitrary
@@ -787,7 +787,7 @@ be signalled by the given interrupt (the details of this check are
 defined individually by each type of event), and if the check is
 positive, an element is added to the event queue requesting the
 evaluation of all listeners of that event.  It is important that the
-event--check, as well as the computation of the value of the event, is
+event-check, as well as the computation of the value of the event, is
 done in the interrupt handler itself, as the value may depend on the
 hardware state (such as the voltage on an input pin) as of that
 moment, and it cannot be guaranteed that this state will not have
@@ -816,7 +816,7 @@ For many embedded applications, a typical workflow would be to
 continuously poll an input source (such as a sensor), then adjusting
 some output device based on the reading.  For example, a
 line-following robot may take readings from its light sensors, then
-adjust its servo--motors to ensure that it is following the line
+adjust its servo-motors to ensure that it is following the line
 straightly.  This can be done by simply attaching a node to a clock
 that fires every millisecond, but this approach has a notable
 disadvantage if many other events are being received at the same time.
@@ -827,7 +827,7 @@ input source is in irregular intervals, but the silent loss of events
 such as button presses is normally undesirable.
 
 Thus, we provide the notion of \textit{idle waiters}, a list of atomic
-subgraphs that are evaluated in a round--robin fashion whenever the
+subgraphs that are evaluated in a round-robin fashion whenever the
 event queue is empty.  They are a useful facility for specifying
 computations that should be done whenever the program is not busy with
 something else.
@@ -909,12 +909,12 @@ previously sent request.  Several options present themselves:
   \centering
 \end{figure}
 
-Both the \textit{Accumulate--Repeat} and \textit{Queue}--strategies
-suffer from \textit{clogging--propagation}, where the multitude of
+Both the \textit{Accumulate-Repeat} and \textit{Queue}-strategies
+suffer from \textit{clogging-propagation}, where the multitude of
 inputs, greater than the sensor is capable of handling, will also
 result in a large amount of activity on the output side of the posting
 wire.  Especially Accumulate-Repeat suffers badly, as the receiving of
-a sensor--reply will result in a potentially large amount of work, a
+a sensor-reply will result in a potentially large amount of work, a
 situation that can result in information loss if the event queue fills
 up.  And as each firing of the output node will be with the same
 value, it is in practice often unlikely that the repeated evaluations
@@ -936,16 +936,16 @@ input.  Thus, a posting wire can be considered an abstraction that is
 activated as long as it keeps receiving input values, and outputs a
 continuous stream of sensor readings as long as it is activated.
 
-\subsubsection{Simulating Accumulate--Repeat and Queue with Ignore}
+\subsubsection{Simulating Accumulate-Repeat and Queue with Ignore}
 
-Should the behaviour exhibited by the Accumulate--Repeat and
-Queue--strategies truly be necessary for some application, we will
+Should the behaviour exhibited by the Accumulate-Repeat and
+Queue-strategies truly be necessary for some application, we will
 show that it is possible to mostly simulate their behaviour via the
 Ignore strategy.  We shall not delve into the gory technical details
 (such as the error handling necessary to avoid fragility), but
 merely show the structure of the solution.
 
-For Accumulate--Repeat, we can connect both input and output nodes to
+For Accumulate-Repeat, we can connect both input and output nodes to
 an \textit{accumulator node} that distinguishes between its two
 inputs.  When receiving a value from the input node, an internal
 counter will be increased by one.  When receiving a value (the sensor
@@ -953,21 +953,21 @@ reading) from the output node, the value will be packaged up with the
 counter into a tuple and sent to successors of the accumulator node,
 after which the counter will then be reset to zero.  Said successors
 will be the nodes that would normally follow the output node.  This
-does not in itself implement the ``repeat''--portion of
-Accumulate--Repeat, but we have removed the loss of information, and
+does not in itself implement the ``repeat''-portion of
+Accumulate-Repeat, but we have removed the loss of information, and
 can thus trivially take whatever action repeated firings of the output
 node would have resulted in.
 
 \begin{figure}
   \label{accum-repeat-with-ignore}
   \includegraphics[width=0.9\textwidth]{images/accum-repeat-with-ignore}
-  \caption{Simulating Accumulate--Repeat}
+  \caption{Simulating Accumulate-Repeat}
   \centering
 \end{figure}
 
 Simulating the Queue behaviour is significantly more complicated and
 requires a somewhat clumsy use of events (see
-\ref{sec:events_design}).  Values received at the input--node are sent
+\ref{sec:events_design}).  Values received at the input-node are sent
 on to a \textit{counter node}, where we check whether we are still
 waiting for the sensor to reply to a previously sent request.  If so,
 we increment an internal counter and send nothing further.  When the
@@ -1010,11 +1010,11 @@ more-or-less compatible platforms, though each of them differ slightly
 in their exact capacity.  Apart from variations in such things as
 memory size, they differ in amount and capability of their I/O pins.
 This latter diversity is what we are most concerned with in Fladuino,
-as we would like to statically check (at generation--time) the
+as we would like to statically check (at generation-time) the
 hardware assumptions expressed in the program.  Thus, we also provide
 a facility for describing the exact capabilities of a specific
 Arduino-based platform, and provide default descriptions of common
-Arduino--compatible such as the Arduino Duemilanove, Arduino Mega,
+Arduino-compatible such as the Arduino Duemilanove, Arduino Mega,
 Arduino BT, and Pololu 3pi.
 
 Defining the driver for each external component consist of a general
@@ -1027,10 +1027,10 @@ specifications, provided the device can supports the notion of events.
 \subsection{Platforms}
 \label{capabilities}
 A platform is defined by a list of \textit{logical pins}, and
-free--form \textit{capabilities}, the latter being a set of strings
+free-form \textit{capabilities}, the latter being a set of strings
 describing the identity or unusual qualities of the platform.  For
 example, the platform definition for the Pololu 3pi robot contains a
-``3pi''--capability that exists merely to express the fact that the
+``3pi''-capability that exists merely to express the fact that the
 platform supports the quirks of the 3pi robot that cannot be expressed
 through a list of pins.  Any device intended to make use of these
 quirks would explicitly require the presence of this capability.
@@ -1087,7 +1087,7 @@ following reasons, we believe we made the right choice:
   and hardware pins (based on the chosen platform), but we see no
   advantage to this approach over adopting the mapping already defined
   by Arduino.
-\item A shared pin abstraction makes it easier for Fladuino--generated
+\item A shared pin abstraction makes it easier for Fladuino-generated
   programs to use existing Arduino libraries.
 \item The pin identifier sequences defined by the Atmel
   microcontrollers are not particularly intuitive when mapped to the
@@ -1098,13 +1098,13 @@ following reasons, we believe we made the right choice:
 Abstractions aside, each pin is not only defined by its number, but
 also by a set of \textit{capabilities}, much like the ones that cover
 the entire platform.  For example, a given pin may support such things
-as \texttt{pin--change interrupts} (triggering an asynchronous signal
+as \texttt{pin-change interrupts} (triggering an asynchronous signal
 when the input value on the pin changes) or \texttt{pulse-width
   modulation} (analog output).  Many hardware devices only work when
 attached to pins with special capabilities --- for example, a
-push--button must be attached to a pin supporting interrupts --- and
-the capability notion allows us to statically sanity--check any used
-devices for such requirements at generation--time.
+push-button must be attached to a pin supporting interrupts --- and
+the capability notion allows us to statically sanity-check any used
+devices for such requirements at generation-time.
 
 \subsection{Devices}
 We use the term \textit{device} for any form of peripheral that can be
@@ -1128,7 +1128,7 @@ reserve exclusive access to the hardware resource that they refer to:
 \item[Digital pin usage] is an expression of exclusive access to one
   of the digital pins on the Arduino board.  If any other device has a
   usage involving the same pin, this will be reported as an error at
-  generation--time.  A digital pin usage also specifies a list of
+  generation-time.  A digital pin usage also specifies a list of
   capabilities that must be provided by the indicated pin.
   Additionally, a digital pin usage can have one of three types:
   \begin{description}
@@ -1167,7 +1167,7 @@ via these abstractions.
 A central aspect of any embedded system is responding to external,
 asynchronous events.  The hardware feature enabling this functionality
 --- asynchronous interrupts --- is primitive and hard to use, leading
-us to define a high--level interface, closely interconnected with the
+us to define a high-level interface, closely interconnected with the
 device abstraction, with which we can describe reactions to stimuli in
 terms that are closer to the problem domain of the application.  In
 the following, we distinguish between \textit{triggering an
@@ -1177,7 +1177,7 @@ execution of any event listener operators with the event as the input
 value.
 
 All events have a static type and value, which is used to distinguish
-between them at generation--time, and an event may carry a data
+between them at generation-time, and an event may carry a data
 \textit{payload} at runtime.  A critical piece of static information,
 that can be found in most (if not all) events, is the device that the
 event is associated with.  All events stem from external sources of
@@ -1187,7 +1187,7 @@ to Arduino's notion of a logical device --- for example, by hardcoding
 the I/O pins directly into the implementation of the event.  In this
 section, however, we shall assume that all events are connected to a
 device.  Not all events have payloads (or rather, some events have
-payloads of the information--less type \textit{unit}): an event
+payloads of the information-less type \textit{unit}): an event
 indicating the press of a pushbutton has no payload, and contains no
 information apart from the static event value itself (which indicates
 the exact button that was pressed), while an event indicating that a
@@ -1202,9 +1202,9 @@ $\sigma(pushdown,p_1) \rightarrow toggle(d_2)$, connecting the input
 of pressing a button to the action of toggling the state of a diode.
 
 In the definition of an event, a list of Arduino pins (see \ref{pins})
-indicates which pin--change interrupts might trigger the event.
-Additionally, two object--language functions are defined: a
-\textit{predicate}, for checking whether a given pin--change interrupt
+indicates which pin-change interrupts might trigger the event.
+Additionally, two object-language functions are defined: a
+\textit{predicate}, for checking whether a given pin-change interrupt
 is actually should actually cause the event to trigger, and a
 \textit{value function}, that calculates the payload (if any) of the
 event.  This yields total control to the event implementor, at the
@@ -1221,17 +1221,17 @@ have a static upper bound defined by the number of events used in the
 program, thus making problems of this sort likely to appear during
 initial testing, and not lay dormant until after deployment.  Of
 course, this bound is dependent on the implementation of the
-user--defined predicate and value functions --- if these have
+user-defined predicate and value functions --- if these have
 unpredictable runtime behaviour (or worse: block), we cannot guarantee
 anything.  See \Fref{sec:pushbuttondef} for example code.
 
 Events initiate dataflow at nodes marked as \textit{listeners} for the
-specific event.  Design--wise there is nothing that prevents these
+specific event.  Design-wise there is nothing that prevents these
 listeners from being successors of other nodes in some atomic
 subgraph, but have not been able to identify a general use for such a
 structure during our work (though see \Fref{sec:postingwireimpl} for a
 notable exception).  As a result, we generally consider an
-event--listening node to have no way of firing except for the
+event-listening node to have no way of firing except for the
 triggering of one of the events that the node is listening for.  A
 single node can listen to multiple different events (though again, we
 have not been able to identify a practical need), as long as the
@@ -1239,12 +1239,12 @@ payloads are of the same type.
 
 \section{Design of the runtime system}
 
-Fladuino is not only a code--generator, it also contains a runtime
+Fladuino is not only a code-generator, it also contains a runtime
 system that implements much of the complex behaviour that the
 generated code expresses.  This runtime system not only has to respect
 the constraints imposed by the Arduino hardware, but also run
 sufficiently fast while implementing the facilities necessary for the
-Fladuino--generated code.  We need several facilities apart from what
+Fladuino-generated code.  We need several facilities apart from what
 is provided by the Arduino libraries themselves:
 
 \begin{itemize}
@@ -1259,7 +1259,7 @@ is provided by the Arduino libraries themselves:
   interrupt support is too restricted for our purposes, as it only
   supports a restricted number of I/O pins.  The microcontroller
   itself supports \textit{pin change interrupts} on a much larger
-  selection of I/O--pins, but the programming interface is much more
+  selection of I/O-pins, but the programming interface is much more
   complicated.  Hence, our runtime system defines a convenient wrapper
   library.
 \end{itemize}
@@ -1274,12 +1274,12 @@ to stop a step short, and merely generate C code meant for further
 compilation through an Arduino-specific compiler.  We have no need of
 the additional power we would gain through generating our own machine
 code, and the additional amount of work required would be significant.
-Flask chooses the same approach, in that it produces NesC--code for
+Flask chooses the same approach, in that it produces NesC-code for
 running on sensor motes, likely for the same reasons.
 
 \section{Dataflow translation}
 \label{sec:dataflowtranslation}
-At their heart, both Flask and Fladuino--programs consist of an
+At their heart, both Flask and Fladuino-programs consist of an
 acyclic dataflow graph.  A core part of the system (the \textit{stream
   generator}) involves the translation of this high-level description
 of the passage of data into the procedural target environment.
@@ -1341,15 +1341,15 @@ We have opted to implement posting wires as a thin layer of
 abstraction on top of events, with a unique event value associated
 with each posting wire.  Implementing posting wires as a separate
 subsystem offers no compelling advantages over an implementation via
-abstractions built on the existing event--dispatch infrastructure.
+abstractions built on the existing event-dispatch infrastructure.
 
 \subsection{On blocking and busywaiting}
 
 \section{Implementation of the runtime system}
 
 In this section we will describe the implementation of the
-runtime--facilities used in the code generated by Fladuino.  It is
-combined with the user--generated code at generation--time by
+runtime-facilities used in the code generated by Fladuino.  It is
+combined with the user-generated code at generation-time by
 Fladuino.
 
 \subsection{Implementation of the event queue}
@@ -1363,7 +1363,7 @@ linked list or array\footnote{In Fladuino, we would use a linked list
   rather than an array, as reserving large contiguous blocks of memory
   on the heap will often not be feasible on the memory-constrained
   Arduino platform.}, requesting additional memory from the heap as
-necessary, but this runs the risk of the event--queue ballooning to
+necessary, but this runs the risk of the event-queue ballooning to
 great size, especially if the program has an input source that
 constantly triggers new events every few milliseconds.  Since the
 stack and heap share the same memory space, we would run the risk of a
@@ -1397,7 +1397,7 @@ memory as the program stack.  While an interesting idea, EEPROM writes
 require unacceptable multi-millisecond delays.
 
 Thus, our event queue consists of a statically allocated
-(compile--time fixed-size) array that is not too big, and in which
+(compile-time fixed-size) array that is not too big, and in which
 element insertions have hard real-time runtime guarantees.  If an
 attempt is made to insert an element into a full event queue, the
 result will be a silent failure.  This is a tradeoff: as mentioned in
@@ -1422,7 +1422,7 @@ therefore we provide a facility, termed \textit{idle waiters}, meant
 to reduce the average load on the event queue and reduce the risk of
 filling it up.
 
-\section{User--extensible abstractions with typeclasses}
+\section{User-extensible abstractions with typeclasses}
 
 \subsection{Defining new devices}
 
@@ -1602,7 +1602,7 @@ Stupid example. Rather use the 3pi instead.
 
 \subsection{Defining a new platform}
 
-\subsection{Defining Saturn V--nozzle control}
+\subsection{Defining Saturn V-nozzle control}
 
 \chapter{Evaluation}
 \label{chapter:evaluation}
