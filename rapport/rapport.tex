@@ -291,7 +291,6 @@ strategy, pros and cons.
 
 \chapter{Flask}
 \label{chapter:Flask}
-\fixme{mangler noget om opdelingen i atomisk delgrafer}
 
 Flask is a domain specific language embedded in Haskell for
 programming sensor networks. Flask is based on the idea of writing
@@ -429,17 +428,17 @@ it's a compile-time thing.
 Figure \ref{fig:redqq} is an example of a quasiquoted function in Red,
 which determines whether a ratio between two values is below a certain
 compile-time determined threshold. 
-\begin{figure}
+\begin{nonfloatingfigure}
 \begin{verbatim}
 [$exp|\(hi, lo) -> hi / lo > $flo:threshold|]
 \end{verbatim}
   \caption{Example of quasiquoted Red function}
   \label{fig:redqq}
-\end{figure}
+\end{nonfloatingfigure}
 
 
 \section{Streams, node-level values and dataflow-operators}
-Writing dataflow graphs in Haskell is normally done by using the
+Expressing dataflow graphs in Haskell is often done using the
 Arrows library. But this isn't a strategy that fits Flask, because
 arrows requires that an arbitrary Haskell function can be lifted to a
 signal function. This isn't possible here, because Flask signal
@@ -451,9 +450,9 @@ different type signatures. It therefore feels like you can use the
 arrows library without really using it, but you won't get the special
 Arrow syntax.
 
-In Flask a stream of values with type $\alpha$ has the type $S\
-\alpha$. The arguably simplest way to generate such a stream is the
-\texttt{clock :: Int -> S ()} Flask-function, which given a time
+In Flask a stream of type $\alpha$ values has the type \texttt{S
+  $\alpha$}. The arguably simplest way to generate such a stream is
+the \texttt{clock :: Int -> S ()} Flask-function, which given a time
 interval in milliseconds generates a unit signal on the resulting
 stream. \texttt{clock 1000} is signalling every second. This isn't
 very useful by itself, some data processing needs to occur, and for
@@ -470,8 +469,9 @@ representation of its node-level type.
 LiftN is a multi parameter type class\footnote{This requires the GHC
   language extension MultiParamTypeClasses}. \texttt{LiftN eta
   Integer} represents that the Haskell value of type can be lifted
-to a node-level \textit{Integer}.
+to a node-level \textit{Integer}.\\
 
+\noindent
 Now to one of the Flask stream operators, \texttt{sfilter}. It's type
 signature is:
 
@@ -528,24 +528,13 @@ detect low high threshold =
 \chapter{Design of the Fladuino system}
 \label{chapter:design}
 Fladuino is a modification of Flask that can be used to program
-Arduino devices in a functional reactive manner.  We have set the
-following requirements for our final program: \fixme{eventuelt
-  reference til synopsisen}
+Arduino devices in a functional reactive manner. In this chapter we
+will analyse which requirements we need to set and which design
+choices should be made.
+
+A summary of the most important requirements for our system follows:
 
 \begin{itemize}
-\item The design of Fladuino must mirror similar core design choices
-  in Flask.
-\item Fladuino must be able to generate a C--program suitable for
-  running on an Arduino from a description of a dataflow graph. This
-  graph must be expressed in the form of a Haskell program.
-  \textit{This requirement stems from the platform selection (see
-    section ...
-    \fixme{ref til introduktion}) of Arduino and from the above
-    requirement of mirroring Flask.}
-\item The C--program generated must be \textit{valid}, except for any
-  custom C--code included by the user.
-\item To the extent that it is possible, we must statically analyse
-  the program for validity (type or logic errors).
 \item It must be possible to define interfaces to external devices
   connected to an Arduino board, without having to modify Fladuino
   itself.  Interaction with these devices must take place through the
@@ -557,16 +546,21 @@ following requirements for our final program: \fixme{eventuelt
   platforms that differ significantly from our built-ins (for example,
   using a different microcontroller) will not be possible without
   modifying the Fladuino libraries themselves, however.
+\item We want to statically analyse and validate the program for
+  certain classes of type and logic errors.
+\item Fladuino must be able to generate a valid C--program suitable for
+  running on an Arduino from a description of a dataflow graph. This
+  graph must be expressed in the form of a Haskell program.
+  \textit{This requirement stems from the platform selection (see
+    section ...
+    \fixme{ref til introduktion}) of Arduino and from the above
+    requirement of mirroring Flask.}
 \end{itemize}
 
-And we set the following limitations of our project scope:
+And we set the scope of our project as follows:
 \begin{itemize}
-\item We shall not describe the implementation of any specific
-  reactive program with Fladuino, nor will we attempt to support the
-  writing of any such specific program.  We shall endeavour to support
-  functionality outside our core requirements only insofar as it is
-  useful for evaluating Fladuino as a whole.  \fixme{jeg tror ikke
-    dette behøves}
+\item The design of Fladuino must mirror similar core design choices
+  in Flask.
 \item It is not required that we attempt to handle all error
   conditions.  We accept that hardware constraints pose certain hard
   restrictions (such as memory limits, integer counter overflow and
@@ -574,7 +568,7 @@ And we set the following limitations of our project scope:
   Fladuino that exceeds these constraints will result in information
   loss or undefined behaviour.  We shall, however, endeavour to design
   Fladuino so as to reduce the likelihood of these errors.
-\item We won't add primitives for writing real time systems.
+\item We won't add primitives for programming real time systems.
 \end{itemize}
 
 \section{Design foundations}
