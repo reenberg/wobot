@@ -75,25 +75,29 @@ Troels Henriksen (athas@sigkill.dk)}
 \thispagestyle{empty}
 
 \begin{abstract}
-  Robots are conventionally programmed in low-level imperative
-  languages with no concepts like events, synchronicity or any of the
-  advantages found in functional programming languages (like pattern
-  matching). Reactive programming languages embedded in Haskell, like
-  Frob \cite{frob99} and Yampa \cite{arrowsrobotsfrp02}, has been
-  suggested for robot programming, but they require a complete Haskell
-  runtime system, which is to large to fit on more
-  resource-constrained devices. 
+  Circuits with embedded processors are conventionally programmed in
+  low-level imperative languages with no concepts like events,
+  synchronicity or any of the advantages found in functional
+  programming languages (like pattern matching). Reactive programming
+  languages embedded in Haskell, like Frob \cite{frob99} and Yampa
+  \cite{arrowsrobotsfrp02}, has been suggested for programming these
+  systems, but they require a complete Haskell runtime system, which
+  is too large to fit on more resource-constrained devices.
 
   We tie these two ends together, creating a highly declarative
-  language for robot programming using a staged compilation-strategy
-  like the one found in Flask \cite{flask08}, that makes it possible
-  to run reactive control programs on devices with few resources. In
-  the creation we've used the Flask-codebase as a starting point and
-  huge (isolated) parts of the code is left unchanged. Our
-  contribution includes functionality suitable for the robot domain,
-  including a framework for specifying interfaces to peripherals (like
-  sensors, motors or displays), primitives for event-handling and
-  (\ldots).
+  language for programming resource scarce embedded processor using a
+  staged compilation-strategy like the one found in Flask
+  \cite{flask08}, where code native to the hardware-platform is
+  generated from a data flow graph and this code is then compiled to
+  machine-code by a platform-specific compiler.
+
+  In the creation we've used the Flask-codebase as a starting point
+  and huge (isolated) parts of the code is left unchanged. Our
+  contribution includes functionality suitable for the domain of
+  control systems where the connected hardware devices (e.g. sensors,
+  motors or displays) can differ much. Specifically we include a
+  framework for specifying interfaces to these peripherals, primitives
+  for event-handling and (\ldots).
 \end{abstract}
 
 \clearpage 
