@@ -203,10 +203,10 @@ onEvent event = S $ do
         v_in  = varIn this ""
         v_out = s_vout this
 
-postThenWait :: forall a eta e t. (Reify a, Reify t, LiftN eta (a -> ()), Event e t)
+postThenWait :: forall a eta e t. (Reify a, Reify t, LiftN eta (() -> ()), Event e t)
                 => eta -> e -> S a -> S t
 postThenWait poster event from = S $ do
-    nposter <- unN $ (liftN poster :: N (a -> ()))
+    nposter <- unN $ (liftN poster :: N (() -> ()))
     sfrom   <- unS from
     addStream  "postThenWait"
                unitTy
@@ -232,7 +232,7 @@ postThenWait poster event from = S $ do
       genC nf this = do
         tauf_a     <- toF tau_a
         (a_params, a_params_ce) <- ToC.flattenParams tauf_a
-        post       <- hcall v_f $ ToC.CUnboxedData tauf_a [a_params_ce]
+        post       <- hcall v_f $ ToC.CUnboxedData unitGTy []
         tauf_t     <- toF tau_t
         (t_params, t_params_ce) <- ToC.flattenParams tauf_t
         e_out      <- hcall v_out $ ToC.CUnboxedData tauf_t [t_params_ce]

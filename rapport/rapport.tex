@@ -1343,10 +1343,10 @@ stream operator can have multiple distinct input, but only a single
 output, though this output can be split so as to send the same output
 value to any number of successors.
 
-For every operator $o$ in the dataflow graph, a set of unary
-functions $o\_in_n()$ and a unary function $o\_out()$ will be
-generated.  The arrival of a value $v$ at $o$ will be implemented by a
-call $o\_in_n(v)$, where the exact choice depends on the wiring of the
+For every operator $o$ in the dataflow graph, a set of unary functions
+$o\_in_n()$ and a unary function $o\_out()$ will be generated.  The
+arrival of a value $v$ at $o$ will be implemented by a call
+$o\_in_n(v)$, where the exact choice depends on the wiring of the
 graph.  In the typical case, even when several wires leads to a single
 stream operator, there will be only a single such $o\_in_n()$
 function\footnote{In fact, multiple ``in'' functions are only
@@ -1357,11 +1357,10 @@ function\footnote{In fact, multiple ``in'' functions are only
   different types and semantics, as there it is not required that $x$
   and $y$ have the same type.}.  Depending on the specific semantics
 of $o$, a value $v'\equiv f(v)$ (where $f()$ represents the
-computation done by $o$, the result may not even depend on $v$ at all)
-may be propagated to the successors of $o$.  In this case,
-$o\_in_n(v)$ will call $o\_out(v')$, the implementation of which will
-feature the calls $\forall s \in S(o). s\_in(v')$, where $S(o)$ is the
-set of all successors of $o$.
+computation done by $o$) may be propagated to the successors of $o$.
+In this case, $o\_in_n(v)$ will call $o\_out(v')$, the implementation
+of which will feature the calls $\forall s \in S(o). s\_in(v')$, where
+$S(o)$ is the set of all successors of $o$.
 
 $o\_in()$ is generated directly by the implementation of the specific
 dataflow operator, but $o\_out()$ is automatically created by Fladuino
@@ -1377,10 +1376,34 @@ apart from its existence; \texttt{()} is perfectly valid as a signal.
 \subsection{Implementation of posting wires}
 \label{sec:postingwireimpl}
 We have opted to implement posting wires as a thin layer of
-abstraction on top of events, with a unique event value associated
-with each posting wire.  Implementing posting wires as a separate
-subsystem offers no compelling advantages over an implementation via
-abstractions built on the existing event-dispatch infrastructure.
+abstraction on top of events, with a unique event associated with each
+posting wire (see \Fref{sec:definingevents} for how events are
+defined).  Implementing posting wires as a separate subsystem offers
+no advantages over an implementation via abstractions built on the
+existing event-dispatch infrastructure.  When creating a posting wire
+between two nodes, two additional pieces of information must be
+provided: a node-level function $f$ of type \texttt{() -> ()} and the
+\textit{response event}, the event that the sensor will trigger to
+reply to the request.  The function $f$ is, as evident from its type
+signature, highly impure, and is responsible for actually transmitting
+the request to the sensor.  The intent is that a Device whose
+interface involves posting wires will define its own, simpler-to-use
+facility on top of our primitive posting wire functionality.
+
+A posting wire does not exist as a special relation between nodes, as
+far as Fladuino is concerned.  The bridging from input- to output-node
+is accomplished by registering the output-node as an \textit{event
+  listener} for the response event.  The input node will, when it
+calls $f$, set an internal flag signifying that the wire is waiting
+for a reply from the sensor.  When an event of the response event type
+arrives, the output node will check this flag and ignore the event
+unless it has been set (after which it will clear it).  This opens up
+the interesting possibility of using ``common'' events with a posting
+wire, understood as events that are not responses to previously sent
+requests.  For example, it is possible to define a posting wire where
+$f$ does nothing, and the event listener is the event sent by some
+specific push-button when it is pressed.  The end result is a wire
+that ``delays'' signals until an event has been received.
 
 \subsection{On blocking and busywaiting}
 
@@ -1521,7 +1544,7 @@ them instances
 
 
 \subsection{Defining new events}
-
+\label{sec:definingevents}
 \section{Something about arduino external interrupt handling}
 \fixme{Lav rigtigt overskrift.}
 
