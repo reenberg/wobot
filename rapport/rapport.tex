@@ -26,6 +26,7 @@
 \usepackage{graphicx}
 \usepackage{stmaryrd}
 \usepackage{amssymb}
+\usepackage{listings}
 
 \renewcommand{\ttdefault}{pcr} % Bedre typewriter font
 %\usepackage[sc]{mathpazo}     % Palatino font
@@ -405,7 +406,7 @@ void loop()
 Red is an object--language from Flask that allows you to write concise
 node--level mapping functions, like predicates or conversion functions
 for simple tasks, without having to deal with NesC. It takes it syntax
-from Haskell, but is restricted to a very small subset of what is
+from Haskell, but is restricted to a small subset of what is
 normally expressible in Haskell. The reason for disallowing these
 things are the same as for not compiling Haskell directly to the
 sensor nodes in the first place: the existing Haskell runtimes are too
@@ -456,8 +457,9 @@ In Flask a stream of type $\alpha$ values has the type \texttt{S
 the \texttt{clock :: Int -> S ()} Flask-function, which given a time
 interval in milliseconds generates a unit signal on the resulting
 stream. \texttt{clock 1000} is signalling every second. This isn't
-very useful by itself, some data processing needs to occur, and for
-this Flask provides a set of stream operators, as mentioned before.
+useful by itself, we need to do something with this signal, e.g. do
+some data processing. As mentioned before, Flask provides a set of
+stream operators for that.
 
 
 \subsection{\texttt{Reify} and \texttt{LiftN}}
@@ -473,7 +475,7 @@ LiftN is a multi parameter type class\footnote{This requires the GHC
 to a node-level \textit{Integer}.\\
 
 \noindent
-Now to one of the Flask stream operators, \texttt{sfilter}. It's type
+Now to one of the Flask stream operators, \texttt{sfilter}. Its type
 signature is:
 
 \begin{verbatim}
@@ -491,26 +493,42 @@ Now we will list a description of most of the stream-operators and
 signal functions that Flask provides. \fixme{Add type signatures and
   improve explanations}
 \begin{description}
-\item[\texttt{sconst}]\hfill \\ 
+\item[\texttt{sconst :: forall a b eta. (Reify b, LiftN eta a)
+       => eta -> S b -> S a}]\hfill \\ 
+     Maps all input value to a constant output value.
+
 \item[$\ggg$]\hfill \\ Connects a stream with a stream operator.
   E.g. \texttt{clock 10 $\ggg$ sconst (liftN [\$exp|42|])} is a stream
   of 42 values, that is passed on every 10th millisecond.
-\item[\texttt{\&\&\&} and \texttt{szip}]\hfill \\ 
-  
+
+\item[\texttt{\&\&\&} (and its alias \texttt{szip})]\hfill \\
+  This operator has two input streams. It waits for a value on both
+  inputs, constructs a pair of them, and sends this pair two its
+  output.
+
+\item[\texttt{sunzip}]\hfill \\ 
+  The inverse of \texttt{\&\&\&} and \texttt{szip}, which splits a
+  signal of pairs into two individual output streams.
   
 \item[\texttt{smap}] \hfill \\ Maps a node-level function over all
   stream-values, creating a stream of the resulting output values.
+
 \item[\texttt{sintegrate}] \hfill \\ When supplied with an initial
   (node-level) state value and a node-level function that takes the
   current state and the next value on the input stream, returning a
   new state and the next value to be send through to the output
   stream.
+
 \item[\texttt{clock :: Int -> S ()}] Creates a stream of unit-values
   that is fired with the given interval (specified in milliseconds).
+
 \item[\texttt{sfilter}]\hfill \\ Only propagates values through to the
   output-stream that satisfies a given node-level predicate.
-%\item[\texttt{sunzip}]\hfill \\ 
-%\item[\texttt{smerge}]\hfill \\ 
+  
+\item[\texttt{smerge}]\hfill \\ 
+Takes two input streams of the same type. When it received a value on
+either of the inputs it will propagate this value to its output, thus
+merging the streams into a single stream.
 
 \end{description}
 

@@ -1,0 +1,21 @@
+digraph G
+{
+        rankdir = LR;
+        node [fontname="Times Roman", shape=rectangle];
+        edge [color=black, fontname="Times Roman"];
+        trigger [label="trigger \nevery 10ms"];
+        sample [label="sample \nseismometer"];
+        highEWMA [label="high-gain \nEWMA"];
+        lowEWMA [label="low-gain \nEWMA"];
+        ratio [label="ratio"];
+        test [label="val > thresh? \nif so, eruption!"];
+        send [label="send vote to base"];
+
+trigger -> sample;
+sample -> highEWMA;
+sample -> lowEWMA;
+highEWMA -> ratio;
+lowEWMA -> ratio;
+ratio -> test -> send;
+               
+}
