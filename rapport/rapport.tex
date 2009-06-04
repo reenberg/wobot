@@ -56,7 +56,7 @@
 \makeatother
 
 
-\newcommand{\EDSL}{EDSL (Embedded Domain Specific Language) \renewcommand{\EDSL}{ EDSL }}
+\newcommand{\EDSL}{EDSL (Embedded Domain-Specific Language) \renewcommand{\EDSL}{ EDSL }}
 
 \title{Controlling embedded devices with functional reactive programming}
 
@@ -85,10 +85,10 @@ Troels Henriksen (athas@sigkill.dk)}
   is too large to fit on more resource-constrained devices.
 
   We tie these two ends together, creating a highly declarative
-  language for programming resource scarce embedded processor using a
+  language for programming resource scarce embedded processors using a
   staged compilation-strategy like the one found in Flask
   \cite{flask08}, where code native to the hardware-platform is
-  generated from a data flow graph and this code is then compiled to
+  generated from a data flow graph and which is then compiled to
   machine-code by a platform-specific compiler.
 
   In the creation we've used the Flask-codebase as a starting point
@@ -124,6 +124,7 @@ supervised by Ken Friis Larsen, assistant professor at DIKU.
 \fixme{Check all cites. Should there be a space between the word and cite or
   not.}
 \fixme{Check all refs. Should be converted to vref to utilize the varioref package}
+\fixme{dataflow eller data flow? --- ensret}
 
 \chapter*{Disposition}
 \begin{itemize}
@@ -174,48 +175,41 @@ supervised by Ken Friis Larsen, assistant professor at DIKU.
   \item A Flask tour
   \item Small guide to Arduino and electronics
   \end{itemize}
-\end{itemize}  
+\end{itemize}
 
 
 \chapter{Introduction}
 
 \section{Problem statement}
-In this report we want to present our robot programming framework
-\textit{Fladuino}. Fladuino is an adaption of the sensor network
-framework \textit{Flask} for the robot domain.
+In this report we present our programming framework for embedded
+devices, \textit{Fladuino}. Fladuino is an adaption of the sensor
+network framework \textit{Flask} for the domain of control systems.
 
-Flask is a domain specific language embedded in Haskell for writing
-sensor network code. With Haskell functioning as a meta-language. The
-final result of executing a Flask program is generated code in a
-sensor network language. And our framework Fladuino follows exactly
-the same concepts as Flask though it generates C-code written
-specifically for our robots.
+Flask is a domain-specific language embedded in Haskell for writing
+sensor network code. With Haskell functioning as a meta-language. A
+Flask program takes the form of an acyclic data flow graph, which
+represents how data from sensors etc. are processed and sent to other
+nodes in the network. When you "`run"' a Flask program, it generates
+code generated in another more low-level language for sensor
+networks. Our framework Fladuino follows exactly the same concepts as
+Flask though its generates C-code written specifically for our
+platform: Arduino, which we will discuss in the next section,
+\ref{sec:hardware platform}.
 
 In the following chapters we want to argue that taking our outset from
 Flask has been successful. Both in the sense that Flask was easily
 adaptable and in the sense that our result, Fladuino, is sufficient
-for many tasks in robot programming.
+for many control systems.
 
-It is the prevailing conception that robots has some sort of
-autonomous behavior. A simpler definition, says that a robot is any
-programmable electronic system that is equipped with sensors and
-actuators. The second definition is more general, in that it applies
-to almost any programmable electronic system, and the autonomous
-behavior will often be achieved programmatically. 
-
-Our goal with Fladuino is to provide a framework that facilitates
-robot programming, but such a framework also has to provide features
-for programming the kind of input-output systems which doesn't
-necessarily have any autonomous behavior. So there are actually two
-steps: making a library suitable for programming sensors, actuators
-and connecting them, and secondly facilitate programming autonomous
-robots.
-
-Robots are reactive systems. We've found the best description of what
-distinguishes a reactive system in Zhanyong Wan's PhD
-thesis ``Functional Reactive Programming for Real-Time reactive
-systems'' \cite{Chambers1992}.  As he explains we can
-partition computer systems into:
+\fixme{I find the following section relevant, but I don't know where
+  it fits in. I don't think it's here /Martin}
+\section{Reactivity}
+Most control systems are reactive, especially robots fits the
+definition of reactive systems well. We've found the best description
+of what distinguishes a reactive system in Zhanyong Wan's PhD thesis
+``Functional Reactive Programming for Real-Time reactive systems''
+\cite{Chambers1992}.  As he explains we can partition computer systems
+into:
 \begin{itemize}
 \item Transitional systems, that takes some data as input, does some
   computation on it and delivers some resulting output (an example of this
@@ -229,10 +223,12 @@ partition computer systems into:
   is required to respond to its changes (e.g. a robot).
 \end{itemize}
 
-A reactive programming language is a language with primitives for connecting
-processes (a kind of ever-changing input values, often called signals). 
+A reactive programming language is a language with primitives for
+connecting streams of values (a kind of ever-changing input values,
+often called signals).
 
 \section{Hardware platform}
+\label{sec:hardware platform}
 The choice of hardware-platform has an influence on how to design such a
 language. We've chosen to make our language and framework target the
 Arduino-platform \cite{arduino}.  
@@ -250,13 +246,13 @@ There are number of reasons for why we think this platform is a good
 choice. First of all, our institute DIKU was planning on buying a
 couple of these boards for research in Human Centered Computing about
 interactive-objects and when they heard we were interested in creating
-a framework for robot development they finally bought some and let us
-use them. Even better reasons is that they are cheap (approximately
-200 DKK for an Arduino Duemilanove, at the time of writing) and is
-easily extensible. E.g. you can buy extensions for ethernet,
-bluetooth, or even small touchscreens. Finally, the Arduino comes with
-a relatively high-level C-interface, sparing us from most low-level
-programming and bit trickery.
+a framework for developing these kinds of systems they finally bought
+some and let us use them. Even better reasons is that they are cheap
+(approximately 200 DKK for an Arduino Duemilanove, at the time of
+writing) and is easily extensible. E.g. you can buy extensions for
+ethernet, Bluetooth, or even small touchscreens. Finally, the Arduino
+comes with a relatively high-level C-interface, sparing us from much
+low-level programming and bit trickery.
 
 We have only had resources to test our work on the Arduino
 Duemilanove\footnote{\url{http://www.arduino.cc/en/Main/ArduinoBoardDuemilanove}},
@@ -265,7 +261,11 @@ Arduino
 Mega\footnote{\url{http://arduino.cc/en/Main/ArduinoBoardMega}}, and
 Pololu 3pi\footnote{\url{http://www.pololu.com/catalog/product/975}}.
 
-\section{Motivation}
+\section{Motivation (very robots specific, should be rewritten for
+  control systems)}
+\textit{Something about how our everyday lifes are packed with control
+systems. Dishwashers, etc.}
+
 Robots has been used in the industry for decades, replacing humans in
 repetitive tasks like sewing, assembling and transportation. In the
 last years, robots have been introduced to the consumer market,
@@ -276,10 +276,26 @@ hardware prices is not everything, efficient development and
 prototyping of robot control programs is another aspect in making
 robots affordable. \fixme{code reusability}
 
+It is the prevailing conception that robots has some sort of
+autonomous behavior. A simpler definition, says that a robot is any
+programmable electronic system that is equipped with sensors and
+actuators. The second definition is more general, in that it applies
+to almost any programmable electronic system, and the autonomous
+behavior will often be achieved programmatically.
+
+Our goal with Fladuino is to provide a framework that facilitates
+robot programming, but such a framework also has to provide features
+for programming the kind of input-output systems which doesn't
+necessarily have any autonomous behavior. So there are actually two
+steps: making a library suitable for programming sensors, actuators
+and connecting them, and secondly facilitate programming autonomous
+robots.
+
+
 \section{Structure outline}
-In the following section (chapter \ref{chapter:Flask}) we will go
+In the following chapter (chapter \ref{chapter:Flask}) we will go
 through the existing Flask system. Its design and how you use it to
-write sensor-network programs. 
+write sensor-network programs.
 
 In chapter \ref{chapter:design} we will look at what is needed when
 programming robots that isn't already in Flask and how this should be
@@ -294,8 +310,7 @@ strategy, pros and cons.
 
 \chapter{Flask}
 \label{chapter:Flask}
-
-Flask is a domain specific language embedded in Haskell for
+Flask is a domain-specific language embedded in Haskell for
 programming sensor networks. Flask is based on the idea of
 constructing \textit{dataflow graphs} that express the overall flow of
 data in the program. The basic task in writing a Flask program is thus
@@ -312,7 +327,7 @@ seismometer values.
 
 \begin{nonfloatingfigure}
 \label{ewma-example}
-  \includegraphics[width=0.9\textwidth]{images/flask-ewma}
+  \includegraphics[width=\textwidth]{images/flask-ewma}
   \centering
   \caption{Flask dataflow graph}
 \end{nonfloatingfigure}
@@ -503,9 +518,11 @@ sconst :: forall a b eta. (Reify b, LiftN eta a)
 \end{verbatim}
      Maps all values on the input-stream to a constant (node-level) output value.
 
-\item $\ggg$ \hfill \\ Connects a stream with a stream operator.
+\item \texttt{($\ggg$) :: forall a. Reify a => S a -> (S a -> S a)}
+  \hfill \\ Connects a stream with a stream operator.
   E.g. \texttt{clock 10 $\ggg$ sconst (liftN [\$exp|42|])} is a stream
-  of 42 values, that is passed on every 10th millisecond.
+  of 42 values, that is passed on every 10th millisecond. This is
+  simply implemented as a normal Haskell function application.
 
 
 \item 
