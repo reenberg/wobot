@@ -293,13 +293,13 @@ strategy, pros and cons.
 \label{chapter:Flask}
 
 Flask is a domain specific language embedded in Haskell for
-programming sensor networks. Flask is based on the idea of writing
-\textit{dataflow graphs} that express the overall flow of data in the
-program. The basic task in writing a Flask program is thus to connect
-(or \textit{wiring}) incoming streams of sensor data to outgoing
-streams of data (e.g. to other nodes in the network) with some
-eventual data processing in between. A program thus takes form of an
-acyclic graph.
+programming sensor networks. Flask is based on the idea of
+constructing \textit{dataflow graphs} that express the overall flow of
+data in the program. The basic task in writing a Flask program is thus
+to connect (or \textit{wire}) incoming streams of sensor data to
+outgoing streams of data (e.g. to other nodes in the network) with
+some eventual data processing in between. A program thus takes form of
+a directed acyclic graph.
 
 On figure \ref{ewma-example} we show an example of a dataflow graph
 taken from the paper "`Flask: A Language for Data-driven Sensor
@@ -330,14 +330,15 @@ was pushed or released.
 
 \section{From Flask to sensor network-code}
 A fundamental thing in Flask is its compilation and
-execution-strategy. A Flask program is a description of the before
-mentioned dataflow-graph written in Haskell, using specialized
-Haskell operators (dataflow-operators, stream-combinators,
-stream-operators or signal-functions) for connecting and manipulating
-the streams. Some of the these stream-operators also accepts some
-node-level code which should be inserted into the dataflow. This
-node-level code is written in one of several object-languages (where
-Haskell is the meta-language) for manipulating node-level values.
+execution-strategy. A Flask program is a description of the prior
+mentioned dataflow--graph written in Haskell, using specialised
+Haskell operators (dataflow--operators, stream--combinators,
+stream--operators or signal--functions) for connecting and
+manipulating the streams. Some of the these stream--operators also
+accepts some node--level code which should be inserted into the
+dataflow. This node--level code is written in one of several
+object--languages (where Haskell is the meta-language) for
+manipulating node--level values.
 
 When compiling the Haskell program description of the dataflow graph,
 you end up with an executable that generates and outputs code in a
@@ -347,7 +348,7 @@ sensor network language called NesC\footnote{NesC is an extension to
 
 The generated NesC code can then be translated by an ordinary
 NesC compiler to machine code running on the nodes in the
-sensor network.  Thus, when you write a Flask-program, you use
+sensor network.  Thus, when you write a Flask--program, you use
 ordinary Haskell constructs to manipulate which NesC-code should
 ultimately be generated.
 
@@ -362,17 +363,18 @@ object-language, allows the user to write all programs that's expressible in
 NesC. The other language Red, is described below.
 
 Both languages are integrated into Flask using the GHC quasiquotation
-library \cite{quasiquote07}, written by the Flask author Geoffrey
-Mainland. This allows you to write the object languages in their
-original syntax inside the Flask/Haskell environment. And it allows
-you to intersperse generation time variables (which results in compile
-time constants) into object-language code.
+library \cite{quasiquote07}, written by the author of Flask, Geoffrey
+Mainland. The quasiquotation facility allows you to write the object
+languages in their original syntax inside the Flask/Haskell
+environment, as well as allowing you to intersperse generation time
+variables (which results in compile time constants) into
+object-language code.
 
 Figure \ref{fig:mainloop} illustrates this, showing a simplified
-version of the main loop and initialization code from Fladuino.
+version of the main loop and initialisation code from Fladuino.
 \texttt{cdefs\_toc} and \texttt{cstms\_toc} are compile-time values
 (lists of C statements). And \texttt{\$edecls} and
-\texttt{\$stms} are anti-quoters which job is two put the values into
+\texttt{\$stms} are anti--quoters which job is two put the values into
 the correct position in the C syntax tree at generation-time.
 
 \begin{figure}
@@ -400,30 +402,29 @@ void loop()
 
 \section{Red --- a restricted node--level language}
 \label{sec:red}
-Red is an object-language from Flask that allows you to write concise
+Red is an object--language from Flask that allows you to write concise
 node--level mapping functions, like predicates or conversion functions
 for simple tasks, without having to deal with NesC. It takes it syntax
 from Haskell, but is restricted to a very small subset of what is
 normally expressible in Haskell. The reason for disallowing these
 things are the same as for not compiling Haskell directly to the
 sensor nodes in the first place: the existing Haskell runtimes are too
-huge to fit on the limited memory of a sensor node. Therefore we can't
+large to fit on the limited memory of a sensor node. Therefore we can't
 allow uses of features that e.g.  requires a garbage collector. Flask
 disallows the following Haskell 98-features (with probably some more,
 that we have overlooked) from Red:
 \begin{itemize}
-\item Recursive function
+\item Recursive functions
 \item Recursive datatypes
-\item Curried functions
+\item Curried functions (except for a few simple cases)
 \item Higher-order functions
 \item Type classes
 \item Laziness
 \item Modules
 \end{itemize}
 
-And the only a very small subset of the Standard Prelude is included
-in Flask. Type classes should be possible to implement though, since
-it's a compile-time thing.
+And only a very small subset of the Standard Prelude is included
+in Flask.
 
 Figure \ref{fig:redqq} is an example of a quasiquoted function in Red,
 which determines whether a ratio between two values is below a certain
@@ -439,15 +440,15 @@ compile-time determined threshold.
 
 \section{Streams, node-level values and dataflow-operators}
 Expressing dataflow graphs in Haskell is often done using the
-Arrows library. But this isn't a strategy that fits Flask, because
-arrows requires that an arbitrary Haskell function can be lifted to a
+Arrows library. But this isn't a strategy that fits Flask, as
+Arrows requires that an arbitrary Haskell function can be lifted to a
 signal function. This isn't possible here, because Flask signal
 functions are meant for being executed on the sensor nodes and
-therefore aren't Haskell functions, but instead a representation of of
+therefore aren't Haskell functions, but instead a representation of
 the node-level code that should be generated. Flask instead defines
-some of the same operators as in the arrows library, though with
+some of the same operators as in the Arrows library, though with
 different type signatures. It therefore feels like you can use the
-arrows library without really using it, but you won't get the special
+Arrows library without really using it, but you won't get the special
 Arrow syntax.
 
 In Flask a stream of type $\alpha$ values has the type \texttt{S
