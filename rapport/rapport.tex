@@ -669,9 +669,7 @@ parts can be divided into the following:
   exclusively used to construct the program, but rather that they are
   part of a larger Haskell program.  Since a Fladuino program is
   highly static at run-time, the generating program should be written
-  to support easy configuration and modification.  In a very real
-  sense, the dynamic part of a Fladuino program happens at
-  compile-time.
+  to support easy configuration and modification.
 \item A compiler is supplied for the Haskell-like programming language
   Red (see section \ref{sec:red}), which is used to tailor the
   behaviour of stream operators.
@@ -715,11 +713,12 @@ parts can be divided into the following:
 
 Except for the last module, this structure has been adopted from
 Flask.  Additionally, Flask defines additional facilities (such as
-\textit{Flows} for communicating between devices) that build heavily
-upon the TinyOS-platform for sensor networks, a platform that is not
-available to us.  We have thus not adapted all of these facilities in
-our work, though posting wires (see \Fref{sec:posting wires}) have
-their own novel implementation in Fladuino.
+\textit{Flows} for communicating between sensor nodes) that build
+heavily upon the TinyOS-platform for sensor networks, a platform that
+is not available to us.  We have thus not adapted all of these
+facilities in our work.  Posting wires, however, (see
+\Fref{sec:posting wires}) have their own novel implementation in
+Fladuino.
 
 \section{Dataflow evaluation strategy}
 \label{sec:dataflowevaluationstrategy}
@@ -1070,9 +1069,9 @@ below it:
   hardware pins, and adding a new mapping is a significant task.
 \end{description}
 
-This choice of abstraction is not as obvious as it may appear: we do
-lose a non-nil amount of expressive power by restricting ourselves to
-the interface provided by Arduino, rather than permitting complete
+This choice of abstraction is not as obvious as it may appear: some
+measure of expressive power is lost by restricting ourselves to the
+interface provided by Arduino, rather than permitting complete
 exploitation of the capabilities of the microprocessor.  Yet for the
 following reasons, we believe we made the right choice:
 
@@ -1180,19 +1179,30 @@ All events have a static type and value, which is used to distinguish
 between them at generation-time, and an event may carry a data
 \textit{payload} at runtime.  A critical piece of static information,
 that can be found in most (if not all) events, is the device that the
-event is associated with.  All events stem from external sources of
-input, and a given event is such intrinsically linked to some specific
-device, though it is possible to define events that are not connected
-to Arduino's notion of a logical device --- for example, by hardcoding
-the I/O pins directly into the implementation of the event.  In this
-section, however, we shall assume that all events are connected to a
-device.  Not all events have payloads (or rather, some events have
-payloads of the information-less type \textit{unit}): an event
-indicating the press of a pushbutton has no payload, and contains no
-information apart from the static event value itself (which indicates
-the exact button that was pressed), while an event indicating that a
-piece of sensor hardware has finished taking a reading may contain the
-reading data as the payload.
+event is associated with.  In our exposes programming interface, all
+events stem from external sources of input, and a given event is such
+intrinsically linked to some specific device, though it is possible to
+define events that are not connected to Arduino's notion of a logical
+device --- for example, by hardcoding the I/O pins directly into the
+implementation of the event.  ``Synthetic'' events, events that are
+explicitly triggered by stream operators, are not conceptually
+problematic (apart for the need to distinguish same-type events by
+something else than an associated device), but for reasons of time,
+Fladuino does not expose a programming interface for triggering them.
+We believe that manually triggered events open some interesting new
+possibilities (not the least of which is Turing--completeness for
+dataflow programs), and we could not afford them the attention they
+deserve without straying too far in scope from the topic of our
+project.
+
+In this section, we shall assume that all events are connected to
+Fladuino's notion of a device.  Not all events have payloads (or
+rather, some events have payloads of the information-less type
+\textit{unit}): an event indicating the press of a pushbutton has no
+payload, and contains no information apart from the static event value
+itself (which indicates the exact button that was pressed), while an
+event indicating that a piece of sensor hardware has finished taking a
+reading may contain the reading data as the payload.
 
 As an example, assume that $p_1$ is a pushbutton device connected to
 digital pin 1, $d_2$ a diode connected to pin 2, and $\sigma(e,d)$ a
