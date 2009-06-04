@@ -3,7 +3,7 @@ digraph G
                 node [fontname="Times Roman", shape=rectangle]
                 edge [color=black, fontname="Times Roman"]
 
-                ToNode [label="", color=white]
+                ToNode [label="", color=white, shape=point]
                 InputNode [label="Input node, counter = 2"]
                 OutputNode [label="Output node"]
 
