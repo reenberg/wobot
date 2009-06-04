@@ -11,7 +11,7 @@ digraph G
 
                 
                 CounterNode->OutputNode [style=dashed]
-                InputNode->CounterNode [label="Increase counter if sensor-reply is pending"]
-                EventNode->CounterNode [label="Decrease counter and send new request"]
-                OutputNode->EventNode [label="Asynchronously notify the event listening node", style=dotted]
+                InputNode->CounterNode [label=" Increase counter if sensor-reply is pending"]
+                EventNode->CounterNode [label=" Decrease counter and send new request"]
+                OutputNode->EventNode [label="Asynchronously notify the event listening node   ", style=dotted]
 }
