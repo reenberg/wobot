@@ -67,8 +67,6 @@ Troels Henriksen (athas@sigkill.dk)}
 \date{\today}
 \pagestyle{plain}
 
-
-
 \begin{document}
 
 \frontmatter
@@ -488,6 +486,7 @@ as the first argument (type eta), and returns a signal function
 (\texttt{S a -> S a}) that for each input value uses the predicate to
 decide whether it should be passed on to its output stream or not.
 
+
 \subsection{Streamoperators}
 Now we will list a description of most of the stream-operators and
 signal functions that Flask provides. \fixme{Add type signatures and
@@ -699,9 +698,7 @@ parts can be divided into the following:
   exclusively used to construct the program, but rather that they are
   part of a larger Haskell program.  Since a Fladuino program is
   highly static at run-time, the generating program should be written
-  to support easy configuration and modification.  In a very real
-  sense, the dynamic part of a Fladuino program happens at
-  compile-time.
+  to support easy configuration and modification.
 \item A compiler is supplied for the Haskell-like programming language
   Red (see section \ref{sec:red}), which is used to tailor the
   behaviour of stream operators.
@@ -745,11 +742,12 @@ parts can be divided into the following:
 
 Except for the last module, this structure has been adopted from
 Flask.  Additionally, Flask defines additional facilities (such as
-\textit{Flows} for communicating between devices) that build heavily
-upon the TinyOS-platform for sensor networks, a platform that is not
-available to us.  We have thus not adapted all of these facilities in
-our work, though posting wires (see \Fref{sec:posting wires}) have
-their own novel implementation in Fladuino.
+\textit{Flows} for communicating between sensor nodes) that build
+heavily upon the TinyOS-platform for sensor networks, a platform that
+is not available to us.  We have thus not adapted all of these
+facilities in our work.  Posting wires, however, (see
+\Fref{sec:posting wires}) have their own novel implementation in
+Fladuino.
 
 \section{Dataflow evaluation strategy}
 \label{sec:dataflowevaluationstrategy}
@@ -1100,9 +1098,9 @@ below it:
   hardware pins, and adding a new mapping is a significant task.
 \end{description}
 
-This choice of abstraction is not as obvious as it may appear: we do
-lose a non-nil amount of expressive power by restricting ourselves to
-the interface provided by Arduino, rather than permitting complete
+This choice of abstraction is not as obvious as it may appear: some
+measure of expressive power is lost by restricting ourselves to the
+interface provided by Arduino, rather than permitting complete
 exploitation of the capabilities of the microprocessor.  Yet for the
 following reasons, we believe we made the right choice:
 
@@ -1210,19 +1208,30 @@ All events have a static type and value, which is used to distinguish
 between them at generation-time, and an event may carry a data
 \textit{payload} at runtime.  A critical piece of static information,
 that can be found in most (if not all) events, is the device that the
-event is associated with.  All events stem from external sources of
-input, and a given event is such intrinsically linked to some specific
-device, though it is possible to define events that are not connected
-to Arduino's notion of a logical device --- for example, by hardcoding
-the I/O pins directly into the implementation of the event.  In this
-section, however, we shall assume that all events are connected to a
-device.  Not all events have payloads (or rather, some events have
-payloads of the information-less type \textit{unit}): an event
-indicating the press of a pushbutton has no payload, and contains no
-information apart from the static event value itself (which indicates
-the exact button that was pressed), while an event indicating that a
-piece of sensor hardware has finished taking a reading may contain the
-reading data as the payload.
+event is associated with.  In our exposes programming interface, all
+events stem from external sources of input, and a given event is such
+intrinsically linked to some specific device, though it is possible to
+define events that are not connected to Arduino's notion of a logical
+device --- for example, by hardcoding the I/O pins directly into the
+implementation of the event.  ``Synthetic'' events, events that are
+explicitly triggered by stream operators, are not conceptually
+problematic (apart for the need to distinguish same-type events by
+something else than an associated device), but for reasons of time,
+Fladuino does not expose a programming interface for triggering them.
+We believe that manually triggered events open some interesting new
+possibilities (not the least of which is Turing--completeness for
+dataflow programs), and we could not afford them the attention they
+deserve without straying too far in scope from the topic of our
+project.
+
+In this section, we shall assume that all events are connected to
+Fladuino's notion of a device.  Not all events have payloads (or
+rather, some events have payloads of the information-less type
+\textit{unit}): an event indicating the press of a pushbutton has no
+payload, and contains no information apart from the static event value
+itself (which indicates the exact button that was pressed), while an
+event indicating that a piece of sensor hardware has finished taking a
+reading may contain the reading data as the payload.
 
 As an example, assume that $p_1$ is a pushbutton device connected to
 digital pin 1, $d_2$ a diode connected to pin 2, and $\sigma(e,d)$ a
@@ -1599,6 +1608,9 @@ A potentiometer interface can be defined in Fladuino quite easily as it doesn't
 make any sense to define any events upon this as its value needs to be pulled
 once in a vile to know if it has changed and/or to act upon that.
 
+The \texttt{Device} instance declaration of \texttt{Potentiometer} defines that
+it uses an Analog pin but with no functionality requirements.
+
 \begin{verbatim}
 data Potentiometer = Potentiometer Integer
                      deriving (Eq, Show)
@@ -1622,12 +1634,29 @@ write values between 0 and 256 unless explicitley changed. The mapping 0 to 1024
 when reading analog values is from GND to AREF which is nomally 0v and 5v
 respectively though AREF can be explicitley changed.
 
-\subsection{Defining a servo motor}
+\subsection{Defining a battery reader for 3pi}
 
+The Pololu 3pi robot has a few extra features that the Arduino boards
+doesn't. One of these features is the possibility of reading how many millivolts
+is left on the batteries that power the device. This feature can be used to
+indicate if the batteries needs replacement, e.g. by signalling with the buzzer
+or writing text to the display.
 
-Stupid example. Rather use the 3pi instead.
+The \texttt{Drevice} instance definition \texttt{BatteryReader} requires that the
+platform supply the functionality \textit{3pi battery reader} which is only
+defined for the Pololu 3pi platform.
 
+\begin{verbatim}
+data BatteryReader = BatteryReader
+                        deriving (Eq, Show)
 
+instance Device BatteryReader where
+    usages _ = [CapabilityRequired "3pi battery reader"]
+    uniqueId _ = "3pi_battery_reader" -- there only need to be one
+
+instance AnalogInputDevice BatteryReader where
+    genReadCode _ resultvar = [[$cstm|$id:resultvar = read_battery_millivolts();|]]
+\end{verbatim}
 
 
 \subsection{Defining a new platform}
@@ -1663,6 +1692,13 @@ Lidt idéer:
   og hvilke funktioner der skal kaldes for at styre hjulenes
   hastighed. Hvorefter man så får adgang til en række generelle
   styringsabstraktioner.
+
+\item 3pi robotten er langt fra understøttet komplet. Fx er der lidt problemer
+  mht. at 3pi robotten bruger alle timere til motor, motor, og sensor/buzzer
+  etc. Fladuino går her ind og overskriver timeren til bl.a. buzzer og andet.
+
+\item  Yderligere er der også problemer med det meste af 3pi platoformen, ikke
+  er precist nok defineret., Fx hvilke pins der kun kan specielle ting.
 \end{itemize}
 
 \chapter{The past}
