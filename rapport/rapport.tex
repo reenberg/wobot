@@ -1326,7 +1326,7 @@ Fladuino adopts Flask's implementation almost verbatim, the details of
 which will be explained within this chapter.
 
 As in Flask, the graph is divided into \textit{atomic subgraphs},
-sections that can be executed without blocking
+sections that can be executed without blocking.
 
 \subsection{Translation of a simple dataflow graph}
 
@@ -1462,8 +1462,63 @@ to reduce the average load on the event queue and reduce the risk of
 filling it up.
 
 \section{User-extensible abstractions with typeclasses}
+As explained in earlier chapters, one of our main additions to Flask,
+is the possibility of defining drivers for peripherals and defining
+new event types.
 
 \subsection{Defining new devices}
+A device is primarily a collection of functions for interacting with
+the device and a setup function for initializing the function on
+start-up. But also a list of which other hardware ... that it uses and
+blocks other devices from using. E.g. which hardware pins or timers
+that it needs.
+
+We need a way to represent these devices as values, i.e. a way of
+referring to a specific device and store information about it. A
+simple solution would be to implement the device as a \textit{Device}
+datatype with a set of required fields (e.g. a list of
+dependencies). But devices differ, many devices would require
+additional fields, e.g. about their starting state and which hardware
+pin the device is connected to. A second reason for why this isn't a
+good idea, is that we wouldn't have a way of distinguishing devices on
+their types. Our solution is thus that a driver-writer has to create a
+new datatype for each device and declare it as an instance of our
+\textit{Device} typeclass. We can thus identify all devices as any
+type with an instance of this typeclass and specific devices can be
+identified directly by their datatype. The state of our program is
+extended with a list of these devices. The required values are shown
+in figure \ref{device typeclass}.
+
+\begin{nonfloatingfigure}
+  \label{device typeclass}
+  \begin{verbatim}
+class (Eq a, Show a) => Device a where
+    setupDevice :: MonadFladuino m => a -> m ()
+    usages :: a -> [Usage]
+    uniqueId :: a -> String
+\end{verbatim}
+\end{nonfloatingfigure}
+
+Remark that all 3 values requires the device itself as a
+parameter. This is because we can have more than one instance of each
+device-type, and they differ only in the values stored in the
+datatype-fields. These functions needs to know specifically which
+instance of the device-type that is referred to.
+
+The \texttt{setupDevice} function initializes the device, it is
+executed the first time the device is used (i.e. when it is added to
+our list of known devices). A common operation here is to add global C
+state-variables or adding certain includes of required header-files.
+
+\texttt{usages} is a list of which hardware-dependencies the device
+has. We use this to make sure that user doesn't try to use two
+incompatible devices (e.g. two devices that both needs access to the
+same PWM output pin)
+
+\texttt{uniqueId} is our way of comparing devices, we can't just make
+them instances
+
+
 
 \subsection{Defining new events}
 
