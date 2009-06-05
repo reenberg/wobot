@@ -56,7 +56,7 @@
 \makeatother
 
 
-\newcommand{\EDSL}{EDSL (Embedded Domain Specific Language) \renewcommand{\EDSL}{ EDSL }}
+\newcommand{\EDSL}{EDSL (Embedded Domain-Specific Language) \renewcommand{\EDSL}{ EDSL }}
 
 \title{Controlling embedded devices with functional reactive programming}
 
@@ -75,25 +75,29 @@ Troels Henriksen (athas@sigkill.dk)}
 \thispagestyle{empty}
 
 \begin{abstract}
-  Robots are conventionally programmed in low-level imperative
-  languages with no concepts like events, synchronicity or any of the
-  advantages found in functional programming languages (like pattern
-  matching). Reactive programming languages embedded in Haskell, like
-  Frob \cite{frob99} and Yampa \cite{arrowsrobotsfrp02}, has been
-  suggested for robot programming, but they require a complete Haskell
-  runtime system, which is to large to fit on more
-  resource-constrained devices. 
+  Embedded control systems are conventionally programmed in low-level
+  imperative languages with no concepts like events, synchronicity or
+  any of the advantages found in functional programming languages
+  (like pattern matching). Reactive programming languages embedded in
+  Haskell, like Frob \cite{frob99} and Yampa \cite{arrowsrobotsfrp02},
+  has been suggested for programming this class of systems, but they
+  require a complete Haskell runtime system, which is too large to fit
+  on more resource-constrained devices.
 
   We tie these two ends together, creating a highly declarative
-  language for robot programming using a staged compilation-strategy
-  like the one found in Flask \cite{flask08}, that makes it possible
-  to run reactive control programs on devices with few resources. In
-  the creation we've used the Flask-codebase as a starting point and
-  huge (isolated) parts of the code is left unchanged. Our
-  contribution includes functionality suitable for the robot domain,
-  including a framework for specifying interfaces to peripherals (like
-  sensors, motors or displays), primitives for event-handling and
-  (\ldots).
+  language for programming embedded processors, which are scarce on
+  resources, using a staged compilation-strategy like the one found in
+  Flask \cite{flask08}, where code native to the hardware-platform is
+  generated from a dataflow graph, which then is compiled to
+  machine-code by a platform-specific compiler.
+
+  In the creation we've used the Flask-codebase as our starting point
+  and huge (isolated) parts of the code was left unchanged. Our
+  contribution includes functionality suitable for the domain of
+  control systems where the connected hardware devices (e.g. sensors,
+  motors or displays) can differ much. Specifically we include a
+  framework for specifying interfaces to these peripherals, primitives
+  for event-handling and (\ldots).
 \end{abstract}
 
 \clearpage 
@@ -109,7 +113,7 @@ supervised by Ken Friis Larsen, assistant professor at DIKU.
 
 \tableofcontents*
 
-\mainmatter
+
 
 \fixme{remove all uses of "`very"'}
 \fixme{change bibtex style to one that includes URL's in the generated list,
@@ -120,6 +124,9 @@ supervised by Ken Friis Larsen, assistant professor at DIKU.
 \fixme{Check all cites. Should there be a space between the word and cite or
   not.}
 \fixme{Check all refs. Should be converted to vref to utilize the varioref package}
+\fixme{dataflow eller data flow? --- ensret}
+
+\listoffixmes 
 
 \chapter*{Disposition}
 \begin{itemize}
@@ -170,48 +177,43 @@ supervised by Ken Friis Larsen, assistant professor at DIKU.
   \item A Flask tour
   \item Small guide to Arduino and electronics
   \end{itemize}
-\end{itemize}  
+\end{itemize}
 
+
+\mainmatter
 
 \chapter{Introduction}
 
 \section{Problem statement}
-In this report we want to present our robot programming framework
-\textit{Fladuino}. Fladuino is an adaption of the sensor network
-framework \textit{Flask} for the robot domain.
+In this report we present our programming framework for embedded
+devices, \textit{Fladuino}. Fladuino is an adaption of the sensor
+network framework \textit{Flask} for the domain of control systems.
 
-Flask is a domain specific language embedded in Haskell for writing
-sensor network code. With Haskell functioning as a meta-language. The
-final result of executing a Flask program is generated code in a
-sensor network language. And our framework Fladuino follows exactly
-the same concepts as Flask though it generates C-code written
-specifically for our robots.
+Flask is a domain-specific language embedded in Haskell for writing
+sensor network code, with Haskell functioning as a meta-language. A
+Flask program takes the form of an acyclic dataflow graph, which
+represents how data from sensors etc. are processed and sent to other
+nodes in the network. When a Flask program is "`run"', it generates a
+program in another more low-level language for sensor networks. Our
+framework, Fladuino, follows exactly the same concepts as Flask,
+although its generates C-code written specifically for our platform:
+Arduino, which we will discuss in the next section, \ref{sec:hardware
+  platform}.
 
 In the following chapters we want to argue that taking our outset from
 Flask has been successful. Both in the sense that Flask was easily
 adaptable and in the sense that our result, Fladuino, is sufficient
-for many tasks in robot programming.
+for many control systems.
 
-It is the prevailing conception that robots has some sort of
-autonomous behavior. A simpler definition, says that a robot is any
-programmable electronic system that is equipped with sensors and
-actuators. The second definition is more general, in that it applies
-to almost any programmable electronic system, and the autonomous
-behavior will often be achieved programmatically. 
-
-Our goal with Fladuino is to provide a framework that facilitates
-robot programming, but such a framework also has to provide features
-for programming the kind of input-output systems which doesn't
-necessarily have any autonomous behavior. So there are actually two
-steps: making a library suitable for programming sensors, actuators
-and connecting them, and secondly facilitate programming autonomous
-robots.
-
-Robots are reactive systems. We've found the best description of what
-distinguishes a reactive system in Zhanyong Wan's PhD
-thesis ``Functional Reactive Programming for Real-Time reactive
-systems'' \cite{Chambers1992}.  As he explains we can
-partition computer systems into:
+\fixme{I find the following section relevant, but I don't know where
+  it fits in. I don't think it's here /Martin}
+\section{Reactivity}
+Most control systems are reactive, especially robots fits the
+definition of reactive systems well. We've found the best description
+of what distinguishes a reactive system in Zhanyong Wan's PhD thesis
+``Functional Reactive Programming for Real-Time reactive systems''
+\cite{Chambers1992}.  As he explains we can partition computer systems
+into:
 \begin{itemize}
 \item Transitional systems, that takes some data as input, does some
   computation on it and delivers some resulting output (an example of this
@@ -225,10 +227,12 @@ partition computer systems into:
   is required to respond to its changes (e.g. a robot).
 \end{itemize}
 
-A reactive programming language is a language with primitives for connecting
-processes (a kind of ever-changing input values, often called signals). 
+A reactive programming language is a language with primitives for
+connecting streams of values (a kind of ever-changing input values,
+often called signals).
 
 \section{Hardware platform}
+\label{sec:hardware platform}
 The choice of hardware-platform has an influence on how to design such a
 language. We've chosen to make our language and framework target the
 Arduino-platform \cite{arduino}.  
@@ -246,13 +250,13 @@ There are number of reasons for why we think this platform is a good
 choice. First of all, our institute DIKU was planning on buying a
 couple of these boards for research in Human Centered Computing about
 interactive-objects and when they heard we were interested in creating
-a framework for robot development they finally bought some and let us
-use them. Even better reasons is that they are cheap (approximately
-200 DKK for an Arduino Duemilanove, at the time of writing) and is
-easily extensible. E.g. you can buy extensions for ethernet,
-bluetooth, or even small touchscreens. Finally, the Arduino comes with
-a relatively high-level C-interface, sparing us from most low-level
-programming and bit trickery.
+a framework for developing these kinds of systems they finally bought
+some and let us use them. Even better reasons is that they are cheap
+(approximately 200 DKK for an Arduino Duemilanove, at the time of
+writing) and is easily extensible. E.g. you can buy extensions for
+ethernet, Bluetooth, or even small touchscreens. Finally, the Arduino
+comes with a relatively high-level C-interface, sparing us from much
+low-level programming and bit trickery.
 
 We have only had resources to test our work on the Arduino
 Duemilanove\footnote{\url{http://www.arduino.cc/en/Main/ArduinoBoardDuemilanove}},
@@ -261,7 +265,11 @@ Arduino
 Mega\footnote{\url{http://arduino.cc/en/Main/ArduinoBoardMega}}, and
 Pololu 3pi\footnote{\url{http://www.pololu.com/catalog/product/975}}.
 
-\section{Motivation}
+\section{Motivation (very robots specific, should be rewritten for
+  control systems)}
+\textit{Something about how our everyday lifes are packed with control
+systems. Dishwashers, etc.}
+
 Robots has been used in the industry for decades, replacing humans in
 repetitive tasks like sewing, assembling and transportation. In the
 last years, robots have been introduced to the consumer market,
@@ -272,26 +280,43 @@ hardware prices is not everything, efficient development and
 prototyping of robot control programs is another aspect in making
 robots affordable. \fixme{code reusability}
 
-\section{Structure outline}
-In the following section (chapter \ref{chapter:Flask}) we will go
-through the existing Flask system. Its design and how you use it to
-write sensor-network programs. 
+It is the prevailing conception that robots has some sort of
+autonomous behavior. A simpler definition, says that a robot is any
+programmable electronic system that is equipped with sensors and
+actuators. The second definition is more general, in that it applies
+to almost any programmable electronic system, and the autonomous
+behavior will often be achieved programmatically.
 
-In chapter \ref{chapter:design} we will look at what is needed when
-programming robots that isn't already in Flask and how this should be
-done (i.e. the core design decisions).
+Our goal with Fladuino is to provide a framework that facilitates
+robot programming, but such a framework also has to provide features
+for programming the kind of input-output systems which doesn't
+necessarily have any autonomous behavior. So there are actually two
+steps: making a library suitable for programming sensors, actuators
+and connecting them, and secondly facilitate programming autonomous
+robots.
+
+
+\section{Structure outline}
+In the following chapter (chapter \ref{chapter:Flask}) we will go
+through the existing Flask system. Its design and how you use it to
+write sensor-network programs.
+
+In chapter \ref{chapter:design} we will look at what functionality is
+needed when programming control systems that isn't already in Flask
+and how we have embodied this in Fladuino (i.e. our core design
+decisions).
 
 In chapter \ref{chapter:implementation} we will talk about the
 technically modification we have made to transform Flask to Fladuino.
 
-In chapter \ref{chapter:evaluation} we will make an evaluation on
-Fladuino. With a discussion of benefits and disadvantages of our
-strategy, pros and cons.
+In chapter \ref{chapter:evaluation} we will present an evaluation of
+the complete Fladuino system, judging its benefits over traditional
+methods of programming control programs, as well as covering the
+any identified shortcomings.
 
 \chapter{Flask}
 \label{chapter:Flask}
-
-Flask is a domain specific language embedded in Haskell for
+Flask is a domain-specific language embedded in Haskell for
 programming sensor networks. Flask is based on the idea of
 constructing \textit{dataflow graphs} that express the overall flow of
 data in the program. The basic task in writing a Flask program is thus
@@ -308,7 +333,7 @@ seismometer values.
 
 \begin{nonfloatingfigure}
 \label{ewma-example}
-  \includegraphics[width=0.9\textwidth]{images/flask-ewma}
+  \includegraphics[width=\textwidth]{images/flask-ewma}
   \centering
   \caption{Flask dataflow graph}
 \end{nonfloatingfigure}
@@ -328,7 +353,7 @@ good example here is that we might want two different \textit{atomic
 was pushed or released.
 
 \section{From Flask to sensor network-code}
-A fundamental thing in Flask is its compilation and
+A fundamental aspect of Flask is its compilation and
 execution-strategy. A Flask program is a description of the prior
 mentioned dataflow-graph written in Haskell, using specialised
 Haskell operators (dataflow-operators, stream-combinators,
@@ -358,8 +383,9 @@ ultimately be generated.
 \end{nonfloatingfigure}
 
 Flask provides two object-languages: NesC and Red. Having NesC as an
-object-language, allows the user to write all programs that's expressible in
-NesC. The other language Red, is described below.
+object-language, allows the user to write all programs that's
+expressible in NesC, and NesC is also heavily used in the
+implementation of Flask. The other language, Red, is described below.
 
 Both languages are integrated into Flask using the GHC quasiquotation
 library \cite{quasiquote07}, written by the author of Flask, Geoffrey
@@ -499,9 +525,11 @@ sconst :: forall a b eta. (Reify b, LiftN eta a)
 \end{verbatim}
      Maps all values on the input-stream to a constant (node-level) output value.
 
-\item $\ggg$ \hfill \\ Connects a stream with a stream operator.
+\item \texttt{($\ggg$) :: forall a. Reify a => S a -> (S a -> S a)}
+  \hfill \\ Connects a stream with a stream operator.
   E.g. \texttt{clock 10 $\ggg$ sconst (liftN [\$exp|42|])} is a stream
-  of 42 values, that is passed on every 10th millisecond.
+  of 42 values, that is passed on every 10th millisecond. This is
+  simply implemented as a normal Haskell function application.
 
 
 \item 
@@ -523,37 +551,41 @@ sunzip :: (Reify a, Reify b) => S (a, b) -> (S a, S b)
 \item 
 \begin{verbatim}
 smap :: forall eta a b . (Reify a, Reify b, LiftN eta (a -> b))
-     => eta -> S a -> S b
+  => eta -> S a -> S b
 \end{verbatim}
   Maps a node-level function over all stream-values, creating a stream
   of the resulting output-values.
 
+\item
 \begin{verbatim}
 sintegrate  ::  forall a b c eta . (Reify a, Reify b, Reify c,
-                                    LiftN eta ((a, c) -> (b, c)))
-            =>  N c ->  eta ->  S a ->  S b
+                                 LiftN eta ((a, c) -> (b, c)))
+         =>  N c ->  eta ->  S a ->  S b
 \end{verbatim}
   When supplied with an initial (node-level) state value and a
   node-level function that takes the current state and the next value
   on the input stream, returning a new state and the next value to be
   send through to the output stream.
 
+\item
 \begin{verbatim}
 clock :: Int -> S ()
 \end{verbatim}
   Creates a stream of unit-values
   that is fired with the given interval (specified in milliseconds).
 
+\item
 \begin{verbatim}
 sfilter :: forall a eta . (Reify a, LiftN eta (a -> Bool))
-        => eta -> S a -> S a
+     => eta -> S a -> S a
 \end{verbatim}
   Only propagates values through to the
   output-stream that satisfies a given node-level predicate.
   
+\item
 \begin{verbatim}
 smerge :: forall a . Reify a
-       => S a -> S a -> S a
+     => S a -> S a -> S a
 \end{verbatim}
 Takes two input streams of the same type. When it received a value on
 either of the inputs it will propagate this value to its output, thus
@@ -561,8 +593,9 @@ merging the streams into a single stream.
 
 \end{description}
 
-
-The data-flow graph from figure \ref{ewma-example} can now be written in Flask like below:
+\section{The EWMA example in Flask-code}
+The dataflow graph from figure \ref{ewma-example} can now be written
+in Flask like below:
 \begin{verbatim}
 detect :: Double -> Double -> Double -> 
           S Double -> S (Double, Double)
@@ -572,9 +605,18 @@ detect low high threshold =
    sfilter [$exp|\(hi, lo) -> hi / lo > $flo:threshold|]
 \end{verbatim}
 
+\fixme{finish this example}
+
 
 \chapter{Design of the Fladuino system}
 \label{chapter:design}
+
+In this chapter we will outline the overall design of Fladuino, as
+well as present some of the technical decisions that have a notable
+impact on how Fladuino is used.  Technical details that have less of
+an impact on the final usage of the system are described in chapter
+\ref{chapter:implementation}.
+
 Fladuino is a modification of Flask that can be used to program
 Arduino devices in a functional reactive manner. In this chapter we
 will analyse which requirements we need to set and which design
@@ -599,10 +641,9 @@ A summary of the most important requirements for our system follows:
 \item Fladuino must be able to generate a valid C-program suitable for
   running on an Arduino from a description of a dataflow graph. This
   graph must be expressed in the form of a Haskell program.
-  \textit{This requirement stems from the platform selection (see
-    section ...
-    \fixme{ref til introduktion}) of Arduino and from the above
-    requirement of mirroring Flask.}
+  \textit{This requirement stems from the selection of
+    Arduino (see section \ref{sec:hardware platform}) as platform and from the
+    ???below??? requirement of mirroring Flask.}
 \end{itemize}
 
 And we set the scope of our project as follows:
@@ -1326,7 +1367,7 @@ Fladuino adopts Flask's implementation almost verbatim, the details of
 which will be explained within this chapter.
 
 As in Flask, the graph is divided into \textit{atomic subgraphs},
-sections that can be executed without blocking
+sections that can be executed without blocking.
 
 \subsection{Translation of a simple dataflow graph}
 
@@ -1343,10 +1384,10 @@ stream operator can have multiple distinct input, but only a single
 output, though this output can be split so as to send the same output
 value to any number of successors.
 
-For every operator $o$ in the dataflow graph, a set of unary
-functions $o\_in_n()$ and a unary function $o\_out()$ will be
-generated.  The arrival of a value $v$ at $o$ will be implemented by a
-call $o\_in_n(v)$, where the exact choice depends on the wiring of the
+For every operator $o$ in the dataflow graph, a set of unary functions
+$o\_in_n()$ and a unary function $o\_out()$ will be generated.  The
+arrival of a value $v$ at $o$ will be implemented by a call
+$o\_in_n(v)$, where the exact choice depends on the wiring of the
 graph.  In the typical case, even when several wires leads to a single
 stream operator, there will be only a single such $o\_in_n()$
 function\footnote{In fact, multiple ``in'' functions are only
@@ -1357,11 +1398,10 @@ function\footnote{In fact, multiple ``in'' functions are only
   different types and semantics, as there it is not required that $x$
   and $y$ have the same type.}.  Depending on the specific semantics
 of $o$, a value $v'\equiv f(v)$ (where $f()$ represents the
-computation done by $o$, the result may not even depend on $v$ at all)
-may be propagated to the successors of $o$.  In this case,
-$o\_in_n(v)$ will call $o\_out(v')$, the implementation of which will
-feature the calls $\forall s \in S(o). s\_in(v')$, where $S(o)$ is the
-set of all successors of $o$.
+computation done by $o$) may be propagated to the successors of $o$.
+In this case, $o\_in_n(v)$ will call $o\_out(v')$, the implementation
+of which will feature the calls $\forall s \in S(o). s\_in(v')$, where
+$S(o)$ is the set of all successors of $o$.
 
 $o\_in()$ is generated directly by the implementation of the specific
 dataflow operator, but $o\_out()$ is automatically created by Fladuino
@@ -1377,12 +1417,59 @@ apart from its existence; \texttt{()} is perfectly valid as a signal.
 \subsection{Implementation of posting wires}
 \label{sec:postingwireimpl}
 We have opted to implement posting wires as a thin layer of
-abstraction on top of events, with a unique event value associated
-with each posting wire.  Implementing posting wires as a separate
-subsystem offers no compelling advantages over an implementation via
-abstractions built on the existing event-dispatch infrastructure.
+abstraction on top of events, with a unique event associated with each
+posting wire (see \Fref{sec:definingevents} for how events are
+defined).  Implementing posting wires as a separate subsystem offers
+no advantages over an implementation via abstractions built on the
+existing event-dispatch infrastructure.  When creating a posting wire
+between two nodes, two additional pieces of information must be
+provided: a node-level function $f$ of type \texttt{() -> ()} and the
+\textit{response event}, the event that the sensor will trigger to
+reply to the request.  The function $f$ is, as evident from its type
+signature, highly impure, and is responsible for actually transmitting
+the request to the sensor.  The intent is that a Device whose
+interface involves posting wires will define its own, simpler-to-use
+facility on top of our primitive posting wire functionality.
 
-\subsection{On blocking and busywaiting}
+A posting wire does not exist as a special relation between nodes, as
+far as Fladuino is concerned.  The bridging from input- to output-node
+is accomplished by registering the output-node as an \textit{event
+  listener} for the response event.  The input node will, when it
+calls $f$, set an internal flag signifying that the wire is waiting
+for a reply from the sensor.  When an event of the response event type
+arrives, the output node will check this flag and ignore the event
+unless it has been set (after which it will clear it).  This opens up
+the interesting possibility of using ``common'' events with a posting
+wire, understood as events that are not responses to previously sent
+requests.  For example, it is possible to define a posting wire where
+$f$ does nothing, and the event listener is the event sent by some
+specific push-button when it is pressed.  The end result is a wire
+that ``delays'' signals until an event has been received.
+
+\subsection{On blocking and busy-waiting}
+Blocking operations are generally disallowed in the dataflow graph,
+such an operation would clog the system, since there is no way to
+continue down another path in the meantime. This was the basis for
+adding posting wires (section \ref{sec:posting wires}). This gives us
+a problem when it comes to pulling analog data from hardware sensors,
+these functions requires some busy-waiting for the analog $-->$
+digital-conversion to finish. In the \texttt{analogRead} function of
+the Arduino library we find the following line of C-code:
+\begin{verbatim}
+// ADSC is cleared when the conversion finishes
+while (bit_is_set(ADCSRA, ADSC));
+\end{verbatim}
+Here the functions waits for the analog $-->$ digital conversion to
+finish, which is signaled by the clearing of a special register.
+We can find a similar problem in the library that reads the Pololu
+3pi's reflectance sensors.
+
+Testing of these functions have shown that they generally tend to be
+fast, blocking the processor for unnoticeable timeperiods. So our
+solutions to this problem is simply to change the disallowance of
+\textit{all} blocking functions to only disallowing calculations
+that occupies the processor for several milliseconds.\fixme{Troels: er
+  det hvad du mente?}
 
 \section{Implementation of the runtime system}
 
@@ -1462,11 +1549,74 @@ to reduce the average load on the event queue and reduce the risk of
 filling it up.
 
 \section{User-extensible abstractions with typeclasses}
+As explained in earlier chapters, one of our main additions to Flask,
+is the possibility of defining drivers for peripherals and defining
+new event types.
 
 \subsection{Defining new devices}
+We define a device-driver as:
+\begin{itemize}
+\item a set of functions for interacting with the device,
+\item a setup-function for doing initializing tasks on start-up
+  (e.g. including C-header files), and
+\item a list of hardware-dependencies, e.g. which hardware pins or
+  timers it confiscates.
+\end{itemize}
+
+Most device-drivers also needs some additional data, e.g. about
+which hardware-pin the device is connected to or the starting state of
+the device (e.g. turned off).
+
+We need a way to represent these devices as values, i.e. a way of
+referring to a specific device and access information about its
+dependencies etc. A simple solution would be to implement the all
+devices as a general \textit{Device} datatype with the above values as
+fields. But as discussed above devices differ and the additional data
+required would be clumsy to store in such a general datatype.  A
+second reason for why this isn't a good idea, is that we wouldn't have
+a way of distinguishing devices on their types. We solve this by
+requiring that the driver-writer creates a separate datatype for each
+device and makes it an instance of our \textit{Device} typeclass. We
+can thus identify devices by being instances of this typeclass and
+specific devices can be identified directly by their datatype. The
+program-state is extended with a list of these devices. The required
+values are shown in figure \ref{device typeclass}.
+
+\begin{nonfloatingfigure}
+  \label{device typeclass}
+  \begin{verbatim}
+class (Eq a, Show a) => Device a where
+    setupDevice :: MonadFladuino m => a -> m ()
+    usages :: a -> [Usage]
+    uniqueId :: a -> String
+\end{verbatim}
+\end{nonfloatingfigure}
+
+Remark that all 3 values requires the device itself as a
+parameter. This is because we can connect simultaneous with more than
+one device of each device-type, and they differ only in the values
+stored in the datatype-fields. These functions needs to know
+specifically which instance of the device-type that is referred to.
+
+The \texttt{setupDevice} function initializes the device, it is
+executed the first time the device is used (i.e. when it is added to
+our list of known devices). A common operation here is to add global C
+state-variables or adding certain includes of required header-files.
+
+\texttt{usages} is a list of which hardware-dependencies the device
+has. We use this to make sure that user doesn't try to use two
+incompatible devices (e.g. two devices that both needs access to the
+same PWM output pin)
+
+\texttt{uniqueId} is our way of comparing devices, we can't just make
+them instances
+
+In section \ref{sec:pushbuttondef}, the implementation of a
+device-driver for a simple push-button is discussed.
+
 
 \subsection{Defining new events}
-
+\label{sec:definingevents}
 \section{Something about arduino external interrupt handling}
 \fixme{Lav rigtigt overskrift.}
 
@@ -1917,14 +2067,13 @@ A description of PWM from the Arduino website follows:
     \centering
     \includegraphics[scale=0.6]{images/pwm}
 
-    \caption{How 0\%, 25\%, 50\%, 75\% and 100\% PWM is measured by a
-      oscilloscop. Where Each vertical green line indicates the duty
+    \caption{How 0\%, 25\%, 50\%, 75\% and 100\% PWM is measured by an
+      oscilloscope. Each vertical line indicates the duty
       cycle}
     \label{fig:pwm}
   \end{nonfloatingfigure}
   
-  \fixme{Better figure text and figure should be non-floating. Jesper
-    has a solution to this in his old Graphics report}
+  \fixme{Better figure text}
 
   Once you get this example running, grab your Arduino and shake it
   back and forth. What you are doing here is essentially mapping time
