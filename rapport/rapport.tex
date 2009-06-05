@@ -85,14 +85,14 @@ Troels Henriksen (athas@sigkill.dk)}
   is too large to fit on more resource-constrained devices.
 
   We tie these two ends together, creating a highly declarative
-  language for programming resource scarce embedded processors using a
-  staged compilation-strategy like the one found in Flask
+  language for programming embedded processors scare on resource,
+  using a staged compilation-strategy like the one found in Flask
   \cite{flask08}, where code native to the hardware-platform is
-  generated from a data flow graph and which is then compiled to
+  generated from a data flow graph, which is then compiled to
   machine-code by a platform-specific compiler.
 
-  In the creation we've used the Flask-codebase as a starting point
-  and huge (isolated) parts of the code is left unchanged. Our
+  In the creation we've used the Flask-codebase as our starting point
+  and huge (isolated) parts of the code was left unchanged. Our
   contribution includes functionality suitable for the domain of
   control systems where the connected hardware devices (e.g. sensors,
   motors or displays) can differ much. Specifically we include a
@@ -297,9 +297,10 @@ In the following chapter (chapter \ref{chapter:Flask}) we will go
 through the existing Flask system. Its design and how you use it to
 write sensor-network programs.
 
-In chapter \ref{chapter:design} we will look at what is needed when
-programming robots that isn't already in Flask and how this should be
-done (i.e. the core design decisions).
+In chapter \ref{chapter:design} we will look at what functionality is
+needed when programming control systems that isn't already in Flask
+and how we have embodied this in Fladuino (i.e. our core design
+decisions).
 
 In chapter \ref{chapter:implementation} we will talk about the
 technically modification we have made to transform Flask to Fladuino.
@@ -377,8 +378,9 @@ ultimately be generated.
 \end{nonfloatingfigure}
 
 Flask provides two object-languages: NesC and Red. Having NesC as an
-object-language, allows the user to write all programs that's expressible in
-NesC. The other language Red, is described below.
+object-language, allows the user to write all programs that's
+expressible in NesC, and NesC is also heavily used in the
+implementation of Flask. The other language, Red, is described below.
 
 Both languages are integrated into Flask using the GHC quasiquotation
 library \cite{quasiquote07}, written by the author of Flask, Geoffrey
@@ -544,37 +546,41 @@ sunzip :: (Reify a, Reify b) => S (a, b) -> (S a, S b)
 \item 
 \begin{verbatim}
 smap :: forall eta a b . (Reify a, Reify b, LiftN eta (a -> b))
-     => eta -> S a -> S b
+  => eta -> S a -> S b
 \end{verbatim}
   Maps a node-level function over all stream-values, creating a stream
   of the resulting output-values.
 
+\item
 \begin{verbatim}
 sintegrate  ::  forall a b c eta . (Reify a, Reify b, Reify c,
-                                    LiftN eta ((a, c) -> (b, c)))
-            =>  N c ->  eta ->  S a ->  S b
+                                 LiftN eta ((a, c) -> (b, c)))
+         =>  N c ->  eta ->  S a ->  S b
 \end{verbatim}
   When supplied with an initial (node-level) state value and a
   node-level function that takes the current state and the next value
   on the input stream, returning a new state and the next value to be
   send through to the output stream.
 
+\item
 \begin{verbatim}
 clock :: Int -> S ()
 \end{verbatim}
   Creates a stream of unit-values
   that is fired with the given interval (specified in milliseconds).
 
+\item
 \begin{verbatim}
 sfilter :: forall a eta . (Reify a, LiftN eta (a -> Bool))
-        => eta -> S a -> S a
+     => eta -> S a -> S a
 \end{verbatim}
   Only propagates values through to the
   output-stream that satisfies a given node-level predicate.
   
+\item
 \begin{verbatim}
 smerge :: forall a . Reify a
-       => S a -> S a -> S a
+     => S a -> S a -> S a
 \end{verbatim}
 Takes two input streams of the same type. When it received a value on
 either of the inputs it will propagate this value to its output, thus
@@ -582,8 +588,9 @@ merging the streams into a single stream.
 
 \end{description}
 
-
-The data-flow graph from figure \ref{ewma-example} can now be written in Flask like below:
+\section{EWMA dataflow graph in code}
+The dataflow graph from figure \ref{ewma-example} can now be written
+in Flask like below:
 \begin{verbatim}
 detect :: Double -> Double -> Double -> 
           S Double -> S (Double, Double)
@@ -592,6 +599,8 @@ detect low high threshold =
    >>>
    sfilter [$exp|\(hi, lo) -> hi / lo > $flo:threshold|]
 \end{verbatim}
+
+\fixme{finish this example}
 
 
 \chapter{Design of the Fladuino system}
@@ -620,10 +629,9 @@ A summary of the most important requirements for our system follows:
 \item Fladuino must be able to generate a valid C-program suitable for
   running on an Arduino from a description of a dataflow graph. This
   graph must be expressed in the form of a Haskell program.
-  \textit{This requirement stems from the platform selection (see
-    section ...
-    \fixme{ref til introduktion}) of Arduino and from the above
-    requirement of mirroring Flask.}
+  \textit{This requirement stems from the selection of
+    Arduino (see section \ref{sec:hardware platform}) as platform and from the
+    ???below??? requirement of mirroring Flask.}
 \end{itemize}
 
 And we set the scope of our project as follows:
@@ -1511,27 +1519,33 @@ is the possibility of defining drivers for peripherals and defining
 new event types.
 
 \subsection{Defining new devices}
-A device is primarily a collection of functions for interacting with
-the device and a setup function for initializing the function on
-start-up. But also a list of which other hardware ... that it uses and
-blocks other devices from using. E.g. which hardware pins or timers
-that it needs.
+We define a device-driver as:
+\begin{itemize}
+\item a set of functions for interacting with the device,
+\item a setup-function for doing initializing tasks on start-up
+  (e.g. including C-header files), and
+\item a list of hardware-dependencies, e.g. which hardware pins or
+  timers it confiscates.
+\end{itemize}
+
+Most device-drivers also needs some additional data, e.g. about
+which hardware-pin the device is connected to or the starting state of
+the device (e.g. turned off).
 
 We need a way to represent these devices as values, i.e. a way of
-referring to a specific device and store information about it. A
-simple solution would be to implement the device as a \textit{Device}
-datatype with a set of required fields (e.g. a list of
-dependencies). But devices differ, many devices would require
-additional fields, e.g. about their starting state and which hardware
-pin the device is connected to. A second reason for why this isn't a
-good idea, is that we wouldn't have a way of distinguishing devices on
-their types. Our solution is thus that a driver-writer has to create a
-new datatype for each device and declare it as an instance of our
-\textit{Device} typeclass. We can thus identify all devices as any
-type with an instance of this typeclass and specific devices can be
-identified directly by their datatype. The state of our program is
-extended with a list of these devices. The required values are shown
-in figure \ref{device typeclass}.
+referring to a specific device and access information about its
+dependencies etc. A simple solution would be to implement the all
+devices as a general \textit{Device} datatype with the above values as
+fields. But as discussed above devices differ and the additional data
+required would be clumsy to store in such a general datatype.  A
+second reason for why this isn't a good idea, is that we wouldn't have
+a way of distinguishing devices on their types. We solve this by
+requiring that the driver-writer creates a separate datatype for each
+device and makes it an instance of our \textit{Device} typeclass. We
+can thus identify devices by being instances of this typeclass and
+specific devices can be identified directly by their datatype. The
+program-state is extended with a list of these devices. The required
+values are shown in figure \ref{device typeclass}.
 
 \begin{nonfloatingfigure}
   \label{device typeclass}
@@ -1544,10 +1558,10 @@ class (Eq a, Show a) => Device a where
 \end{nonfloatingfigure}
 
 Remark that all 3 values requires the device itself as a
-parameter. This is because we can have more than one instance of each
-device-type, and they differ only in the values stored in the
-datatype-fields. These functions needs to know specifically which
-instance of the device-type that is referred to.
+parameter. This is because we can connect simultaneous with more than
+one device of each device-type, and they differ only in the values
+stored in the datatype-fields. These functions needs to know
+specifically which instance of the device-type that is referred to.
 
 The \texttt{setupDevice} function initializes the device, it is
 executed the first time the device is used (i.e. when it is added to
@@ -1562,6 +1576,7 @@ same PWM output pin)
 \texttt{uniqueId} is our way of comparing devices, we can't just make
 them instances
 
+See an example of how a device-driver is created in section \fixme{}.
 
 
 \subsection{Defining new events}
