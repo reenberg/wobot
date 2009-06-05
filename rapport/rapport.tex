@@ -186,15 +186,15 @@ devices, \textit{Fladuino}. Fladuino is an adaption of the sensor
 network framework \textit{Flask} for the domain of control systems.
 
 Flask is a domain-specific language embedded in Haskell for writing
-sensor network code. With Haskell functioning as a meta-language. A
-Flask program takes the form of an acyclic data flow graph, which
+sensor network code, with Haskell functioning as a meta-language. A
+Flask program takes the form of an acyclic dataflow graph, which
 represents how data from sensors etc. are processed and sent to other
-nodes in the network. When you "`run"' a Flask program, it generates
-code generated in another more low-level language for sensor
-networks. Our framework Fladuino follows exactly the same concepts as
-Flask though its generates C-code written specifically for our
-platform: Arduino, which we will discuss in the next section,
-\ref{sec:hardware platform}.
+nodes in the network. When a Flask program is "`run"', it generates a
+program in another more low-level language for sensor networks. Our
+framework, Fladuino, follows exactly the same concepts as Flask,
+although its generates C-code written specifically for our platform:
+Arduino, which we will discuss in the next section, \ref{sec:hardware
+  platform}.
 
 In the following chapters we want to argue that taking our outset from
 Flask has been successful. Both in the sense that Flask was easily
@@ -304,9 +304,10 @@ done (i.e. the core design decisions).
 In chapter \ref{chapter:implementation} we will talk about the
 technically modification we have made to transform Flask to Fladuino.
 
-In chapter \ref{chapter:evaluation} we will make an evaluation on
-Fladuino. With a discussion of benefits and disadvantages of our
-strategy, pros and cons.
+In chapter \ref{chapter:evaluation} we will present an evaluation of
+the complete Fladuino system, judging its benefits over traditional
+methods of programming control programs, as well as covering the
+any identified shortcomings.
 
 \chapter{Flask}
 \label{chapter:Flask}
@@ -347,7 +348,7 @@ good example here is that we might want two different \textit{atomic
 was pushed or released.
 
 \section{From Flask to sensor network-code}
-A fundamental thing in Flask is its compilation and
+A fundamental aspect of Flask is its compilation and
 execution-strategy. A Flask program is a description of the prior
 mentioned dataflow-graph written in Haskell, using specialised
 Haskell operators (dataflow-operators, stream-combinators,
@@ -596,6 +597,13 @@ detect low high threshold =
 
 \chapter{Design of the Fladuino system}
 \label{chapter:design}
+
+In this chapter we will outline the overall design of Fladuino, as
+well as present some of the technical decisions that have a notable
+impact on how Fladuino is used.  Technical details that have less of
+an impact on the final usage of the system are described in chapter
+\ref{chapter:implementation}.
+
 Fladuino is a modification of Flask that can be used to program
 Arduino devices in a functional reactive manner. In this chapter we
 will analyse which requirements we need to set and which design
