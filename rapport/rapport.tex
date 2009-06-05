@@ -75,20 +75,20 @@ Troels Henriksen (athas@sigkill.dk)}
 \thispagestyle{empty}
 
 \begin{abstract}
-  Circuits with embedded processors are conventionally programmed in
-  low-level imperative languages with no concepts like events,
-  synchronicity or any of the advantages found in functional
-  programming languages (like pattern matching). Reactive programming
-  languages embedded in Haskell, like Frob \cite{frob99} and Yampa
-  \cite{arrowsrobotsfrp02}, has been suggested for programming these
-  systems, but they require a complete Haskell runtime system, which
-  is too large to fit on more resource-constrained devices.
+  Embedded control systems are conventionally programmed in low-level
+  imperative languages with no concepts like events, synchronicity or
+  any of the advantages found in functional programming languages
+  (like pattern matching). Reactive programming languages embedded in
+  Haskell, like Frob \cite{frob99} and Yampa \cite{arrowsrobotsfrp02},
+  has been suggested for programming this class of systems, but they
+  require a complete Haskell runtime system, which is too large to fit
+  on more resource-constrained devices.
 
   We tie these two ends together, creating a highly declarative
-  language for programming embedded processors scare on resource,
-  using a staged compilation-strategy like the one found in Flask
-  \cite{flask08}, where code native to the hardware-platform is
-  generated from a data flow graph, which is then compiled to
+  language for programming embedded processors, which are scarce on
+  resources, using a staged compilation-strategy like the one found in
+  Flask \cite{flask08}, where code native to the hardware-platform is
+  generated from a dataflow graph, which then is compiled to
   machine-code by a platform-specific compiler.
 
   In the creation we've used the Flask-codebase as our starting point
@@ -593,7 +593,7 @@ merging the streams into a single stream.
 
 \end{description}
 
-\section{EWMA dataflow graph in code}
+\section{The EWMA example in Flask-code}
 The dataflow graph from figure \ref{ewma-example} can now be written
 in Flask like below:
 \begin{verbatim}
@@ -1998,14 +1998,13 @@ A description of PWM from the Arduino website follows:
     \centering
     \includegraphics[scale=0.6]{images/pwm}
 
-    \caption{How 0\%, 25\%, 50\%, 75\% and 100\% PWM is measured by a
-      oscilloscop. Where Each vertical green line indicates the duty
+    \caption{How 0\%, 25\%, 50\%, 75\% and 100\% PWM is measured by an
+      oscilloscope. Each vertical line indicates the duty
       cycle}
     \label{fig:pwm}
   \end{nonfloatingfigure}
   
-  \fixme{Better figure text and figure should be non-floating. Jesper
-    has a solution to this in his old Graphics report}
+  \fixme{Better figure text}
 
   Once you get this example running, grab your Arduino and shake it
   back and forth. What you are doing here is essentially mapping time
