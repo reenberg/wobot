@@ -1864,20 +1864,22 @@ arduinoDuemilanove = emptyPlatform { p_pins = [ PinDecl (DPin n) $ pc n | n <- [
                 pc _ = ["interrupt"]
 \end{verbatim}
 
-Since the \mathtt{arduinoDiecimila} platform is fully compatible and has
-exactley the same pin configuration as the \mathtt{arduinoDuemilanove} platform, it can
+Since the \texttt{arduinoDiecimila} platform is fully compatible and has
+exactley the same pin configuration as the \texttt{arduinoDuemilanove} platform, it can
 be defined by just extending it
 
 \begin{verbatim}
 arduinoDiecimila = arduinoDuemilanove { p_capabilities = ["Diecimila"] }
 \end{verbatim}
 
+
+
 This is also the case when defining the \texttt{pololu3pi} platform, as it uses
-the same Atmega processor and thus has the same pin configuration. It hovever
-comes with a bunch of default devices and capabilities.
+the same Atmega processor and thus has the same pin configuration. It however
+comes with a bunch of default devices and capabilities
 
 \begin{verbatim}
-
+aasd
 \end{verbatim}
 
 3 pi pin mapping \cite{3pi_pin_mapping}.
