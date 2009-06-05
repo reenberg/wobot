@@ -1813,10 +1813,81 @@ instance AnalogInputDevice BatteryReader where
     genReadCode _ resultvar = [[$cstm|$id:resultvar = read_battery_millivolts();|]]
 \end{verbatim}
 
+\fixme{not done}
 
 \subsection{Defining a new platform}
 
-\subsection{Defining Saturn V-nozzle control}
+When adding support for a new platform, e.g. the Pololu 3pi, one has the option
+to either define it from scratch by extending the \texttt{emptyPlatform} ore by
+extending one of the predefined platforms. A platform consists of the following
+definitions
+
+\begin{description}
+\item[Pins] This is a list of pin declarations. A pin declaration is either a
+  digital pin or analog pin followed by a list of features supported by this pin
+  and its pin number. A feature could be that pin supports ``PWM'' and ``interrupt''. 
+
+\item[Pin map] This is a function that maps digital pin number or analog pin
+  number to the physical platforms specific pin numbers. E.g. the Arduino
+  Duemilanove maps analog pin 0 to physical pin 14.
+\fixme{troels: hvad bruges dette egentlig til?}
+
+\item[Capabilities] This is a list of platform specific capabilities. All
+  platforms should include their name such that a Fladuino program can state
+  only to be compatible with this platform. Thus all platforms that is
+  compatible with each other could include this in the list of
+  capabilities. Other capabilities could be the Pololu 3pi robot's motors,
+  buzzer or LCD.
+
+\item[Base setup] Any platform specific things that should be added like
+  initialisation code for the Arduino BT platforms bluetooth device or inclusion
+  of specific header file on the Pololu 3pi platform.
+
+\item[Default devices] This is a list of default devices that a platform has
+  mounted. E.g. motors, potentiometers and sensors on the Pololu 3pi robot.
+
+\fixme{Er dette korrekt?}
+
+\item[Timer id] This defines the timer id that Fladuino uses to drive the
+  clock. Some Arduino compliant hardware reserves different timers for various
+  tasks, like the Pololu 3pi uses time 0 and timer 1 to drive the motors. 
+\end{description}
+
+The default platform is the \texttt{arduinoDuemilanove} which extends the
+\texttt{emptyPlatform} and is defined as
+
+\begin{verbatim}
+arduinoDuemilanove = emptyPlatform { p_pins = [ PinDecl (DPin n) $ pc n | n <- [0..13] ] ++
+                                              [ PinDecl (APin n) ["analog", "interrupt"] | n <- [0..6] ]
+                                   , p_pinmap = (\x -> case x of
+                                                         DPin pin -> pin
+                                                         APin pin -> pin+14)
+                                   , p_capabilities = ["Duemilanove"] }
+              where
+                -- PWM on pin 9 and 10 are disallowed because they interfere with TIMER1
+                pc pin | pin `elem` [3, 5, 6, 11] = ["PWM", "interrupt"] 
+                pc _ = ["interrupt"]
+\end{verbatim}
+
+Since the \texttt{arduinoDiecimila} platform is fully compatible and has
+exactley the same pin configuration as the \texttt{arduinoDuemilanove} platform, it can
+be defined by just extending it
+
+\begin{verbatim}
+arduinoDiecimila = arduinoDuemilanove { p_capabilities = ["Diecimila"] }
+\end{verbatim}
+
+
+
+This is also the case when defining the \texttt{pololu3pi} platform, as it uses
+the same Atmega processor and thus has the same pin configuration. It however
+comes with a bunch of default devices and capabilities
+
+\begin{verbatim}
+aasd
+\end{verbatim}
+
+3 pi pin mapping \cite{3pi_pin_mapping}.
 
 \chapter{Evaluation}
 \label{chapter:evaluation}
