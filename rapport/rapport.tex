@@ -695,7 +695,7 @@ A summary of the most important requirements for our system follows:
 \item Fladuino must be able to generate a valid C-program suitable for
   running on an Arduino from a description of a dataflow graph. This
   graph must be expressed in the form of a Haskell program.
-  \textit{This requirement stems from the selection of
+  \footnote{This requirement stems from the selection of
     Arduino (see section \ref{sec:hardware platform}) as platform and from the
     ???below??? requirement of mirroring Flask.}
 \end{itemize}
@@ -917,9 +917,9 @@ moment, and it cannot be guaranteed that this state will not have
 changed by the time the main loop retrieves the element from the event
 queue.  This means that we cannot provide any strict guarantees about
 the resource usage of interrupt handlers, but this is a hardware issue
-that is fundamentally unsolvable in software.  Optimisations can be
-performed, of course, but ultimately there are constraints on how much
-any computer can do.
+that is not solvable in software.  Optimisations can be performed, of
+course, but ultimately there are constraints on how much any computer
+can do.
 
 \begin{figure}
 \label{fig:eventloopcode}
@@ -1147,8 +1147,8 @@ Arduino BT, and Pololu 3pi.
 
 Defining the driver for each external component consist of a general
 device specification in the form of a Haskell type definition, a set
-of functions operating on the device type and possibly a set of event
-specifications, provided the device can supports the notion of events.
+of functions operating on the device type, and possibly a set of event
+specifications, provided the device supports the notion of events.
 
 \fixme{find a good example to add here}
 
@@ -1376,7 +1376,7 @@ single node can listen to multiple different events (though again, we
 have not been able to identify a practical need), as long as the
 payloads are of the same type.
 
-\section{Design of the runtime system}
+\section{The runtime system}
 
 Fladuino is not only a code-generator, it also contains a runtime
 system that implements much of the complex behaviour that the
@@ -1402,6 +1402,24 @@ is provided by the Arduino libraries themselves:
   complicated.  Hence, our runtime system defines a convenient wrapper
   library.
 \end{itemize}
+
+We do not support dynamic reconfiguration of timer fidelity -- at
+generation-time, it is instead practical to compute the greatest
+common divisor of all used timer intervals, and use this number to
+compute the hardware-level timer setup.  The intent is to reduce the
+amount of time spent on bookkeeping in timers based on our knowledge
+of the static usage of timers in the program.  Adding new timers at
+runtime (with a dynamically computed interval) would thus either
+require us to run the hardware timer with maximum fidelity (minimum
+interval) at all times, or to implement a method for reconfiguring the
+timer in mid-interval.  Postponing the reconfiguration until the next
+timer-related interrupt (so we will not have to compute how much was
+left of an interrupted interval) may be possible under some
+circumstances, but is not acceptable in the general case, 
+
+Due to the complexity of these schemes, and the relatively low utility
+of dynamic timers, we have opted not to include support for such
+functionality in our design.
 
 \chapter{Implementation}
 \label{chap:implementation}
@@ -1506,36 +1524,43 @@ specific push-button when it is pressed.  The end result is a wire
 that ``delays'' signals until a specific event has been received.
 
 \subsection{On blocking and busy-waiting}
-Blocking operations are generally disallowed in the dataflow graph,
-such an operation would clog the system, since there is no way to
-continue down another path in the meantime. This was the basis for
-adding posting wires (section \ref{sec:posting wires}). This gives us
-a problem when it comes to pulling analog data from hardware sensors,
-these functions requires some busy-waiting for the analog $-->$
-digital-conversion to finish. In the \texttt{analogRead} function of
+Blocking operations are disallowed in stream operators, as such
+operations clog the entire execution of the program, since there is no
+way to continue down another path in the meantime.  Additionally,
+there is no guarantee that an arbitrary blocking operation will ever
+terminate.  This was the basis for adding posting wires (section
+\ref{sec:posting wires}). However, there is a potential issue when it
+comes to pulling analog data from hardware sensors, as these functions
+requires some busy-waiting for the analog $\rightarrow$
+digital-conversion to finish.  In the \texttt{analogRead} function of
 the Arduino library we find the following line of C-code:
+
 \begin{verbatim}
 // ADSC is cleared when the conversion finishes
 while (bit_is_set(ADCSRA, ADSC));
 \end{verbatim}
-Here the functions waits for the analog $-->$ digital conversion to
-finish, which is signaled by the clearing of a special register.
-We can find a similar problem in the library that reads the Pololu
-3pi's reflectance sensors.
 
-Testing of these functions have shown that they generally tend to be
-fast, blocking the processor for unnoticeable timeperiods. So our
-solutions to this problem is simply to change the disallowance of
-\textit{all} blocking functions to only disallowing calculations
-that occupies the processor for several milliseconds.\fixme{Troels: er
-  det hvad du mente?}
+Here the functions waits for the analog $\rightarrow$ digital
+conversion to finish, which is signalled by the clearing of a special
+register.  We can find a similar operation in the library that reads
+the Pololu 3pi's reflectance sensors.
+
+Operations of this kind are acceptable however.  Barring hardware
+failure, we are \textit{guaranteed} that the above loop will terminate
+in a deterministic (and very short) period of time.  In general, any
+operation that can be guaranteed to terminate, no matter how long it
+would take, is safe and permitted as far as Fladuino is concerned.
+There are, of course, still practical issues with such long-running
+operations, as we have mentioned in
+\Fref{sec:dataflowevaluationstrategy}.
 
 \section{Implementation of the runtime system}
 
 In this section we will describe the implementation of the
 runtime-facilities used in the code generated by Fladuino.  It is
-combined with the user-generated code at generation-time by
-Fladuino.
+combined with the user-generated code at generation-time by Fladuino.
+As far as possible, these facilities are written on top of the
+abstractions provided by the Arduino libraries, or in pure C.
 
 \subsection{Implementation of the event queue}
 \label{sec:event_queue}
