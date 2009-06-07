@@ -1141,8 +1141,8 @@ Arduino BT, and Pololu 3pi.
 
 Defining the driver for each external component consist of a general
 device specification in the form of a Haskell type definition, a set
-of functions operating on the device type and possibly a set of event
-specifications, provided the device can supports the notion of events.
+of functions operating on the device type, and possibly a set of event
+specifications, provided the device supports the notion of events.
 
 \fixme{find a good example to add here}
 
@@ -1500,29 +1500,35 @@ specific push-button when it is pressed.  The end result is a wire
 that ``delays'' signals until a specific event has been received.
 
 \subsection{On blocking and busy-waiting}
-Blocking operations are generally disallowed in the dataflow graph,
-such an operation would clog the system, since there is no way to
-continue down another path in the meantime. This was the basis for
-adding posting wires (section \ref{sec:posting wires}). This gives us
-a problem when it comes to pulling analog data from hardware sensors,
-these functions requires some busy-waiting for the analog $-->$
-digital-conversion to finish. In the \texttt{analogRead} function of
+Blocking operations are disallowed in stream operators, as such
+operations clog the entire execution of the program, since there is no
+way to continue down another path in the meantime.  Additionally,
+there is no guarantee that an arbitrary blocking operation will ever
+terminate.  This was the basis for adding posting wires (section
+\ref{sec:posting wires}). However, there is a potential issue when it
+comes to pulling analog data from hardware sensors, as these functions
+requires some busy-waiting for the analog $\rightarrow$
+digital-conversion to finish.  In the \texttt{analogRead} function of
 the Arduino library we find the following line of C-code:
+
 \begin{verbatim}
 // ADSC is cleared when the conversion finishes
 while (bit_is_set(ADCSRA, ADSC));
 \end{verbatim}
-Here the functions waits for the analog $-->$ digital conversion to
-finish, which is signaled by the clearing of a special register.
-We can find a similar problem in the library that reads the Pololu
-3pi's reflectance sensors.
 
-Testing of these functions have shown that they generally tend to be
-fast, blocking the processor for unnoticeable timeperiods. So our
-solutions to this problem is simply to change the disallowance of
-\textit{all} blocking functions to only disallowing calculations
-that occupies the processor for several milliseconds.\fixme{Troels: er
-  det hvad du mente?}
+Here the functions waits for the analog $\rightarrow$ digital
+conversion to finish, which is signalled by the clearing of a special
+register.  We can find a similar operation in the library that reads
+the Pololu 3pi's reflectance sensors.
+
+Operations of this kind are acceptable however.  Barring hardware
+failure, we are \textit{guaranteed} that the above loop will terminate
+in a deterministic (and very short) period of time.  In general, any
+operation that can be guaranteed to terminate, no matter how long it
+would take, is safe and permitted as far as Fladuino is concerned.
+There are, of course, still practical issues with such long-running
+operations, as we have mentioned in
+\Fref{sec:dataflowevaluationstrategy}.
 
 \section{Implementation of the runtime system}
 
