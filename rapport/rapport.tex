@@ -1169,7 +1169,7 @@ through a list of pins.  Any device intended to make use of these
 quirks would explicitly require the presence of this capability.
 
 \subsubsection{The Fladuino pin model}
-\label{pins}
+\label{sec:pins}
 There is no concrete distinction between analog and digital pins in
 the Atmel microcontroller that lies at the heart of all Arduino
 platforms --- they are just subsets of the single set of numbered pins
@@ -1345,7 +1345,7 @@ event $e$.  We can then construct a dataflow graph such as
 $\sigma(pushdown,p_1) \rightarrow toggle(d_2)$, connecting the input
 of pressing a button to the action of toggling the state of a diode.
 
-In the definition of an event, a list of Arduino pins (see \ref{pins})
+In the definition of an event, a list of Arduino pins (see \Fref{sec:pins})
 indicates which pin-change interrupts might trigger the event.
 Additionally, two object-language functions are defined: a
 \textit{predicate}, for checking whether a given pin-change interrupt
@@ -1397,7 +1397,9 @@ is provided by the Arduino libraries themselves:
   clock as an input source.  This precision has been adopted verbatim
   from Flask, as we see no reason to deviate.
 \item An \textit{event queue} must be provided that supports the
-  operations mentioned in \Fref{sec:dataflowevaluationstrategy}.
+  operations mentioned in \Fref{sec:dataflowevaluationstrategy}.  Its
+  implementation is comprehensively described in
+  \Fref{sec:event_queue}.
 \item An \textit{interrupt abstraction} built on top of the
   microcontrollers own hardware interrupts.  The Arduino libraries own
   interrupt support is too restricted for our purposes, as it only
@@ -1908,34 +1910,32 @@ extending one of the predefined platforms. A platform consists of the following
 definitions
 
 \begin{description}
-\item[Pins] This is a list of pin declarations. A pin declaration is either a
-  digital pin or analog pin followed by a list of features supported by this pin
-  and its pin number. A feature could be that pin supports ``PWM'' and ``interrupt''. 
+\item[Pins] This is a list of pin definition. A pin definition
+  consists of the type of the pin (digital or analog-input) paired
+  with the pin number and a list of the capabilities supported by the
+  pin.
 
-\item[Pin map] This is a function that maps digital pin number or analog pin
-  number to the physical platforms specific pin numbers. E.g. the Arduino
+\item[Pin map] A mapping from \textit{logical pins} to
+  \textit{hardware pins} (see \Fref{sec:pins}).  E.g. the Arduino
   Duemilanove maps analog pin 0 to physical pin 14.
-\fixme{troels: hvad bruges dette egentlig til?}
 
-\item[Capabilities] This is a list of platform specific capabilities. All
-  platforms should include their name such that a Fladuino program can state
-  only to be compatible with this platform. Thus all platforms that is
-  compatible with each other could include this in the list of
-  capabilities. Other capabilities could be the Pololu 3pi robot's motors,
-  buzzer or LCD.
+\item[Capabilities] A list of platform specific capabilities
+  expressing support for notions not otherwise expressable.  All
+  platforms should include their name such that a Fladuino program can
+  state only to be compatible with this platform. Thus all platforms
+  that is compatible with each other could include this in the list of
+  capabilities. Other capabilities could be the Pololu 3pi robot's
+  motors, buzzer or LCD.
 
-\item[Base setup] Any platform specific things that should be added like
-  initialisation code for the Arduino BT platforms bluetooth device or inclusion
-  of specific header file on the Pololu 3pi platform.
+\item[Base setup] Any platform specific configuration that should be
+  added, like initialisation code for the Arduino BT platform's
+  bluetooth device or inclusion of specific header file on the Pololu
+  3pi platform.
 
-\item[Default devices] This is a list of default devices that a platform has
-  mounted. E.g. motors, potentiometers and sensors on the Pololu 3pi robot.
-
-\fixme{Er dette korrekt?}
-
-\item[Timer id] This defines the timer id that Fladuino uses to drive the
-  clock. Some Arduino compliant hardware reserves different timers for various
-  tasks, like the Pololu 3pi uses time 0 and timer 1 to drive the motors. 
+\item[Timer id] This defines the timer id that Fladuino uses to drive
+  the clock. Some Arduino compliant hardware reserves different timers
+  for various tasks, like the Pololu 3pi uses time 0 and timer 1 to
+  drive the motors.
 
   The \texttt{defaultPlatform} defaults this to 1.
 \end{description}

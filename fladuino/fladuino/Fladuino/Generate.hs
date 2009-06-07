@@ -271,7 +271,6 @@ emptyPlatform = Platform { p_pins = []
                          , p_pinmap = undefined
                          , p_capabilities = []
                          , p_base_setup = return ()
-                         , p_default_devices = [] 
                          , p_timerid = 1 -- ^ The timer used by the "clock" primitive
                                        -- Pin 5 and 6 are connected to timer 0, 9 and 
                                        -- 10 to timer 1 and pin 3 and 11 to timer 2
