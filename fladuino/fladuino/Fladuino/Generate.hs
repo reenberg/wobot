@@ -273,6 +273,9 @@ emptyPlatform = Platform { p_pins = []
                          , p_base_setup = return ()
                          , p_default_devices = [] 
                          , p_timerid = 1 -- ^ The timer used by the "clock" primitive
+                                       -- Pin 5 and 6 are connected to timer 0, 9 and 
+                                       -- 10 to timer 1 and pin 3 and 11 to timer 2
+
                          }
 
 defaultPlatform :: Platform FladuinoM
@@ -314,7 +317,8 @@ arduinoBT = arduinoDuemilanove { p_pins = [ PinDecl (DPin n) $ pc n | n <- [0..6
                                , p_timerid = 2
                         }
               where
-                pc pin | pin `elem` [3, 5, 6, 9, 10, 11] = ["PWM", "interrupt"]
+                -- PWM on pin 3 and 11 are disallowed because they interfere with TIMER2
+                pc pin | pin `elem` [5, 6, 9, 10] = ["PWM", "interrupt"]
                 pc _ = ["interrupt"]
 
 arduinoMega :: Platform FladuinoM
@@ -334,18 +338,11 @@ arduinoMega = emptyPlatform { p_pins = [ PinDecl (DPin n) $ pc n | n <- [0..53] 
                     | pin `elem` [2..7]++[10..13] = ["PWM"]
                     | otherwise = []
 
--- The pin setup is copied from the Duemilanove specification, it
--- therefore needs adjustments.
-pololu3pi :: Platform FladuinoM
-pololu3pi = emptyPlatform { p_pins = [ PinDecl (DPin n) $ pc n | n <- [0..13] ] ++
-                                     [ PinDecl (APin n) ["analog", "interrupt"] | n <- [0..6] ]
-                          , p_capabilities = ["3pi"]
-                          , p_base_setup = addCInclude "3pi/3pi.h"
-                          }
-              where
-                -- PWM on pin 9 and 10 are disallowed because they interfere with TIMER1
-                pc pin | pin `elem` [3, 5, 6, 11] = ["PWM", "interrupt"] 
-                pc _ = ["interrupt"]
+
+pololu3pi = arduinoDuemilanove { p_capabilities = ["3pi", "3pi battery reader", "3pi reflectance sensor array",
+                                                   "3pi motors"]
+                               , p_base_setup = addCInclude "3pi/3pi.h"
+                               }
 
 finalizeConfig :: forall m . MonadFladuino m
                   => PConf m -> m ()

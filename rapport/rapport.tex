@@ -531,6 +531,7 @@ decide whether it should be passed on to its output stream or not.
 
 
 \subsection{Streamoperators}
+\label{sec:streamoperators}
 Now we will list a description of most of the stream-operators and
 signal functions that Flask provides. \fixme{Add type signatures and
   improve explanations}
@@ -550,13 +551,16 @@ sconst :: forall a b eta. (Reify b, LiftN eta a)
 
 
 \item 
+\label{item:szip}
 \begin{verbatim}
 szip, (&&&) :: forall a b . (Reify a, Reify b)
       => S a -> S b -> S (a, b)
 \end{verbatim}
   This operator has two input-streams. It waits for a value on both
   inputs, constructs a pair of them, and sends this pair to its
-  output-stream.
+  output-stream.  Should several signals arrive on one of the inputs
+  before one arrives on the other, the most recently arrived value
+  will be used.
 
 \item 
 \begin{verbatim}
@@ -997,10 +1001,15 @@ previously sent request.  Several options present themselves:
 \item[Ignore:] We can also opt not to queue or accumulate anything,
   ignore any input values sent while there is already an outstanding
   request, and fire the output node a single time upon receiving a
-  reply from the sensor.  While appearing to be a lossy hack at first
-  glance, we argue that it is in fact the most elegant solution, that
-  its deficiencies are not important in the typical case, and that
-  they can (to a degree) be worked around, if necessary.
+  reply from the sensor.  This strategy also implies that whatever
+  value was carried by the signal that arrived at the input node to
+  trigger the posting wire will be lost, unless the user takes care to
+  explicitly route it around the wire (the \texttt{szip} stream
+  operator described in \Fref{sec:streamoperators} is highly useful
+  for this).  While appearing to be a lossy hack at first glance, we
+  argue that it is in fact the most elegant solution, that its
+  deficiencies are not important in the typical case, and that they
+  can (to a degree) be worked around, if necessary.
 \end{description}
 
 \begin{figure}
@@ -1487,7 +1496,7 @@ wire, understood as events that are not responses to previously sent
 requests.  For example, it is possible to define a posting wire where
 $f$ does nothing, and the event listener is the event sent by some
 specific push-button when it is pressed.  The end result is a wire
-that ``delays'' signals until an event has been received.
+that ``delays'' signals until a specific event has been received.
 
 \subsection{On blocking and busy-waiting}
 Blocking operations are generally disallowed in the dataflow graph,
@@ -1889,6 +1898,8 @@ definitions
 \item[Timer id] This defines the timer id that Fladuino uses to drive the
   clock. Some Arduino compliant hardware reserves different timers for various
   tasks, like the Pololu 3pi uses time 0 and timer 1 to drive the motors. 
+
+  The \texttt{defaultPlatform} defaults this to 1.
 \end{description}
 
 The default platform is the \texttt{arduinoDuemilanove} which extends the
@@ -1915,17 +1926,22 @@ be defined by just extending it
 arduinoDiecimila = arduinoDuemilanove { p_capabilities = ["Diecimila"] }
 \end{verbatim}
 
-
-
-This is also the case when defining the \texttt{pololu3pi} platform, as it uses
-the same Atmega processor and thus has the same pin configuration. It however
-comes with a bunch of default devices and capabilities
+The \texttt{pololu3pi} platform uses the same Atmega processor as the Arduino
+platform and is thus pin compatible with the \texttt{arduinoDuemilanove}
+platform and others. This means that it has the same possibilities of e.g.
+interrupts, however it should be noted that most of the pins are reserved
+\cite{3pi_pin_mapping} for platform specific devices such as motors and thus
+behaviour is undefined for pins where this doesn't make sense. This means that
+the \texttt{pololu3pi} platform can be defined by extending the
+\texttt{arduinoDuemilanove} and adding the extra capabilities and base setup
 
 \begin{verbatim}
-aasd
+pololu3pi = arduinoDuemilanove { p_capabilities = ["3pi", "3pi battery reader", "3pi reflectance sensor array",
+                                                   "3pi motors"]
+                               , p_base_setup = addCInclude "3pi/3pi.h"
+                               }
 \end{verbatim}
 
-3 pi pin mapping \cite{3pi_pin_mapping}.
 
 \chapter{Evaluation}
 \label{chapter:evaluation}
@@ -1964,6 +1980,56 @@ Lidt idéer:
 \item  Yderligere er der også problemer med det meste af 3pi platoformen, ikke
   er precist nok defineret., Fx hvilke pins der kun kan specielle ting.
 \end{itemize}
+
+\section{Needs further work}
+\fixme{bedre overskrift}
+
+
+\subsection{C++ Quasiquoter}
+
+This could be quite handy $\ldots$
+
+\subsection{Arduino libraries}
+
+The base Language
+Reference\footnote{\url{http://arduino.cc/en/Reference/Extended}, last checked
+  6th June 2009} is fully supported by the C-quasiquotation module and most of
+it is also supported as devices, however all official Arduino libraries and most
+Contributed Libraries are written in C++, which isn't supported as an object
+language, and without C linkage. 
+
+The most used library that suffers from this is the \texttt{Serial} library used
+to communicate with any connected device. This is one of the easiest ways of
+debugging an embedded device.
+
+To solve this any necessary libraries must be wrapped with C linkage definitions
+and for easy usability Fladuino devices ought to be defined.
+
+\subsection{Pololu 3pi support}
+
+The Pololu 3pi robot is just barely supported as the Fladuino framework is
+now. The Pololu Corporation has luckily made all their libraries C-compliant
+though they are written in C++. However only the motors and battery reader are
+fully implemented and the reflectance sensor's are partially implemented.
+
+Some of the functionality is in its current state not fully compliant with the
+Fladuino framework. E.g. timer 0 and 2 is reserved when using the
+motors\footnote{This is a core part of using the 3pi robot. Else a Arduino board
+  could have been used.} which leaves timer 1 for Fladuino. This breaks all
+functionality with devices and libraries that uses any of the timers, like the
+Pololu library \texttt{OrangutanBuzzer} that uses timer 1 for playing melody's
+meanwhile allowing the processor to do other stuff. Only solution to this
+problem is to write new libraries that utilises the Fladuino event queue ore
+something else, see \fref{sec:fladuino-event-queue}.
+
+\subsection{Fladuino event queue}
+\label{sec:fladuino-event-queue}
+$\ldots$
+Making the event queue prioritised or allowing to hook the timer 1 interrupt
+making sure a function is always run when an interrupt happens. Of cause the
+user needs to be aware not to add computational heavy functions here. But
+e.g. something that writes a new value to the Pololu 3pi robot's buzzer.
+$\ldots$
 
 \chapter{The past}
 Discussion about related robot programming tools (Frob, Yampa, Atom,

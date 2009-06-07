@@ -36,9 +36,10 @@ data ReflectanceSensorArray = ReflectanceSensorArray
                               deriving (Eq, Show)
 
 instance Device ReflectanceSensorArray where
+    usages _ = [CapabilityRequired "3pi reflectance sensor array"]
     setupDevice (ReflectanceSensorArray n) = 
         do addCVardef [$cedecl|unsigned int $id:arrayname[$int:n];|]
-           addCInitStm [$cstm|calibrate_line_sensors(IR_EMITTERS_ON);|]                                                 
+           addCInitStm [$cstm|calibrate_line_sensors(IR_EMITTERS_ON);|]
         where arrayname = "sensors" ++ show n
     uniqueId _ = "reflectance_sensor_array" -- only one should be needed
 
@@ -56,6 +57,7 @@ data LineReader = LineReader ReflectanceSensorArray
                   deriving (Eq, Show)
 
 instance Device LineReader where
+    usages _ = [CapabilityRequired "3pi reflectance sensor array"]
     uniqueId _ = "line_reader"
 
 instance AnalogInputDevice LineReader where
@@ -67,7 +69,7 @@ data Motors = Motors
               deriving (Eq, Show)
 
 instance Device Motors where
-    setupDevice Motors = addCInclude "pololu/motors.h"
+    usages _ = ["3pi motors"]
     uniqueId _ = "motors"
 
 -- This just calls the pololu set_motors function with the integers on
@@ -93,16 +95,3 @@ compute (v, omega) = let motorLvel = v * (if omega <= 0.0 then 1.0 else 1.0 - om
                          motorRvel = v * (if omega >= 0.0 then 1.0 else 1.0 + omega)
                      in (round (motorLvel * 255.0), round (motorRvel * 255.0))
                        |]
-
-{-
-
-data ReflectanceSensor = ReflectanceSensor ReflectanceSensorArray 
-                                           Integer -- The index of the sensor in the array
-
-instance Device ReflectanceSensor where
-    setupDevice _ = return ()
-    deviceClass _ = "reflectance_sensor"
-    uniqueId d@(ReflectanceSensor _ i) = deviceClass d ++ "_" ++ show i
-
-instance AnalogInputDevice ReflectanceSensor where
-    -}
