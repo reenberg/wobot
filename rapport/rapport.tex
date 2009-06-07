@@ -27,6 +27,7 @@
 \usepackage{stmaryrd}
 \usepackage{amssymb}
 \usepackage{listings}
+\usepackage{ulem} % \sout - strike-through
 
 \renewcommand{\ttdefault}{pcr} % Bedre typewriter font
 %\usepackage[sc]{mathpazo}     % Palatino font
@@ -85,19 +86,22 @@ Troels Henriksen (athas@sigkill.dk)}
   on more resource-constrained devices.
 
   We tie these two ends together, creating a highly declarative
-  language for programming embedded processors, which are scarce on
-  resources, using a staged compilation-strategy like the one found in
-  Flask \cite{flask08}, where code native to the hardware-platform is
-  generated from a dataflow graph, which then is compiled to
+  language for programming resource-scarce embedded processors, using
+  the same staged com\-pi\-la\-tion-strategy as found in Flask
+  \cite{flask08}, where code specific to the hardware-platform is
+  generated from a dataflow graph, which subsequently is compiled to
   machine-code by a platform-specific compiler.
 
-  In the creation we've used the Flask-codebase as our starting point
-  and huge (isolated) parts of the code was left unchanged. Our
-  contribution includes functionality suitable for the domain of
-  control systems where the connected hardware devices (e.g. sensors,
-  motors or displays) can differ much. Specifically we include a
-  framework for specifying interfaces to these peripherals, primitives
-  for event-handling and (\ldots).
+  \sout{In the creation we've used the Flask-codebase as our starting
+    point and huge (isolated) parts of the code was left unchanged.}
+  Our contribution includes functionality suitable for the domain of
+  control systems where a multitude of different hardware devices
+  (e.g. sensors, motors or displays) should be possible to
+  program. Specifically we include a framework for specifying
+  interfaces to these peripherals and primitives for
+  event-handling. \fixme{Any other major additions?}
+
+  \fixme{Evaluation}
 \end{abstract}
 
 \clearpage 
@@ -115,15 +119,14 @@ supervised by Ken Friis Larsen, assistant professor at DIKU.
 
 
 
-\fixme{remove all uses of "`very"'}
-\fixme{change bibtex style to one that includes URL's in the generated list,
-  such as plain-url or another fancy one.}
+\fixme{remove all uses of ``very''}
 \fixme{change $\backslash$ url to use the hyperref package so real links are
   used.}
 \fixme{check all quoted text for use of the same quotes!!!!}
 \fixme{Check all cites. Should there be a space between the word and cite or
   not.}
-\fixme{Check all refs. Should be converted to vref to utilize the varioref package}
+\fixme{Check all refs. Should be converted to vref to utilize the
+  varioref package (Where appropriate!!)}
 \fixme{dataflow eller data flow? --- ensret}
 
 \listoffixmes 
@@ -156,7 +159,7 @@ supervised by Ken Friis Larsen, assistant professor at DIKU.
   \item Flask
   \end{itemize}
 
-\item "`Our system"'
+\item ``Our system''
   \begin{itemize}
   \item Staged compilation
   \item Dataflows
@@ -194,7 +197,7 @@ Flask is a domain-specific language embedded in Haskell for writing
 sensor network code, with Haskell functioning as a meta-language. A
 Flask program takes the form of an acyclic dataflow graph, which
 represents how data streams its sensors are processed and sent to
-other nodes in the network. When a Flask program is "`run"', it
+other nodes in the network. When a Flask program is ``run'', it
 generates a program in another more low-level sensor network
 language. Our framework, Fladuino, follows exactly the same concepts
 as Flask, although it generates C-code written specifically for our
@@ -206,22 +209,25 @@ Flask has been successful. Both in the sense that Flask was easily
 adaptable to reactive programming domain, and in the sense that our
 result, Fladuino, is sufficient for a wide range of control systems.
 
-Our domain, control systems, is quite wide. We define it as
-\textit{any programmable electronic system with sensors and/or
-  actuators}\fixme{reformulation?}. This has the obvious impact, that
-our framework should be general enough to support almost any thinkable
-peripheral. We do this by making the user capable of writing drivers
-or small frameworks for the different devices that users could connect
-to the Arduino-boards.
+Our domain, control systems, is quite wide. It is
+often\fixme{citations} defined as \textit{programmable systems that
+  senses and regulates some task by the use of sensors and actuators},
+which includes almost any computer-system. Selecting the
+Arduino-platform restrains our scope to the tasks it can handle. The
+Arduino is generic and handles a broad range of tasks, when connected
+with the right peripherals. This extendability makes us argue that
+concentrating on the Arduino isn't a very strict limitation. This has
+the obvious impact, that our framework should be general enough to
+support almost any Arduino-connectable external device. We do this by
+providing a way of writing drivers or small frameworks for arbitrary
+devices.
 
-\fixme{I find the following Reactivity-section relevant, but I don't know where
-  it fits in. I don't think it's here /Martin}
-\section{Reactivity}
+\subsection{Reactivity}
 Most control systems are reactive, especially robots fits the
 definition of reactive systems well. We've found the best description
 of what distinguishes a reactive system in Zhanyong Wan's PhD thesis
 ``Functional Reactive Programming for Real-Time reactive systems''
-\cite{Chambers1992}.  As he explains we can partition computer systems
+\cite{Chambers1992}.  As he explains, we can partition computer systems
 into:
 \begin{itemize}
 \item Transitional systems, that takes some data as input, does some
@@ -238,7 +244,7 @@ into:
 
 A reactive programming language is a language with primitives for
 connecting streams of values (a kind of ever-changing input values,
-often called signals).
+often called signals).\fixme{citation}
 
 \section{Hardware platform}
 \label{sec:hardware platform}
@@ -257,19 +263,17 @@ physical package of microcontroller and I/O ports.
 
 \noindent
 We've selected the Arduino platform 
-\begin{description}
-\item because of its low cost. An Arduino Duemilanove is priced at approximately 200
-  DKK at the time of writing.
+\begin{itemize}
+\item because of its low cost. An Arduino Duemilanove is priced at
+  approximately 200 \nolinebreak DKK at the time of writing.
 \item because of its extensibility. You can buy plenty of different
-  Arduino-specific extensions ("`shields"'), there exists shields for
-  bluetooth, ethernet or even small touch, to name a few. It is also
-  our perception that it isn't hard to connect it with other
-  electronic devices which aren't built for the Arduino
+  Arduino-specific extensions (``shields''). There exists shields for
+  bluetooth, ethernet or even small touch, to name a few. And it is also
+  our perception that it is possible to connect it with other
+  electronic devices which aren't built for the Arduino.
 \item and finally because of its relatively high-level C-interface,
   sparing us from much low-level programming and bit trickery.
-\end{description}
-
-
+\end{itemize}
 
 We have only had resources to test our work on the Arduino
 Duemilanove\footnote{\url{http://www.arduino.cc/en/Main/ArduinoBoardDuemilanove}},
@@ -311,25 +315,25 @@ robots.
 
 
 \section{Structure outline}
-In the following chapter (chapter \ref{chapter:Flask}) we will go
+In the following chapter (\Fref[plain]{chap:Flask}) we will go
 through the existing Flask system. Its design and how you use it to
 write sensor-network programs.
 
-In chapter \ref{chapter:design} we will look at what functionality is
+In \fref{chap:design} we will look at what functionality is
 needed when programming control systems that isn't already in Flask
 and how we have embodied this in Fladuino (i.e. our core design
 decisions).
 
-In chapter \ref{chapter:implementation} we will talk about the
+In \fref{chap:implementation} we will talk about the
 technically modification we have made to transform Flask to Fladuino.
 
-In chapter \ref{chapter:evaluation} we will present an evaluation of
+In \fref{chap:evaluation} we will present an evaluation of
 the complete Fladuino system, judging its benefits over traditional
-methods of programming control programs, as well as covering the
+methods of programming control programs, as well as covering
 any identified shortcomings.
 
 \chapter{Flask}
-\label{chapter:Flask}
+\label{chap:Flask}
 Flask is a domain-specific language embedded in Haskell for
 programming sensor networks. Flask is based on the idea of
 constructing \textit{dataflow graphs} that express the overall flow of
@@ -340,8 +344,8 @@ processing in between. A program thus takes form of a directed acyclic
 graph.
 
 On figure \ref{ewma-example} we show an example of a dataflow graph
-taken from the paper "`Flask: A Language for Data-driven Sensor
-Network Programs"'. The graph represents a program for detecting earth
+taken from the paper ``Flask: A Language for Data-driven Sensor
+Network Programs''. The graph represents a program for detecting earth
 quakes observing the ratio between two different exponentially
 weighted moving averages (EWMA) of the seismometer values. When the
 high-gain EWMA drifts away from the low-gain EWMA --- which happens on
@@ -361,13 +365,13 @@ Flask. We see that this is a single connected graph\footnote{This is
   actually two different \textit{atomic subgraphs} because of the
   special \textit{posting wire} required to use the sensor, but for
   simplicity we wont discuss this now. Refer to \cite{flask06} or our
-  section on posting wires, \ref{sec:posting wires}.}, but many Flask
+  \fref{sec:posting wires} about posting wires.}, but many Flask
 programs will consist of several \textit{atomic subgraphs}. We say
 that they are atomic in the sense that they have to run to completion
 before we can go on to the next action. \fixme{eventually add
-  something about the need for this} This point is actually easier
-to explain when talking about Fladuino. The good example here is that
-we might want two different \textit{atomic subgraphs} to execute
+  something about the need for this} This point is actually easier to
+explain when talking about Fladuino. The good example here is that we
+might want two different \textit{atomic subgraphs} to execute
 depending on whether a button on our circuit was pushed or released.
 
 \section{From Flask to sensor network-code}
@@ -414,7 +418,7 @@ environment, as well as allowing you to intersperse generation time
 variables (which results in compile time constants) into
 object-language code.
 
-Figure \ref{fig:mainloop} illustrates this, showing a simplified
+\Fref{fig:mainloop} illustrates this, showing a simplified
 version of the main loop and initialisation code from Fladuino.
 \texttt{topdefs} and \texttt{initstms} are generation-time values
 (lists of C statements). And \texttt{\$edecls} and \texttt{\$stms} are
@@ -480,41 +484,43 @@ inserted at generation-time by the \texttt{flo}-antiquoter.
   \label{fig:redqq}
 \end{nonfloatingfigure}
 
-
+\newpage
 \section{Streams, node-level values and dataflow-operators}
-Expressing dataflow graphs in Haskell is often done using the
-Arrows library. But this isn't a strategy that fits Flask, as
-Arrows requires that an arbitrary Haskell function can be lifted to a
-signal function. This isn't possible here, because Flask signal
-functions are meant for being executed on the sensor nodes and
-therefore aren't Haskell functions, but instead a representation of
-the node-level code that should be generated. Flask instead defines
-some of the same operators as in the Arrows library, though with
-different type signatures. It therefore feels like you can use the
-Arrows library without really using it, but you won't get the special
-Arrow syntax.
+Expressing dataflow graphs in Haskell is often done using the Arrows
+library. But this isn't a strategy that fits Flask, as the
+\textit{Arrow} type class requires that arbitrary Haskell functions
+can be lifted to a signal function. This isn't possible with Flask,
+because Flask signal-functions are to be executed on the sensor nodes
+and therefore aren't Haskell functions per se, but instead a
+representation of the node-level code that should be generated. Flask
+still defines some of the same operators as in the Arrows library,
+though with different type signatures. Writing dataflow graphs in
+Flask therefore still feels quite the same as when using the Arrows
+library, but you won't get the Arrow syntax\cite{PatersonRA:notation}.
 
 In Flask a stream of type $\alpha$ values has the type \texttt{S
   $\alpha$}. The arguably simplest way to generate such a stream is
-the \texttt{clock :: Int -> S ()} Flask-function, which given a time
-interval in milliseconds generates a unit signal on the resulting
-stream. \texttt{clock 1000} is signalling every second. This isn't
-useful by itself, we need to do something with this signal, e.g. do
-some data processing. As mentioned before, Flask provides a set of
-stream operators for that.
+the Flask-function \texttt{clock :: Int -> S ()}, which given a time
+interval in milliseconds returns a stream of unit signals, that is
+sent with the given frequency. E.g. \texttt{clock 1000} is signalling
+every second. This isn't useful by itself, but is useful for
+activating some other task, like reading a sensor at some frequency.
+
+We also need to process these signals, and as mentioned before, Flask
+provides a set of general stream operators for this task.
 
 
 \subsection{\texttt{Reify} and \texttt{LiftN}}
-To explain the stream operators we need to discuss the two type
-classes: \textit{Reify} and \textit{LiftN}.  Instances of the Reify
-type classes are Haskell types that has node-level equivalents. An
-instance has to provide a function reify that given a Haskell value
-returns a representation of its node-level type.
+Before we go on to explain the stream operators, we need to discuss
+two type classes: \textit{Reify} and \textit{LiftN}.  Instances of the
+\textit{Reify} type classes are Haskell types that has node-level
+equivalents. An instance has to provide a function \texttt{reify} that
+given a Haskell value returns a representation of its node-level type.
 
-LiftN is a multi parameter type class\footnote{This requires the GHC
-  language extension MultiParamTypeClasses}. \texttt{LiftN eta
-  Integer} represents that the Haskell value of type can be lifted
-to a node-level \textit{Integer}.\\
+\textit{LiftN} is a multi parameter type class\footnote{This requires
+  the GHC language extension MultiParamTypeClasses}. An instance
+\texttt{LiftN eta Integer} represents that the Haskell value of type
+can be lifted to a node-level \textit{Integer}.\\
 
 \noindent
 Now to one of the Flask stream operators, \texttt{sfilter}. Its type
@@ -530,12 +536,12 @@ as the first argument (type eta), and returns a signal function
 (\texttt{S a -> S a}) that for each input value uses the predicate to
 decide whether it should be passed on to its output stream or not.
 
-
+\newpage
 \subsection{Streamoperators}
 \label{sec:streamoperators}
-Now we will list a description of most of the stream-operators and
-signal functions that Flask provides. \fixme{Add type signatures and
-  improve explanations}
+In this section we will describe the stream-operators and signal
+functions that Flask provides.
+
 \begin{description}
 \item
 \begin{verbatim}
@@ -657,13 +663,13 @@ ewma gain = sintegrate zero
 
 
 \chapter{Design of the Fladuino system}
-\label{chapter:design}
+\label{chap:design}
 
 In this chapter we will outline the overall design of Fladuino, as
 well as present some of the technical decisions that have a notable
 impact on how Fladuino is used.  Technical details that have less of
 an impact on the final usage of the system are described in chapter
-\ref{chapter:implementation}.
+\ref{chap:implementation}.
 
 Fladuino is a modification of Flask that can be used to program
 Arduino devices in a functional reactive manner. In this chapter we
@@ -1418,7 +1424,7 @@ of dynamic timers, we have opted not to include support for such
 functionality in our design.
 
 \chapter{Implementation}
-\label{chapter:implementation}
+\label{chap:implementation}
 
 The essence of Fladuino can be condensed to a single, conceptually
 simple problem: translate a high-level functional reactive program to
@@ -1970,7 +1976,7 @@ pololu3pi = arduinoDuemilanove { p_capabilities = ["3pi", "3pi battery reader", 
 
 
 \chapter{Evaluation}
-\label{chapter:evaluation}
+\label{chap:evaluation}
 
 \begin{itemize}
 \item Is this for any practical use?
