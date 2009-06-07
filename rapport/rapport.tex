@@ -125,7 +125,8 @@ supervised by Ken Friis Larsen, assistant professor at DIKU.
 \fixme{check all quoted text for use of the same quotes!!!!}
 \fixme{Check all cites. Should there be a space between the word and cite or
   not.}
-\fixme{Check all refs. Should be converted to vref to utilize the varioref package}
+\fixme{Check all refs. Should be converted to vref to utilize the
+  varioref package (Where appropriate!!)}
 \fixme{dataflow eller data flow? --- ensret}
 
 \listoffixmes 
@@ -274,8 +275,6 @@ We've selected the Arduino platform
   sparing us from much low-level programming and bit trickery.
 \end{itemize}
 
-
-
 We have only had resources to test our work on the Arduino
 Duemilanove\footnote{\url{http://www.arduino.cc/en/Main/ArduinoBoardDuemilanove}},
 Arduino BT\footnote{\url{http://www.arduino.cc/en/Guide/ArduinoBT}},
@@ -316,25 +315,25 @@ robots.
 
 
 \section{Structure outline}
-In the following chapter (chapter \ref{chapter:Flask}) we will go
+In the following chapter (\Fref[plain]{chap:Flask}) we will go
 through the existing Flask system. Its design and how you use it to
 write sensor-network programs.
 
-In chapter \ref{chapter:design} we will look at what functionality is
+In \fref{chap:design} we will look at what functionality is
 needed when programming control systems that isn't already in Flask
 and how we have embodied this in Fladuino (i.e. our core design
 decisions).
 
-In chapter \ref{chapter:implementation} we will talk about the
+In \fref{chap:implementation} we will talk about the
 technically modification we have made to transform Flask to Fladuino.
 
-In chapter \ref{chapter:evaluation} we will present an evaluation of
+In \fref{chap:evaluation} we will present an evaluation of
 the complete Fladuino system, judging its benefits over traditional
-methods of programming control programs, as well as covering the
+methods of programming control programs, as well as covering
 any identified shortcomings.
 
 \chapter{Flask}
-\label{chapter:Flask}
+\label{chap:Flask}
 Flask is a domain-specific language embedded in Haskell for
 programming sensor networks. Flask is based on the idea of
 constructing \textit{dataflow graphs} that express the overall flow of
@@ -366,13 +365,13 @@ Flask. We see that this is a single connected graph\footnote{This is
   actually two different \textit{atomic subgraphs} because of the
   special \textit{posting wire} required to use the sensor, but for
   simplicity we wont discuss this now. Refer to \cite{flask06} or our
-  section on posting wires, \ref{sec:posting wires}.}, but many Flask
+  \fref{sec:posting wires} about posting wires.}, but many Flask
 programs will consist of several \textit{atomic subgraphs}. We say
 that they are atomic in the sense that they have to run to completion
 before we can go on to the next action. \fixme{eventually add
-  something about the need for this} This point is actually easier
-to explain when talking about Fladuino. The good example here is that
-we might want two different \textit{atomic subgraphs} to execute
+  something about the need for this} This point is actually easier to
+explain when talking about Fladuino. The good example here is that we
+might want two different \textit{atomic subgraphs} to execute
 depending on whether a button on our circuit was pushed or released.
 
 \section{From Flask to sensor network-code}
@@ -419,7 +418,7 @@ environment, as well as allowing you to intersperse generation time
 variables (which results in compile time constants) into
 object-language code.
 
-Figure \ref{fig:mainloop} illustrates this, showing a simplified
+\Fref{fig:mainloop} illustrates this, showing a simplified
 version of the main loop and initialisation code from Fladuino.
 \texttt{topdefs} and \texttt{initstms} are generation-time values
 (lists of C statements). And \texttt{\$edecls} and \texttt{\$stms} are
@@ -485,41 +484,43 @@ inserted at generation-time by the \texttt{flo}-antiquoter.
   \label{fig:redqq}
 \end{nonfloatingfigure}
 
-
+\newpage
 \section{Streams, node-level values and dataflow-operators}
-Expressing dataflow graphs in Haskell is often done using the
-Arrows library. But this isn't a strategy that fits Flask, as
-Arrows requires that an arbitrary Haskell function can be lifted to a
-signal function. This isn't possible here, because Flask signal
-functions are meant for being executed on the sensor nodes and
-therefore aren't Haskell functions, but instead a representation of
-the node-level code that should be generated. Flask instead defines
-some of the same operators as in the Arrows library, though with
-different type signatures. It therefore feels like you can use the
-Arrows library without really using it, but you won't get the special
-Arrow syntax.
+Expressing dataflow graphs in Haskell is often done using the Arrows
+library. But this isn't a strategy that fits Flask, as the
+\textit{Arrow} type class requires that arbitrary Haskell functions
+can be lifted to a signal function. This isn't possible with Flask,
+because Flask signal-functions are to be executed on the sensor nodes
+and therefore aren't Haskell functions per se, but instead a
+representation of the node-level code that should be generated. Flask
+still defines some of the same operators as in the Arrows library,
+though with different type signatures. Writing dataflow graphs in
+Flask therefore still feels quite the same as when using the Arrows
+library, but you won't get the Arrow syntax\cite{PatersonRA:notation}.
 
 In Flask a stream of type $\alpha$ values has the type \texttt{S
   $\alpha$}. The arguably simplest way to generate such a stream is
-the \texttt{clock :: Int -> S ()} Flask-function, which given a time
-interval in milliseconds generates a unit signal on the resulting
-stream. \texttt{clock 1000} is signalling every second. This isn't
-useful by itself, we need to do something with this signal, e.g. do
-some data processing. As mentioned before, Flask provides a set of
-stream operators for that.
+the Flask-function \texttt{clock :: Int -> S ()}, which given a time
+interval in milliseconds returns a stream of unit signals, that is
+sent with the given frequency. E.g. \texttt{clock 1000} is signalling
+every second. This isn't useful by itself, but is useful for
+activating some other task, like reading a sensor at some frequency.
+
+We also need to process these signals, and as mentioned before, Flask
+provides a set of general stream operators for this task.
 
 
 \subsection{\texttt{Reify} and \texttt{LiftN}}
-To explain the stream operators we need to discuss the two type
-classes: \textit{Reify} and \textit{LiftN}.  Instances of the Reify
-type classes are Haskell types that has node-level equivalents. An
-instance has to provide a function reify that given a Haskell value
-returns a representation of its node-level type.
+Before we go on to explain the stream operators, we need to discuss
+two type classes: \textit{Reify} and \textit{LiftN}.  Instances of the
+\textit{Reify} type classes are Haskell types that has node-level
+equivalents. An instance has to provide a function \texttt{reify} that
+given a Haskell value returns a representation of its node-level type.
 
-LiftN is a multi parameter type class\footnote{This requires the GHC
-  language extension MultiParamTypeClasses}. \texttt{LiftN eta
-  Integer} represents that the Haskell value of type can be lifted
-to a node-level \textit{Integer}.\\
+\textit{LiftN} is a multi parameter type class\footnote{This requires
+  the GHC language extension MultiParamTypeClasses}. An instance
+\texttt{LiftN eta Integer} represents that the Haskell value of type
+can be lifted to a node-level \textit{Integer}.\\
 
 \noindent
 Now to one of the Flask stream operators, \texttt{sfilter}. Its type
@@ -535,12 +536,12 @@ as the first argument (type eta), and returns a signal function
 (\texttt{S a -> S a}) that for each input value uses the predicate to
 decide whether it should be passed on to its output stream or not.
 
-
+\newpage
 \subsection{Streamoperators}
 \label{sec:streamoperators}
-Now we will list a description of most of the stream-operators and
-signal functions that Flask provides. \fixme{Add type signatures and
-  improve explanations}
+In this section we will describe the stream-operators and signal
+functions that Flask provides.
+
 \begin{description}
 \item
 \begin{verbatim}
@@ -662,13 +663,13 @@ ewma gain = sintegrate zero
 
 
 \chapter{Design of the Fladuino system}
-\label{chapter:design}
+\label{chap:design}
 
 In this chapter we will outline the overall design of Fladuino, as
 well as present some of the technical decisions that have a notable
 impact on how Fladuino is used.  Technical details that have less of
 an impact on the final usage of the system are described in chapter
-\ref{chapter:implementation}.
+\ref{chap:implementation}.
 
 Fladuino is a modification of Flask that can be used to program
 Arduino devices in a functional reactive manner. In this chapter we
@@ -1403,7 +1404,7 @@ is provided by the Arduino libraries themselves:
 \end{itemize}
 
 \chapter{Implementation}
-\label{chapter:implementation}
+\label{chap:implementation}
 
 The essence of Fladuino can be condensed to a single, conceptually
 simple problem: translate a high-level functional reactive program to
@@ -1950,7 +1951,7 @@ pololu3pi = arduinoDuemilanove { p_capabilities = ["3pi", "3pi battery reader", 
 
 
 \chapter{Evaluation}
-\label{chapter:evaluation}
+\label{chap:evaluation}
 
 \begin{itemize}
 \item Is this for any practical use?
