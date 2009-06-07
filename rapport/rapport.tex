@@ -283,8 +283,7 @@ Arduino
 Mega\footnote{\url{http://arduino.cc/en/Main/ArduinoBoardMega}}, and
 Pololu 3pi\footnote{\url{http://www.pololu.com/catalog/product/975}}.
 
-\section{New and improved Motivation}
-
+\section{Motivation}
 One of the most noticeable consequences of the dramatic reductions in
 cost that we have observed in programmable electronic devices over the
 last five centuries, is the sheer ubiquity of small computers in our
@@ -336,41 +335,10 @@ is that programs written with Fladuino will be easier to get right,
 and to combine with other programs, than the C or assembly programs
 that are normally required due to resource constraints.  Fladuino must
 thus fulfil two major requirements: it must provide sufficiently
-useful \textit{tools} for control programs to be easily expressable
+useful \textit{tools} for control programs to be easily expressible
 and statically error-checked, and the resulting programs must have
 enough \textit{performance} to run on the highly resource--constrained
 devices that form our domain.
-
-\section{Motivation (very robots specific, should be rewritten for
-  control systems)}
-\textit{Something about how our everyday lifes are packed with control
-systems. Dishwashers, etc. --- humanistic blah blah --- the following
-is probably too robot-specific} 
-
-Robots has been used in the industry for decades, replacing humans in
-repetitive tasks like sewing, assembling and transportation. In the
-last years, robots have been introduced to the consumer market,
-e.g. the Roomba vacuum cleaner. This is quite probably a sign that
-robots are getting cheaper and affordable for more tasks. In the future
-we will probably see robots deployed in many other uses. But falling
-hardware prices is not everything, efficient development and
-prototyping of robot control programs is another aspect in making
-robots affordable. \fixme{code reusability}
-
-It is the prevailing conception that robots has some sort of
-autonomous behavior. A simpler definition, says that a robot is any
-programmable electronic system that is equipped with sensors and
-actuators. The second definition is more general, in that it applies
-to almost any programmable electronic system, and the autonomous
-behavior will often be achieved programmatically.
-
-Our goal with Fladuino is to provide a framework that facilitates
-robot programming, but such a framework also has to provide features
-for programming the kind of input-output systems which doesn't
-necessarily have any autonomous behavior. So there are actually two
-steps: making a library suitable for programming sensors, actuators
-and connecting them, and secondly facilitate programming autonomous
-robots.
 
 
 \section{Structure outline}
