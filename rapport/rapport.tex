@@ -27,6 +27,7 @@
 \usepackage{stmaryrd}
 \usepackage{amssymb}
 \usepackage{listings}
+\usepackage{ulem} % \sout - strike-through
 
 \renewcommand{\ttdefault}{pcr} % Bedre typewriter font
 %\usepackage[sc]{mathpazo}     % Palatino font
@@ -85,19 +86,22 @@ Troels Henriksen (athas@sigkill.dk)}
   on more resource-constrained devices.
 
   We tie these two ends together, creating a highly declarative
-  language for programming embedded processors, which are scarce on
-  resources, using a staged compilation-strategy like the one found in
-  Flask \cite{flask08}, where code native to the hardware-platform is
-  generated from a dataflow graph, which then is compiled to
+  language for programming resource-scarce embedded processors, using
+  the same staged com\-pi\-la\-tion-strategy as found in Flask
+  \cite{flask08}, where code specific to the hardware-platform is
+  generated from a dataflow graph, which subsequently is compiled to
   machine-code by a platform-specific compiler.
 
-  In the creation we've used the Flask-codebase as our starting point
-  and huge (isolated) parts of the code was left unchanged. Our
-  contribution includes functionality suitable for the domain of
-  control systems where the connected hardware devices (e.g. sensors,
-  motors or displays) can differ much. Specifically we include a
-  framework for specifying interfaces to these peripherals, primitives
-  for event-handling and (\ldots).
+  \sout{In the creation we've used the Flask-codebase as our starting
+    point and huge (isolated) parts of the code was left unchanged.}
+  Our contribution includes functionality suitable for the domain of
+  control systems where a multitude of different hardware devices
+  (e.g. sensors, motors or displays) should be possible to
+  program. Specifically we include a framework for specifying
+  interfaces to these peripherals and primitives for
+  event-handling. \fixme{Any other major additions?}
+
+  \fixme{Evaluation}
 \end{abstract}
 
 \clearpage 
@@ -115,9 +119,7 @@ supervised by Ken Friis Larsen, assistant professor at DIKU.
 
 
 
-\fixme{remove all uses of "`very"'}
-\fixme{change bibtex style to one that includes URL's in the generated list,
-  such as plain-url or another fancy one.}
+\fixme{remove all uses of ``very''}
 \fixme{change $\backslash$ url to use the hyperref package so real links are
   used.}
 \fixme{check all quoted text for use of the same quotes!!!!}
@@ -156,7 +158,7 @@ supervised by Ken Friis Larsen, assistant professor at DIKU.
   \item Flask
   \end{itemize}
 
-\item "`Our system"'
+\item ``Our system''
   \begin{itemize}
   \item Staged compilation
   \item Dataflows
@@ -194,7 +196,7 @@ Flask is a domain-specific language embedded in Haskell for writing
 sensor network code, with Haskell functioning as a meta-language. A
 Flask program takes the form of an acyclic dataflow graph, which
 represents how data streams its sensors are processed and sent to
-other nodes in the network. When a Flask program is "`run"', it
+other nodes in the network. When a Flask program is ``run'', it
 generates a program in another more low-level sensor network
 language. Our framework, Fladuino, follows exactly the same concepts
 as Flask, although it generates C-code written specifically for our
@@ -206,22 +208,25 @@ Flask has been successful. Both in the sense that Flask was easily
 adaptable to reactive programming domain, and in the sense that our
 result, Fladuino, is sufficient for a wide range of control systems.
 
-Our domain, control systems, is quite wide. We define it as
-\textit{any programmable electronic system with sensors and/or
-  actuators}\fixme{reformulation?}. This has the obvious impact, that
-our framework should be general enough to support almost any thinkable
-peripheral. We do this by making the user capable of writing drivers
-or small frameworks for the different devices that users could connect
-to the Arduino-boards.
+Our domain, control systems, is quite wide. It is
+often\fixme{citations} defined as \textit{programmable systems that
+  senses and regulates some task by the use of sensors and actuators},
+which includes almost any computer-system. Selecting the
+Arduino-platform restrains our scope to the tasks it can handle. The
+Arduino is generic and handles a broad range of tasks, when connected
+with the right peripherals. This extendability makes us argue that
+concentrating on the Arduino isn't a very strict limitation. This has
+the obvious impact, that our framework should be general enough to
+support almost any Arduino-connectable external device. We do this by
+providing a way of writing drivers or small frameworks for arbitrary
+devices.
 
-\fixme{I find the following Reactivity-section relevant, but I don't know where
-  it fits in. I don't think it's here /Martin}
-\section{Reactivity}
+\subsection{Reactivity}
 Most control systems are reactive, especially robots fits the
 definition of reactive systems well. We've found the best description
 of what distinguishes a reactive system in Zhanyong Wan's PhD thesis
 ``Functional Reactive Programming for Real-Time reactive systems''
-\cite{Chambers1992}.  As he explains we can partition computer systems
+\cite{Chambers1992}.  As he explains, we can partition computer systems
 into:
 \begin{itemize}
 \item Transitional systems, that takes some data as input, does some
@@ -238,7 +243,7 @@ into:
 
 A reactive programming language is a language with primitives for
 connecting streams of values (a kind of ever-changing input values,
-often called signals).
+often called signals).\fixme{citation}
 
 \section{Hardware platform}
 \label{sec:hardware platform}
@@ -257,17 +262,17 @@ physical package of microcontroller and I/O ports.
 
 \noindent
 We've selected the Arduino platform 
-\begin{description}
-\item because of its low cost. An Arduino Duemilanove is priced at approximately 200
-  DKK at the time of writing.
+\begin{itemize}
+\item because of its low cost. An Arduino Duemilanove is priced at
+  approximately 200 \nolinebreak DKK at the time of writing.
 \item because of its extensibility. You can buy plenty of different
-  Arduino-specific extensions ("`shields"'), there exists shields for
-  bluetooth, ethernet or even small touch, to name a few. It is also
-  our perception that it isn't hard to connect it with other
-  electronic devices which aren't built for the Arduino
+  Arduino-specific extensions (``shields''). There exists shields for
+  bluetooth, ethernet or even small touch, to name a few. And it is also
+  our perception that it is possible to connect it with other
+  electronic devices which aren't built for the Arduino.
 \item and finally because of its relatively high-level C-interface,
   sparing us from much low-level programming and bit trickery.
-\end{description}
+\end{itemize}
 
 
 
@@ -340,8 +345,8 @@ processing in between. A program thus takes form of a directed acyclic
 graph.
 
 On figure \ref{ewma-example} we show an example of a dataflow graph
-taken from the paper "`Flask: A Language for Data-driven Sensor
-Network Programs"'. The graph represents a program for detecting earth
+taken from the paper ``Flask: A Language for Data-driven Sensor
+Network Programs''. The graph represents a program for detecting earth
 quakes observing the ratio between two different exponentially
 weighted moving averages (EWMA) of the seismometer values. When the
 high-gain EWMA drifts away from the low-gain EWMA --- which happens on
