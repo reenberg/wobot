@@ -192,13 +192,13 @@ network framework \textit{Flask} for the domain of control systems.
 Flask is a domain-specific language embedded in Haskell for writing
 sensor network code, with Haskell functioning as a meta-language. A
 Flask program takes the form of an acyclic dataflow graph, which
-represents how data from sensors etc. are processed and sent to other
-nodes in the network. When a Flask program is "`run"', it generates a
-program in another more low-level language for sensor networks. Our
-framework, Fladuino, follows exactly the same concepts as Flask,
-although its generates C-code written specifically for our platform:
-Arduino, which we will discuss in the next section, \ref{sec:hardware
-  platform}.
+represents how data streams its sensors are processed and sent to
+other nodes in the network. When a Flask program is "`run"', it
+generates a program in another more low-level sensor network
+language. Our framework, Fladuino, follows exactly the same concepts
+as Flask, although it generates C-code written specifically for our
+platform: Arduino, which we will discuss in the next section,
+\ref{sec:hardware platform}.
 
 In the following chapters we want to argue that taking our outset from
 Flask has been successful. Both in the sense that Flask was easily
@@ -207,10 +207,13 @@ for many control systems.
 
 Our domain, control systems, is quite wide. We define it as
 \textit{any programmable electronic system with sensors and/or
-  actuators}. This has the obvious impact, that our framework should
-be general. In the sense that we should support 
+  actuators}\fixme{reformulation?}. This has the obvious impact, that
+our framework should be general enough to support almost any thinkable
+peripheral. We do this by making the user capable of writing drivers
+or small frameworks for the different devices that users could connect
+to the Arduino-boards.
 
-\fixme{I find the following section relevant, but I don't know where
+\fixme{I find the following Reactivity-section relevant, but I don't know where
   it fits in. I don't think it's here /Martin}
 \section{Reactivity}
 Most control systems are reactive, especially robots fits the
@@ -238,9 +241,9 @@ often called signals).
 
 \section{Hardware platform}
 \label{sec:hardware platform}
-The choice of hardware-platform has an influence on how to design such a
-language. We've chosen to make our language and framework target the
-Arduino-platform \cite{arduino}.  
+The choice of hardware-platform has an influence on how to design such
+a language. We've chosen to make our language and framework target the
+Arduino-platform \cite{arduino}.
 
 The term ``Arduino'' is somewhat ambiguous.  It is both a registered
 trademark of the Arduino team that can be used by licensed
@@ -251,17 +254,21 @@ This paper will use the latter meaning unless otherwise is explicitly
 mentioned.  We will use the term ``an Arduino board'' to refer to the
 physical package of microcontroller and I/O ports.
 
-There are number of reasons for why we think this platform is a good
-choice. First of all, our institute DIKU was planning on buying a
-couple of these boards for research in Human Centered Computing about
-interactive-objects and when they heard we were interested in creating
-a framework for developing these kinds of systems they finally bought
-some and let us use them. Even better reasons is that they are cheap
-(approximately 200 DKK for an Arduino Duemilanove, at the time of
-writing) and is easily extensible. E.g. you can buy extensions for
-ethernet, Bluetooth, or even small touchscreens. Finally, the Arduino
-comes with a relatively high-level C-interface, sparing us from much
-low-level programming and bit trickery.
+\noindent
+We've selected the Arduino platform 
+\begin{description}
+\item because of its low cost. An Arduino Duemilanove is priced at approximately 200
+  DKK at the time of writing.
+\item because of its extensibility. You can buy plenty of different
+  Arduino-specific extensions ("`shields"'), there exists shields for
+  bluetooth, ethernet or even small touch, to name a few. It is also
+  our perception that it isn't hard to connect it with other
+  electronic devices which aren't built for the Arduino
+\item and finally because of its relatively high-level C-interface,
+  sparing us from much low-level programming and bit trickery.
+\end{description}
+
+
 
 We have only had resources to test our work on the Arduino
 Duemilanove\footnote{\url{http://www.arduino.cc/en/Main/ArduinoBoardDuemilanove}},
@@ -273,7 +280,8 @@ Pololu 3pi\footnote{\url{http://www.pololu.com/catalog/product/975}}.
 \section{Motivation (very robots specific, should be rewritten for
   control systems)}
 \textit{Something about how our everyday lifes are packed with control
-systems. Dishwashers, etc.}
+systems. Dishwashers, etc. --- humanistic blah blah --- the following
+is probably too robot-specific} 
 
 Robots has been used in the industry for decades, replacing humans in
 repetitive tasks like sewing, assembling and transportation. In the
@@ -325,16 +333,20 @@ Flask is a domain-specific language embedded in Haskell for
 programming sensor networks. Flask is based on the idea of
 constructing \textit{dataflow graphs} that express the overall flow of
 data in the program. The basic task in writing a Flask program is thus
-to connect (or \textit{wire}) incoming streams of sensor data to
-outgoing streams of data (e.g. to other nodes in the network) with
-some eventual data processing in between. A program thus takes form of
-a directed acyclic graph.
+to connect incoming streams of sensor data to outgoing streams of data
+(e.g. to other nodes in the network) with some eventual data
+processing in between. A program thus takes form of a directed acyclic
+graph.
 
 On figure \ref{ewma-example} we show an example of a dataflow graph
 taken from the paper "`Flask: A Language for Data-driven Sensor
 Network Programs"'. The graph represents a program for detecting earth
-quakes with two exponentially weighted moving averages (EWMA) of the
-seismometer values.
+quakes observing the ratio between two different exponentially
+weighted moving averages (EWMA) of the seismometer values. When the
+high-gain EWMA drifts away from the low-gain EWMA --- which happens on
+a sudden rise of the seismometer value --- we record it as an
+earthquake. How high the rise should be is given by a constant
+threshold-value.
 
 \begin{nonfloatingfigure}
 \label{ewma-example}
@@ -343,19 +355,19 @@ seismometer values.
   \caption{Flask dataflow graph}
 \end{nonfloatingfigure}
 
-Later we will examine how this is written in Flask, but looking at it
-we see that this is a single connected graph\footnote{This is actually
-  two different \textit{atomic subgraphs} because of the posting wire
-  required to use the sensor, but for simplicity we wont discuss this
-  now. Refer to \cite{flask06} or our section on posting wires,
-  \ref{sec:posting wires}.}. Many Flask programs will though consist
-of several \textit{atomic subgraphs}. That they are atomic means that
-when we start to execute it (when it receives an input value), we have
-to run it to completion before we can go on to the next action. This
-point is actually easier to explain when talking about Fladuino. The
-good example here is that we might want two different \textit{atomic
-  subgraphs} to execute depending on whether a button on our circuit
-was pushed or released.
+Later we will examine how this is written (or \textit{wired}) in
+Flask. We see that this is a single connected graph\footnote{This is
+  actually two different \textit{atomic subgraphs} because of the
+  special \textit{posting wire} required to use the sensor, but for
+  simplicity we wont discuss this now. Refer to \cite{flask06} or our
+  section on posting wires, \ref{sec:posting wires}.}, but many Flask
+programs will consist of several \textit{atomic subgraphs}. We say
+that they are atomic in the sense that they have to run to completion
+before we can go on to the next action. \fixme{eventually add
+  something about the need for this} This point is actually easier
+to explain when talking about Fladuino. The good example here is that
+we might want two different \textit{atomic subgraphs} to execute
+depending on whether a button on our circuit was pushed or released.
 
 \section{From Flask to sensor network-code}
 A fundamental aspect of Flask is its compilation and
@@ -389,36 +401,35 @@ ultimately be generated.
 
 Flask provides two object-languages: NesC and Red. Having NesC as an
 object-language, allows the user to write all programs that's
-expressible in NesC, and NesC is also heavily used in the
-implementation of Flask. The other language, Red, is described below.
+expressible in NesC, and NesC is also heavily used as object-language
+in the Flask-implementation. The other object-language, Red, is described
+in the next section (\ref{sec:red}).
 
 Both languages are integrated into Flask using the GHC quasiquotation
-library \cite{quasiquote07}, written by the author of Flask, Geoffrey
-Mainland. The quasiquotation facility allows you to write the object
-languages in their original syntax inside the Flask/Haskell
+library \cite{quasiquote07}, written by the Flask-author, Geoffrey
+Mainland. The quasiquotation facility allows you to write the
+object-languages in their original syntax inside the Flask/Haskell
 environment, as well as allowing you to intersperse generation time
 variables (which results in compile time constants) into
 object-language code.
 
 Figure \ref{fig:mainloop} illustrates this, showing a simplified
 version of the main loop and initialisation code from Fladuino.
-\texttt{cdefs\_toc} and \texttt{cstms\_toc} are compile-time values
-(lists of C statements). And \texttt{\$edecls} and
-\texttt{\$stms} are anti-quoters which job is two put the values into
-the correct position in the C syntax tree at generation-time.
+\texttt{topdefs} and \texttt{initstms} are generation-time values
+(lists of C statements). And \texttt{\$edecls} and \texttt{\$stms} are
+\textit{anti-quoters} which at generation-time inserts the values into
+the correct position in the C syntax tree.
 
 \begin{figure}
 \begin{verbatim}
 [$cunit|
-$edecls:cdefs_toc
+$edecls:topdefs
 
-void setup()
-{
-    $stms:cstms_toc
+void setup() {
+    $stms:initstms
 }
 
-void loop()
-{
+void loop() {
     if (event_available()) {
         handle_event(pop_event());
     }
@@ -426,7 +437,7 @@ void loop()
 |]
 \end{verbatim}
 \caption{Simplified version of the Fladuino main-loop and
-  initialization code}
+  initialization code.}
 \label{fig:mainloop}
 \end{figure}
 
@@ -458,7 +469,8 @@ in Flask.
 
 Figure \ref{fig:redqq} is an example of a quasiquoted function in Red,
 which determines whether a ratio between two values is below a certain
-compile-time determined threshold. 
+threshold. The threshold is a generation-time computed value, which is
+inserted at generation-time by the \texttt{flo}-antiquoter.
 \begin{nonfloatingfigure}
 \begin{verbatim}
 [$exp|\(hi, lo) -> hi / lo > $flo:threshold|]
@@ -493,10 +505,10 @@ stream operators for that.
 
 \subsection{\texttt{Reify} and \texttt{LiftN}}
 To explain the stream operators we need to discuss the two type
-classes: Reify and LiftN.  Instances of the Reify type classes are
-Haskell types that has node-level equivalents. An instance has to
-provide a function reify that given a Haskell value returns a
-representation of its node-level type.
+classes: \textit{Reify} and \textit{LiftN}.  Instances of the Reify
+type classes are Haskell types that has node-level equivalents. An
+instance has to provide a function reify that given a Haskell value
+returns a representation of its node-level type.
 
 LiftN is a multi parameter type class\footnote{This requires the GHC
   language extension MultiParamTypeClasses}. \texttt{LiftN eta
@@ -590,27 +602,53 @@ sfilter :: forall a eta . (Reify a, LiftN eta (a -> Bool))
 \item
 \begin{verbatim}
 smerge :: forall a . Reify a
-     => S a -> S a -> S a
+    => S a -> S a -> S a
 \end{verbatim}
 Takes two input streams of the same type. When it received a value on
 either of the inputs it will propagate this value to its output, thus
 merging the streams into a single stream.
 
 \end{description}
-
+\newpage
 \section{The EWMA example in Flask-code}
 The dataflow graph from figure \ref{ewma-example} can now be written
-in Flask like below:
+in Flask like below (the code is an almost verbatim copy from
+\cite{flask08}). The result is a stream that only produces values when
+an earthquake is detected.
 \begin{verbatim}
 detect :: Double -> Double -> Double -> 
           S Double -> S (Double, Double)
 detect low high threshold = 
-   ewma high &&& ewma low
+     clock 10
    >>>
-   sfilter [$exp|\(hi, lo) -> hi / lo > $flo:threshold|]
+     adc "Seismometer"
+   >>>
+     ewma high &&& ewma low
+   >>>
+     sfilter [$exp|\(hi, lo) -> hi / lo > $flo:threshold|]
 \end{verbatim}
 
-\fixme{finish this example}
+\noindent
+The function \texttt{adc :: String -> S () -> Double ()} is a Flask
+built-in operator for reading sensor-values, the String-argument
+specifies which NesC interface to use for querying the sensor.
+
+The function \texttt{ewma} retains an exponentially weighted moving
+average with the given gain, which is updated for each input
+value. It is implemented in \cite{flask08} by following declaration:
+
+\begin{verbatim}
+ewma :: Double -> S Double -> S Double
+ewma gain = sintegrate zero
+               [$exp| \(x, xold) ->
+                        let x = $flo:gain * x +
+                                (1.0 - $flo:gain) * xold
+                        in (x, x) |]
+    where
+      zero :: N Double
+      zero = liftN [$exp| 0.0 |]
+\end{verbatim}
+
 
 
 \chapter{Design of the Fladuino system}

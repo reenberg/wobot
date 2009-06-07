@@ -8,14 +8,15 @@ digraph G
         highEWMA [label="high-gain \nEWMA"];
         lowEWMA [label="low-gain \nEWMA"];
         ratio [label="ratio"];
-        test [label="val > thresh? \nif so, eruption!"];
-        send [label="send vote to base"];
+        test [label="value > threshold? \nif so, eruption!"];
+//        send [label="send vote to base"];
 
 trigger -> sample;
 sample -> highEWMA;
 sample -> lowEWMA;
 highEWMA -> ratio;
 lowEWMA -> ratio;
-ratio -> test -> send;
+ratio -> test;
+//-> send;
                
 }
