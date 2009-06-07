@@ -93,8 +93,6 @@ Troels Henriksen (athas@sigkill.dk)}
   generated from a dataflow graph, which subsequently is compiled to
   machine-code by a platform-specific compiler.
 
-  \sout{In the creation we've used the Flask-codebase as our starting
-    point and huge (isolated) parts of the code was left unchanged.}
   Our contribution includes functionality suitable for the domain of
   control systems where a multitude of different hardware devices
   (e.g. sensors, motors or displays) should be possible to
@@ -132,56 +130,56 @@ supervised by Ken Friis Larsen, assistant professor at DIKU.
 
 \listoffixmes 
 
-\chapter*{Disposition}
-\begin{itemize}
-\item Abstract
+% \chapter*{Disposition}
+% \begin{itemize}
+% \item Abstract
 
-\item Preface 
+% \item Preface 
 
-\item Introduction
-  \begin{itemize}
-  \item Brief intro to robot programming
-    \begin{itemize}
-     \item Sensors and Actuators
-    \end{itemize}
-  \item Brief Arduino introduction
-  \item Brief Flask introduction
-    \begin{itemize}
-     \item The staged compilation strategy
-    \end{itemize}
-  \end{itemize}
+% \item Introduction
+%   \begin{itemize}
+%   \item Brief intro to robot programming
+%     \begin{itemize}
+%      \item Sensors and Actuators
+%     \end{itemize}
+%   \item Brief Arduino introduction
+%   \item Brief Flask introduction
+%     \begin{itemize}
+%      \item The staged compilation strategy
+%     \end{itemize}
+%   \end{itemize}
 
-\item Related Work
-  \begin{itemize}
-  \item Frob
-  \item Esterel
-    (http://www.softwaresafety.net/Esterel.org/esterel.html)
-  \item Lustre \cite{lustre91}
-  \item Flask
-  \end{itemize}
+% \item Related Work
+%   \begin{itemize}
+%   \item Frob
+%   \item Esterel
+%     (http://www.softwaresafety.net/Esterel.org/esterel.html)
+%   \item Lustre \cite{lustre91}
+%   \item Flask
+%   \end{itemize}
 
-\item ``Our system''
-  \begin{itemize}
-  \item Staged compilation
-  \item Dataflows
-  \item Node representation
-  \item Devices
-  \item Interrupts
-  \item Events
-  \end{itemize}
+% \item ``Our system''
+%   \begin{itemize}
+%   \item Staged compilation
+%   \item Dataflows
+%   \item Node representation
+%   \item Devices
+%   \item Interrupts
+%   \item Events
+%   \end{itemize}
 
-\item Example programs
+% \item Example programs
 
-\item Conclusions
+% \item Conclusions
 
-\item Bibliography
+% \item Bibliography
 
-\item Appendixes
-  \begin{itemize}
-  \item A Flask tour
-  \item Small guide to Arduino and electronics
-  \end{itemize}
-\end{itemize}
+% \item Appendixes
+%   \begin{itemize}
+%   \item A Flask tour
+%   \item Small guide to Arduino and electronics
+%   \end{itemize}
+% \end{itemize}
 
 
 \mainmatter
@@ -211,7 +209,7 @@ adaptable to reactive programming domain, and in the sense that our
 result, Fladuino, is sufficient for a wide range of control systems.
 
 Our domain, control systems, is quite wide. It is
-often\fixme{citations} defined as \textit{programmable systems that
+often\fixme{citations needed} defined as \textit{programmable systems that
   senses and regulates some task by the use of sensors and actuators},
 which includes almost any computer-system. Selecting the
 Arduino-platform restrains our scope to the tasks it can handle. The
@@ -243,9 +241,18 @@ into:
   is required to respond to its changes (e.g. a robot).
 \end{itemize}
 
-A reactive programming language is a language with primitives for
-connecting streams of values (a kind of ever-changing input values,
-often called signals).\fixme{citation}
+To respond accurately, such a system needs to recompute certain values
+at each change in the environment. \textit{Reactive programming
+  languages} facilitates this programming scheme. They escapes the
+programmer from the tedious task of manually detecting changes on
+input variables, before he can make the appropriate
+responses. Instead, the programmer specifies how his reactions
+(output-variables) are related to the values he observes
+(input-values) and the language itself discovers which output-values
+are to be recalculated when detecting a change in an input-value.
+
+Flask and Fladuino are thus reactive programming languages.
+
 
 \section{Hardware platform}
 \label{sec:hardware platform}
@@ -304,7 +311,7 @@ of (many classes of) obscure runtime-errors.  The home computer is no
 longer a crude and unstable thing, no longer dependent on cooperative
 multitasking, with faulty programs irrecoverably crashing the entire
 system.  Much of this improvement has been driven by the even more
-impressive evolution in hardware capabilities - the laptop of 2009
+impressive evolution in hardware capabilities --- the laptop of 2009
 would seem a supercomputer of almost infinite resources in the early
 1990s.  With such an abundance of resources, we can afford to divert
 an increasing amount to ensure the quality and stability of the
@@ -346,15 +353,15 @@ In the following chapter (\Fref[plain]{chap:Flask}) we will go
 through the existing Flask system. Its design and how you use it to
 write sensor-network programs.
 
-In \fref{chap:design} we will look at what functionality is
+In \Fref{chap:design} we will look at what functionality is
 needed when programming control systems that isn't already in Flask
 and how we have embodied this in Fladuino (i.e. our core design
 decisions).
 
-In \fref{chap:implementation} we will talk about the
+In \Fref{chap:implementation} we will talk about the
 technically modification we have made to transform Flask to Fladuino.
 
-In \fref{chap:evaluation} we will present an evaluation of
+In \Fref{chap:evaluation} we will present an evaluation of
 the complete Fladuino system, judging its benefits over traditional
 methods of programming control programs, as well as covering
 any identified shortcomings.
@@ -652,7 +659,7 @@ merging the streams into a single stream.
 
 \end{description}
 \newpage
-\section{The EWMA example in Flask-code}
+\section{From dataflow graph to Flask-code}
 The dataflow graph from \fref{fig:ewma-example} can now be written
 in Flask like below (the code is an almost verbatim copy from
 \cite{flask08}). The result is a stream that only produces values when
@@ -1721,13 +1728,13 @@ executed the first time the device is used (i.e. when it is added to
 our list of known devices). A common operation here is to add global C
 state-variables or adding certain includes of required header-files.
 
-\texttt{usages} is a list of which hardware-dependencies the device
-has. We use this to make sure that user doesn't try to use two
-incompatible devices (e.g. two devices that both needs access to the
-same PWM output pin)
+\texttt{usages} is a list of the devices hardware-dependencies. We use
+this to make sure that user doesn't try to use two incompatible
+devices (e.g. two devices that both needs access to the same PWM
+output pin). 
 
 \texttt{uniqueId} is our way of comparing devices, we can't just make
-them instances
+them instances of \texttt{Eq}, since
 
 In section \ref{sec:pushbuttondef}, the implementation of a
 device-driver for a simple push-button is discussed.
@@ -1735,6 +1742,9 @@ device-driver for a simple push-button is discussed.
 
 \subsection{Defining new events}
 \label{sec:definingevents}
+
+
+
 \section{Something about arduino external interrupt handling}
 \fixme{Lav rigtigt overskrift.}
 
