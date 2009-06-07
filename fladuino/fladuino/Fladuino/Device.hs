@@ -91,14 +91,12 @@ data MonadFladuino m => Platform m = Platform
     , p_pinmap :: Pin -> Integer
     , p_capabilities :: [Capability]
     , p_base_setup :: m ()
-    , p_default_devices :: [DRef m]
     , p_timerid :: Integer }
 
 data MonadFladuino m => PConf m = PConf (Platform m) [Usage] [m ()]
 
 startConf :: MonadFladuino m => Platform m -> m (PConf m)
-startConf p = do mapM_ (\(DRef d) -> addDevice d) $ p_default_devices p
-                 return (PConf p [] [p_base_setup p])
+startConf p = return (PConf p [] [p_base_setup p])
 
 supports :: MonadFladuino m => PConf m -> Usage -> Bool
 supports (PConf p _ _) (DPinUsage pin caps _) = isJust $ find f (p_pins p)

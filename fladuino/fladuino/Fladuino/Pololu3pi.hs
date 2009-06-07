@@ -69,7 +69,7 @@ data Motors = Motors
               deriving (Eq, Show)
 
 instance Device Motors where
-    usages _ = ["3pi motors"]
+    usages _ = [CapabilityRequired "3pi motors"]
     uniqueId _ = "motors"
 
 -- This just calls the pololu set_motors function with the integers on
