@@ -28,6 +28,7 @@
 \usepackage{amssymb}
 \usepackage{listings}
 \usepackage{ulem} % \sout - strike-through
+\usepackage{tikz}
 
 \renewcommand{\ttdefault}{pcr} % Bedre typewriter font
 %\usepackage[sc]{mathpazo}     % Palatino font
@@ -401,7 +402,7 @@ to connect incoming streams of sensor data to outgoing streams of data
 processing in between. A program thus takes form of a directed acyclic
 graph.
 
-On figure \ref{ewma-example} we show an example of a dataflow graph
+On \fref{fig:ewma-example} we show an example of a dataflow graph
 taken from the paper ``Flask: A Language for Data-driven Sensor
 Network Programs''. The graph represents a program for detecting earth
 quakes observing the ratio between two different exponentially
@@ -412,10 +413,10 @@ earthquake. How high the rise should be is given by a constant
 threshold-value.
 
 \begin{nonfloatingfigure}
-\label{ewma-example}
   \includegraphics[width=\textwidth]{images/flask-ewma}
   \centering
   \caption{Flask dataflow graph}
+  \label{fig:ewma-example}
 \end{nonfloatingfigure}
 
 Later we will examine how this is written (or \textit{wired}) in
@@ -460,6 +461,7 @@ ultimately be generated.
   \includegraphics[width=0.9\textwidth]{images/flask-simple}
   \centering
   \caption{High-level illustration of the Flask compilation strategy.}
+  \label{fig:flask-simple}
 \end{nonfloatingfigure}
 
 Flask provides two object-languages: NesC and Red. Having NesC as an
@@ -554,7 +556,8 @@ representation of the node-level code that should be generated. Flask
 still defines some of the same operators as in the Arrows library,
 though with different type signatures. Writing dataflow graphs in
 Flask therefore still feels quite the same as when using the Arrows
-library, but you won't get the Arrow syntax\cite{PatersonRA:notation}.
+library, but you won't get the Arrow syntax (introduced in
+\cite{PatersonRA:notation}).
 
 In Flask a stream of type $\alpha$ values has the type \texttt{S
   $\alpha$}. The arguably simplest way to generate such a stream is
@@ -578,7 +581,7 @@ given a Haskell value returns a representation of its node-level type.
 \textit{LiftN} is a multi parameter type class\footnote{This requires
   the GHC language extension MultiParamTypeClasses}. An instance
 \texttt{LiftN eta Integer} represents that the Haskell value of type
-can be lifted to a node-level \textit{Integer}.\\
+can be lifted to a node-level \textit{Integer} (by the \texttt{liftN} function).\\
 
 \noindent
 Now to one of the Flask stream operators, \texttt{sfilter}. Its type
@@ -593,6 +596,8 @@ Thus the stream operator \texttt{sfilter} takes a node-level predicate
 as the first argument (type eta), and returns a signal function
 (\texttt{S a -> S a}) that for each input value uses the predicate to
 decide whether it should be passed on to its output stream or not.
+
+
 
 \newpage
 \subsection{Streamoperators}
@@ -612,7 +617,7 @@ sconst :: forall a b eta. (Reify b, LiftN eta a)
   \hfill \\ Connects a stream with a stream operator.
   E.g. \texttt{clock 10 $\ggg$ sconst (liftN [\$exp|42|])} is a stream
   of 42 values, that is passed on every 10th millisecond. This is
-  simply implemented as a normal Haskell function application.
+  simply implemented as a Haskell function application.
 
 
 \item 
@@ -680,7 +685,7 @@ merging the streams into a single stream.
 \end{description}
 \newpage
 \section{The EWMA example in Flask-code}
-The dataflow graph from figure \ref{ewma-example} can now be written
+The dataflow graph from \fref{fig:ewma-example} can now be written
 in Flask like below (the code is an almost verbatim copy from
 \cite{flask08}). The result is a stream that only produces values when
 an earthquake is detected.
@@ -980,7 +985,6 @@ course, but ultimately there are constraints on how much any computer
 can do.
 
 \begin{figure}
-\label{fig:eventloopcode}
 \begin{verbatim}
 repeat forever
   if (event_available())
@@ -989,6 +993,7 @@ repeat forever
 endrepeat
 \end{verbatim}
 \caption{Pseudocode for the event loop}
+\label{fig:eventloopcode}
 \end{figure}
 
 \subsection{Idle waiters}
@@ -1078,21 +1083,21 @@ previously sent request.  Several options present themselves:
 \end{description}
 
 \begin{figure}
-  \label{fig:accum-repeat}
   \includegraphics[width=\textwidth]{images/accumulate-repeat-1}
   \includegraphics[width=\textwidth]{images/accumulate-repeat-2}
   \includegraphics[width=\textwidth]{images/accumulate-repeat-3}
   \caption{Visualisation of Accumulate-Repeat}
   \centering
+  \label{fig:accum-repeat}
 \end{figure}
 
 \begin{figure}
-  \label{fig:queue}
   \includegraphics[width=\textwidth]{images/queue-1}
   \includegraphics[width=\textwidth]{images/queue-2}
   \includegraphics[width=\textwidth]{images/queue-3}
   \caption{Visualisation of Queue}
   \centering
+  \label{fig:queue}
 \end{figure}
 
 Both the \textit{Accumulate-Repeat} and \textit{Queue}-strategies
@@ -1145,10 +1150,10 @@ can thus trivially take whatever action repeated firings of the output
 node would have resulted in.
 
 \begin{figure}
-  \label{accum-repeat-with-ignore}
   \includegraphics[width=0.9\textwidth]{images/accum-repeat-with-ignore}
   \caption{Simulating Accumulate-Repeat}
   \centering
+  \label{accum-repeat-with-ignore}
 \end{figure}
 
 Simulating the Queue behaviour is significantly more complicated and
@@ -1172,10 +1177,10 @@ particularly weak kind of posting wire --- informally, they are to
 real posting wires, as software interrupts are to hardware interrupts.
 
 \begin{figure}
-  \label{queue-with-ignore}
   \includegraphics[width=0.9\textwidth]{images/queue-with-ignore}
   \caption{Simulating Queue}
   \centering
+  \label{queue-with-ignore}
 \end{figure}
 
 \section{Representing peripherals}
@@ -1707,13 +1712,13 @@ We define a device-driver as:
   timers it confiscates.
 \end{itemize}
 
-Most device-drivers also needs some additional data, e.g. about
-which hardware-pin the device is connected to or the starting state of
-the device (e.g. turned off).
+Most device-drivers also needs some additional data, e.g.  which
+hardware-pin the device is connected to or the starting state of the
+device (e.g. turned off).
 
 We need a way to represent these devices as values, i.e. a way of
 referring to a specific device and access information about its
-dependencies etc. A simple solution would be to implement the all
+dependencies etc. A simple solution would be to implement all
 devices as a general \textit{Device} datatype with the above values as
 fields. But as discussed above devices differ and the additional data
 required would be clumsy to store in such a general datatype.  A
@@ -1727,13 +1732,14 @@ program-state is extended with a list of these devices. The required
 values are shown in figure \ref{device typeclass}.
 
 \begin{nonfloatingfigure}
-  \label{device typeclass}
   \begin{verbatim}
 class (Eq a, Show a) => Device a where
     setupDevice :: MonadFladuino m => a -> m ()
     usages :: a -> [Usage]
     uniqueId :: a -> String
 \end{verbatim}
+  \caption{Type class definition for devices (default values omitted)}
+  \label{device typeclass}
 \end{nonfloatingfigure}
 
 Remark that all 3 values requires the device itself as a
