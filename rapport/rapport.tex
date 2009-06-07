@@ -541,6 +541,10 @@ interval in milliseconds returns a stream of unit signals, that is
 sent with the given frequency. E.g. \texttt{clock 1000} is signalling
 every second. This isn't useful by itself, but is useful for
 activating some other task, like reading a sensor at some frequency.
+A discrete \textit{node-level value} of type $a$ has the type $N a$ in
+Haskell.  For example, node-level integers are referred to as $N
+Integer$, and a stream of such integers would have the type $S
+Integer$.
 
 We also need to process these signals, and as mentioned before, Flask
 provides a set of general stream operators for this task.
@@ -548,31 +552,35 @@ provides a set of general stream operators for this task.
 
 \subsection{\texttt{Reify} and \texttt{LiftN}}
 Before we go on to explain the stream operators, we need to discuss
-two type classes: \textit{Reify} and \textit{LiftN}.  Instances of the
-\textit{Reify} type classes are Haskell types that has node-level
-equivalents. An instance has to provide a function \texttt{reify} that
-given a Haskell value returns a representation of its node-level type.
+two Haskell type classes: \textit{Reify} and \textit{LiftN}.
+Instances of the \textit{Reify} type classes are Haskell types that
+have node-level equivalents. An instance \textit{Reify a} has to
+provide a function \texttt{reify :: a -> Type} that, given a Haskell
+value of type $a$ returns a representation of its node-level type.
+The actual value is never used, only its type, so a common value to
+use is \texttt{undefined :: a}.
 
-\textit{LiftN} is a multi parameter type class\footnote{This requires
-  the GHC language extension MultiParamTypeClasses}. An instance
-\texttt{LiftN eta Integer} represents that the Haskell value of type
-can be lifted to a node-level \textit{Integer} (by the \texttt{liftN} function).\\
+\textit{LiftN} is a multi-parameter type class\footnote{This requires
+  the GHC language extension MultiParameterTypeClasses.}. An instance
+\texttt{LiftN eta Integer} declares that a Haskell value of type $eta$
+can be lifted to a node-level value \textit{Integer} (by the
+\texttt{liftN :: a -> N a} function).\\
 
 \noindent
-Now to one of the Flask stream operators, \texttt{sfilter}. Its type
-signature is:
+Let us consider an actual Flask stream operator, namely
+\texttt{sfilter}. Its type signature is:
 
 \begin{verbatim}
 sfilter :: forall a eta . (Reify a, LiftN eta (a -> Bool))
               => eta -> S a -> S a
 \end{verbatim}
 
-Thus the stream operator \texttt{sfilter} takes a node-level predicate
-as the first argument (type eta), and returns a signal function
-(\texttt{S a -> S a}) that for each input value uses the predicate to
-decide whether it should be passed on to its output stream or not.
-
-
+Thus the stream operator \texttt{sfilter} takes as its first argument
+any value that can be lifted to a node-level function of type
+\texttt{a -> Bool} (a predicate function), and returns a signal
+function (\texttt{S a -> S a}) that for each input value uses the
+predicate to decide whether it should be passed on to its output
+stream or not.
 
 \newpage
 \subsection{Streamoperators}
