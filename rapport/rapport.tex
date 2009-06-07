@@ -282,6 +282,64 @@ Arduino
 Mega\footnote{\url{http://arduino.cc/en/Main/ArduinoBoardMega}}, and
 Pololu 3pi\footnote{\url{http://www.pololu.com/catalog/product/975}}.
 
+\section{New and improved Motivation}
+
+One of the most noticeable consequences of the dramatic reductions in
+cost that we have observed in programmable electronic devices over the
+last five centuries, is the sheer ubiquity of small computers in our
+everyday lives.  Every citizen of a modern industrialised society
+interacts with many of these devices every day -- we refer to them as
+\textit{embedded computers}, as they are an integrated part of some
+larger machine, rather than an independent machine the way we consider
+the personal computer to be.  Indeed, it may be that many consumers
+don't even think of the multitude of microcontrollers that inhabit
+their daily lives to be computers; but they are computers none the
+less, and they suffer the same impediments to programming as any
+desktop machine.
+
+Programming on general-purpose computers has undergone a major
+evolution in the last two (or more) decades: gone are the days of
+manual memory management, of segmentation faults, of runaway pointers,
+of (many classes of) obscure runtime-errors.  The home computer is no
+longer a crude and unstable thing, no longer dependent on cooperative
+multitasking, with faulty programs irrecoverably crashing the entire
+system.  Much of this improvement has been driven by the even more
+impressive evolution in hardware capabilities - the laptop of 2009
+would seem a supercomputer of almost infinite resources in the early
+1990s.  With such an abundance of resources, we can afford to divert
+an increasing amount to ensure the quality and stability of the
+software that we run.  Many modern programs are written with garbage
+collection and in managed languages, or statically checked with the
+help of powerful type systems that catch large classes of errors
+before the program even runs.
+
+This revolution, while not invisible, is however not as marked in the
+field of embedded devices.  While some modern uses of integrated
+computers would be impossible scant years ago (consider for example
+the Roomba: an autonomous robotic vacuum cleaner), a trend is forming
+where we see an expansion in \textit{breadth}, rather than
+\textit{depth}.  By this we mean that embedded computers continue to
+decrease in size, energy usage, and cost, while not improving
+significantly in processing power or memory size, thus precluding the
+use of many of the sophisticated run-time systems that we use to ease
+the programming of larger computers.  Rather than a supercomputer in
+every coffee machine, the future looks more like one of tiny,
+ubiquitous microchips in every conceivable man-made object, presumably
+gaining utility through massive ad-hoc networking and interchange of
+data.  These devices span a great belt of functionality: from passive
+sensors to mobile robots.
+
+Our goal with Fladuino is to provide a framework that facilitates the
+writing of \textit{control programs} for these devices.  Our intention
+is that programs written with Fladuino will be easier to get right,
+and to combine with other programs, than the C or assembly programs
+that are normally required due to resource constraints.  Fladuino must
+thus fulfil two major requirements: it must provide sufficiently
+useful \textit{tools} for control programs to be easily expressable
+and statically error-checked, and the resulting programs must have
+enough \textit{performance} to run on the highly resource--constrained
+devices that form our domain.
+
 \section{Motivation (very robots specific, should be rewritten for
   control systems)}
 \textit{Something about how our everyday lifes are packed with control
