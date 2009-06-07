@@ -689,7 +689,7 @@ A summary of the most important requirements for our system follows:
 \item Fladuino must be able to generate a valid C-program suitable for
   running on an Arduino from a description of a dataflow graph. This
   graph must be expressed in the form of a Haskell program.
-  \textit{This requirement stems from the selection of
+  \footnote{This requirement stems from the selection of
     Arduino (see section \ref{sec:hardware platform}) as platform and from the
     ???below??? requirement of mirroring Flask.}
 \end{itemize}
@@ -911,9 +911,9 @@ moment, and it cannot be guaranteed that this state will not have
 changed by the time the main loop retrieves the element from the event
 queue.  This means that we cannot provide any strict guarantees about
 the resource usage of interrupt handlers, but this is a hardware issue
-that is fundamentally unsolvable in software.  Optimisations can be
-performed, of course, but ultimately there are constraints on how much
-any computer can do.
+that is not solvable in software.  Optimisations can be performed, of
+course, but ultimately there are constraints on how much any computer
+can do.
 
 \begin{figure}
 \label{fig:eventloopcode}
