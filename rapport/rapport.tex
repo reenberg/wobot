@@ -519,6 +519,7 @@ decide whether it should be passed on to its output stream or not.
 
 
 \subsection{Streamoperators}
+\label{sec:streamoperators}
 Now we will list a description of most of the stream-operators and
 signal functions that Flask provides. \fixme{Add type signatures and
   improve explanations}
@@ -538,13 +539,16 @@ sconst :: forall a b eta. (Reify b, LiftN eta a)
 
 
 \item 
+\label{item:szip}
 \begin{verbatim}
 szip, (&&&) :: forall a b . (Reify a, Reify b)
       => S a -> S b -> S (a, b)
 \end{verbatim}
   This operator has two input-streams. It waits for a value on both
   inputs, constructs a pair of them, and sends this pair to its
-  output-stream.
+  output-stream.  Should several signals arrive on one of the inputs
+  before one arrives on the other, the most recently arrived value
+  will be used.
 
 \item 
 \begin{verbatim}
@@ -959,10 +963,15 @@ previously sent request.  Several options present themselves:
 \item[Ignore:] We can also opt not to queue or accumulate anything,
   ignore any input values sent while there is already an outstanding
   request, and fire the output node a single time upon receiving a
-  reply from the sensor.  While appearing to be a lossy hack at first
-  glance, we argue that it is in fact the most elegant solution, that
-  its deficiencies are not important in the typical case, and that
-  they can (to a degree) be worked around, if necessary.
+  reply from the sensor.  This strategy also implies that whatever
+  value was carried by the signal that arrived at the input node to
+  trigger the posting wire will be lost, unless the user takes care to
+  explicitly route it around the wire (the \texttt{szip} stream
+  operator described in \Fref{sec:streamoperators} is highly useful
+  for this).  While appearing to be a lossy hack at first glance, we
+  argue that it is in fact the most elegant solution, that its
+  deficiencies are not important in the typical case, and that they
+  can (to a degree) be worked around, if necessary.
 \end{description}
 
 \begin{figure}
@@ -1449,7 +1458,7 @@ wire, understood as events that are not responses to previously sent
 requests.  For example, it is possible to define a posting wire where
 $f$ does nothing, and the event listener is the event sent by some
 specific push-button when it is pressed.  The end result is a wire
-that ``delays'' signals until an event has been received.
+that ``delays'' signals until a specific event has been received.
 
 \subsection{On blocking and busy-waiting}
 Blocking operations are generally disallowed in the dataflow graph,
