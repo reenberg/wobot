@@ -126,7 +126,6 @@ supervised by Ken Friis Larsen, assistant professor at DIKU.
   not.}
 \fixme{Check all refs. Should be converted to vref to utilize the
   varioref package (Where appropriate!!)}
-\fixme{dataflow eller data flow? --- ensret}
 
 \listoffixmes 
 
@@ -402,11 +401,13 @@ Flask. We see that this is a single connected graph\footnote{This is
   \fref{sec:posting wires} about posting wires.}, but many Flask
 programs will consist of several \textit{atomic subgraphs}. We say
 that they are atomic in the sense that they have to run to completion
-before we can go on to the next action. \fixme{eventually add
-  something about the need for this} This point is actually easier to
-explain when talking about Fladuino. The good example here is that we
-might want two different \textit{atomic subgraphs} to execute
-depending on whether a button on our circuit was pushed or released.
+before we can go on to the next action, thus ensuring that any mutable
+state they encapsulate is atomically manipulated.  The details for
+this notion, as well as details about its implementation, can be found
+in \Fref{sec:dataflowevaluationstrategy} and
+\Fref{sec:dataflowtranslation}.  An example here is that we might want
+two different \textit{atomic subgraphs} to execute depending on
+whether a button on our circuit was pushed or released.
 
 \section{From Flask to sensor network-code}
 A fundamental aspect of Flask is its compilation and
@@ -1281,6 +1282,7 @@ the capability notion allows us to statically sanity-check any used
 devices for such requirements at generation-time.
 
 \subsection{Devices}
+\label{sec:devices}
 We use the term \textit{device} for any form of peripheral that can be
 connected to an Arduino board, e.g. buttons, electromotors and
 potentiometers.  The definition of a device consists of a list of
@@ -1481,6 +1483,27 @@ the additional power we would gain through generating our own machine
 code, and the additional amount of work required would be significant.
 Flask chooses the same approach, in that it produces NesC-code for
 running on sensor motes, likely for the same reasons.
+
+The task of adapting Flask for our purposes was greatly aided by the
+fact that the low-level code generation machinery, the part of the
+system responsible for translating Red to NesC, was already
+parametrised to support generation of C via a C-quasiquotation library
+that Geoffrey Mainland graciously made available to us.  Indeed, we
+barely modified any part of Flask below the layer that manages the
+dataflow graph representation.  We had to disable some features that
+were intrinsic to Flask's target domain of sensor networks (such as
+the \textit{Flows}-abstraction for communicating between nodes), and
+extend the intermediate data structures and high-level code generation
+procedures with our own abstractions for platforms, devices, events,
+and idle waiters.
+
+The implementation separates the construction of the dataflow graph
+from the generation of code, which has the resulting property that we
+can parametrise the generation by the target platform.  This also
+implies that we postpone sanity-checking the graph (such as the
+checking of devices as described in \Fref{sec:devices}) until the last
+step, as we need the target platform information in order to perform
+it.
 
 \section{Dataflow translation}
 \label{sec:dataflowtranslation}
@@ -1949,11 +1972,12 @@ This allows programs such as
 idle >>> (valueOf $ Potentiometer 0) >>> smap [$exp|(/4)|] >>> (setValue $ AnalogOutputPin 10 0)
 \end{verbatim}
 
-The reason why the pulled value is devided by 4 is that the Atmega chip by
-default returns values between 0 and 1024 when doing analog reads but can only
-write values between 0 and 256 unless explicitley changed. The mapping 0 to 1024
-when reading analog values is from GND to AREF which is nomally 0v and 5v
-respectively though AREF can be explicitley changed.
+The reason why the pulled value is devided by 4 is that the Atmega
+chip by default returns values in the range 0 to 1023 when doing
+analog reads but can only write values in the range 0 to 255 unless
+explicitley changed. The scale 0 to 1024 when reading analog values is
+proportional to the relationship between GND and AREF, which is
+nomally 0v and 5v respectively, though AREF can be explicitly changed.
 
 \subsection{Defining a battery reader for 3pi}
 
@@ -1994,9 +2018,9 @@ definitions
   with the pin number and a list of the capabilities supported by the
   pin.
 
-\item[Pin map] A mapping from \textit{logical pins} to
-  \textit{hardware pins} (see \Fref{sec:pins}).  E.g. the Arduino
-  Duemilanove maps analog pin 0 to physical pin 14.
+\item[Pin map] A mapping from \textit{arduino pins} to
+  \textit{logical pins} (see \Fref{sec:pins}).  E.g. the Arduino
+  Duemilanove maps analog pin 0 to logical pin 14.
 
 \item[Capabilities] A list of platform specific capabilities
   expressing support for notions not otherwise expressable.  All
