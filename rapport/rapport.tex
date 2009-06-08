@@ -110,15 +110,12 @@ Department (DIKU), University of Copenhagen. The authors are Martin
 Dybdal, Troels Henriksen and Jesper Reenberg. The project is
 supervised by Ken Friis Larsen, assistant professor at DIKU.
 
-\fixme{maybe add thanks to Flask-guys}
-
 \clearpage
 
 \tableofcontents*
 
 
 
-\fixme{remove all uses of ``very''}
 \fixme{change $\backslash$ url to use the hyperref package so real links are
   used.}
 \fixme{check all quoted text for use of the same quotes!!!!}
@@ -208,17 +205,19 @@ adaptable to reactive programming domain, and in the sense that our
 result, Fladuino, is sufficient for a wide range of control systems.
 
 Our domain, control systems, is quite wide. It is
-often\fixme{citations needed} defined as \textit{programmable systems that
-  senses and regulates some task by the use of sensors and actuators},
-which includes almost any computer-system. Selecting the
+often\fixme{citations needed} defined as \textit{programmable systems
+  that senses and regulates some task by the use of sensors and
+  actuators}, which includes almost any computer-system. Selecting the
 Arduino-platform restrains our scope to the tasks it can handle. The
 Arduino is generic and handles a broad range of tasks, when connected
 with the right peripherals. This extendability makes us argue that
-concentrating on the Arduino isn't a very strict limitation. This has
-the obvious impact, that our framework should be general enough to
-support almost any Arduino-connectable external device. We do this by
-providing a way of writing drivers or small frameworks for arbitrary
-devices.
+concentrating on the Arduino isn't a particularly strict
+limitation. This has the obvious impact, that our framework should be
+general enough to support almost any Arduino-connectable external
+device. We do this by providing a way of writing drivers or small
+frameworks for arbitrary devices.  Furthermore, due to the blandness
+of Arduino's technology itself, it would most likely not prove
+difficult to port our work to another architecture.
 
 \subsection{Reactivity}
 Most control systems are reactive, especially robots fits the
@@ -505,8 +504,7 @@ that we have overlooked) from Red:
 \item Modules
 \end{itemize}
 
-And only a very small subset of the Standard Prelude is included
-in Flask.
+And only a small subset of the Standard Prelude is included in Flask.
 
 Figure \ref{fig:redqq} is an example of a quasiquoted function in Red,
 which determines whether a ratio between two values is below a certain
@@ -1621,7 +1619,7 @@ the Pololu 3pi's reflectance sensors.
 
 Operations of this kind are acceptable however.  Barring hardware
 failure, we are \textit{guaranteed} that the above loop will terminate
-in a deterministic (and very short) period of time.  In general, any
+in a deterministic (and short) period of time.  In general, any
 operation that can be guaranteed to terminate, no matter how long it
 would take, is safe and permitted as far as Fladuino is concerned.
 There are, of course, still practical issues with such long-running
