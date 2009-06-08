@@ -17,7 +17,6 @@
 \let\Fref\undefined
 \usepackage{fancyref} % Better reference. 
 
-\usepackage{colortbl}  % Bruges til at farve celler, rækker mv. i tabeller
 \usepackage{pdflscape} % Gør landscape-environmentet tilgængeligt
 \usepackage[draft]{fixme}     % Indsæt "fixme" noter i drafts.
 \usepackage{hyperref}  % Indsæter links (interne og eksterne) i PDF
@@ -54,7 +53,6 @@
   }{
   \vskip\intextsep
 }
-
 \makeatother
 
 
@@ -1673,7 +1671,7 @@ great size, especially if the program has an input source that
 constantly triggers new events every few milliseconds.  Since the
 stack and heap share the same memory space, we would run the risk of a
 collision, causing data corruption possibly severe enough to
-completely crash the program (eg. if the procedure return address on
+completely crash the program (e.g. if the procedure return address on
 the topmost stack frame was modified).  While we could modify the
 event queue to perform a check for imminent collision whenever an
 element was about to be added (and if so, ignore the event), we cannot
@@ -1770,6 +1768,57 @@ would be appropriate to allow the programmer to select his preferred
 implementation with a parameter to Fladuino, as it is not a problem
 that we feel has a universal solution.  This feature is unfortunately
 not implemented in Fladuino, however.
+
+\subsection{Implementation of the clock operator}
+
+To handle different \texttt{clock} operators in a Fladuino program, their
+greatest common divisor is calculated and used to calculate the timeout vale of
+a hardware timer (see \fref{sec:timer-interrupts}). Each time an overflow
+interrupt from the timer occurs a IHF (Interrupt Handler Function) is called
+which takes care of queueing events in the event queue. This is done by having a
+counter for each \texttt{clock} operator and knowing how many times the timer
+must overflow before the defined \texttt{clock} time has elapsed. This handler
+function is statically generated at compile-time. Currently timer 1 and 2 can be
+used as the \texttt{clock}-timer since the Arduino framework reserves timer
+0\footnote{This timer is used for the functions \texttt{millis()},
+  \texttt{delay()} and other timing related function}.
+
+Fladuino events such as the \texttt{PushButtonPressEvent} and
+\texttt{PushButtonReleaseEvent} uses external hardware interrupts (see
+\fref{sec:external-interrupts}). The default behaviour when such an event occurs
+is that the GIE (Global Interrupt Enable) bit is cleared which disables all
+further interrupt handling until the IHF finish and returns which enables the
+GIE bit again. It is however possible to enable the GIE bit when entering a IHF
+which would allow nested interrupts \cite[Section 4.7 page 14]{atmel8p} but
+potentially also reverse the order of events, e.g. if a press event occurs and
+while processing this a release event occurs. This would result in the release
+event being processed first and then the press event. Therefore this is
+generally not a good idea.
+
+This leads to the possibility of losing interrupts if GIE is cleared, nested
+interrupts isn't used and an interrupt happens. Fortunately the Atmega chip has
+a cheap work around for this that works in most cases: all timer interrupts and
+external interrupts on Arduino digital pin 0 and 1 has internal flag registers
+that indicates if the particular interrupt has occurred. Further occurrences and
+any other interrupts while GIE is cleared will however be lost.
+
+In practice this is not a problem as all Fladuino defined IHF's only push events
+onto the event queue and thus should be executed before the same interrupt
+happens again. It should however also be noted that there is a predefined order
+of running IHF's \cite[Section 9 page 57]{atmel8p} (lowest vector no. is run
+first) when multiple has flagged and GIE is set and thus it is not guaranteed
+that interrupt is handled in the order they occurred and that defining more
+\texttt{clock} operators in the Fladuino program results in a slower
+\texttt{clock}-timer IHF. Though the later only becomes a problem if at least
+one of the \texttt{clock} operators is using a low timeout, resulting in the IHF
+being run more frequently. As mentioned in the previous section it is the users
+responsibility not to define any combination of to many \texttt{clock}
+operators, to short \texttt{clock}-timeout or to much work when a \texttt{clock}
+event occurs such that the event queue is filled up.
+
+When an IHF returns it is guaranteed that the main program executes at least
+one instruction before the next IHF is called \cite[Section 4.7 page 14]{atmel8p}.
+
 
 \section{User-extensible abstractions with typeclasses}
 As explained in earlier chapters, one of our main additions to Flask,
@@ -1915,83 +1964,6 @@ mkEvent :: forall e t. (Event e t)
 
 \subsubsection{Subscribing to events}
 
-
-
-\section{Something about arduino external interrupt handling}
-\label{sec:external interrupts}
-\fixme{Lav rigtigt overskrift.}
-
-Fladuino events such as the \texttt{PushButtonPressEvent} and
-\texttt{PushButtonReleaseEvent} uses hardware interrupt on the Atmega chip. The
-default behaviour when such an event occurs is that the GIE (Global Interrupt
-Enable) bit is cleared which disables all further interrupt handling until the
-IHF (Interrupt Handler Function) finish and returns which enables the GIE bit
-again. It is however possible to enable the GIE bit when entering a IHF which
-would allow nested interrupts \cite[Section 4.7 page 14]{atmel8p} but
-potentially also reverse the order of events, e.g. if a press event occurs and
-while processing this a release event occurs. This would result in the release
-event being processed first and then the press event. Therefore this is
-generally not a good idea.
-
-This leads to the possibility of losing external interrupts when GIE is cleared and
-nested interrupts isn't used. Arduino digital pins 0 and 1 is however a bit
-different as they have an internal flag register that indicates if an interrupt
-occurs. If this register is flagged for either of the pins their individual
-IHF's will be executed as soon as GIE is set. Any other interrupts or multiple
-occurrences of interrupts will not be recorded while GIE is cleared.
-
-The disadvantage of not allowing nested interrupts is that when the Fladuino
-clock timer interrupt occurs while an another IHF is running, its IHF will not
-be run but it will be flagged and run when then current running IHF returns. As
-with external interrupts multiple occurrences while GIE is cleared will not be
-recorded. As there is a predefined order \cite[Section 9 page 57]{atmel8p}
-(lowest vector no. is run first) of running IHF's when multiple is flagged and
-GIE is set, it is not guaranteed that interrupt is handled in they order they
-occurred. However in general this is not a problem as Fladuino utilises an event
-queue and all Fladuino defined IHF's only push function calls to this event
-queue, making sure the IHF is quickly executed leaving time for the main program
-loop.
-
-When a IHF returns it is guaranteed that the main program loop executed at least
-one instruction before the next IHF is called \cite[Section 4.7 page 14]{atmel8p}.
-
-
-% The default behaviour of the Atmega chip, when interrupts occur, is that
-% the GIE (Global Interrupt Enable) bit\footnote{which is the L-bit in the SREG
-%   (Status Register)} is cleared and thus all interrupt are disabled. The GIE bit
-% is automatically set again when the IHF (Interrupt Handler Function) returns,
-% using the RETI instruction. The software running on the chip could however
-% enable the GIE bit when the IHF is called, thus allowing nested interrupts. If
-% interrupts triggers when GIE is disabled, their individual flag bits is set and
-% when GIE is enabled again those interrupts will trigger in the order the flags
-% is located in the registers, and not necessarily in the order the interrupts
-% happened. When GIE is disabled and the same interrupt happens multiple times,
-% only the first one set the flag and thus it is not possible to know how many
-% times the interrupt actually occurred \cite[Section 4.7 page 14]{atmel8p}
-
-% \subsection{Types of interrupts}
-
-% The Atmega chip support two types of interrupts. The sophisticated INT0..1 pins
-% and the simple PCI0..2 which controls the PCINT0..23 pins. The sophisticated
-% interrupts supports low level, logical change, falling edge and rising edge,
-% though Fladuino only supports the logical change on any of the interrupt
-% types. These interrupts are triggered if the INT0..1 bit is enabled in the
-% EIMSK (External Interrupt Mask) Register and the GIE bit is set.
-
-% The simple interrupts only support logical change and doesn't directly support
-% separate IHF's for each PCINT pins but only for each of the three PCI0..2. These
-% interrupts are triggered if the GIE bit is set, either of the PCIE0..2 bits is
-% enabled in the PCICR (Pin Change Interrupt Control Register) and any of the
-% PCINT0..7, PCINT8..14, PCINT16..23 bits respectively, is enabled in the
-% PCMSK0..2 (Pin Change Mask) register. As any logical change to any of the
-% PCINT0..7 pins will only trigger the PCI0 IHF, this function must then see which
-% of the enabled PCINT0..7 pins that has changed its value since last time, by
-% keeping a track of their state, and then trigger the defined IHF for each of the
-% changed pins and so fourth for all the PCI0..2. An example of this can be seen
-% on the Arduino Playerground
-% \footnote{\url{http://www.arduino.cc/playground/Main/PcInt}, last checked 23rd
-%   June 2009} which have been modified to work on all the supported platforms in
-% Fladuino system \cite[Section 10 page 70]{atmel8p}.
 
 \chapter{Example programs}
 
@@ -2235,6 +2207,47 @@ pololu3pi = arduinoDuemilanove { p_capabilities = ["3pi", "3pi battery reader", 
 \item How does the example-programs compare to similar programs
   written directly in C? More or less code? More or less debugging?
 \end{itemize}
+
+While we consider the core technical and design foundations to be
+strong, a number of nontrivial issues prevent Fladuino from being
+immediately generally useful for general-purpose programming of
+Arduino-based control systems:
+
+\begin{itemize}
+\item The complete absence of documentation makes the proper use of
+  Fladuino difficult, and anything but performing trivial
+  modifications to existing programs is likely to be impossible
+  without studying the source code of Fladuino.  Documenting Fladuino
+  is, however, possible without touching the code itself.
+\item There is no robust system in case for any reasonable kind of
+  run-time error handling for the generated programs.  While
+  exhausting memory, or swamping the processor with more work that it
+  is able to handle, are situations that it is hard to solve
+  gracefully, \textit{some} detection of these problems is likely to
+  be important for debugging.  Even ultra-simplistic error reporting,
+  like lighting a given diode, would be preferable, though many
+  applications may well require not only the ability to notice errors,
+  but also to take steps to correct them (such as throttling input
+  events, or disabling some of its functionality).
+\item Somewhat connected to the previous issue, the very static nature
+  of Fladuino programs can be problematic for some uses.  Though less
+  of an issue in the sensor networks that are Flask's target domain,
+  many applications in the (admittedly broad) domain of arbitrary
+  control programs may benefit from the ability to dynamically rewire
+  dataflow.
+\end{itemize}
+
+Fladuino \textit{does}, however, fully implement its target feature
+set in a manner that is practically useful.  If a program can be
+expressed within the abstractions that we provide, then using Fladuino
+to implement it should not be a problem.
+
+\section{Experimental comparison}
+
+We cannot hope to make a general comparison of utility between
+Fladuino and the programming of Arduino in C, but this section will
+present a number of programs implemented in both, in order to showcase
+the advantages and shortcomings of Fladuino.
 
 \chapter{The Fladuino Future}
 \label{chap:futurework}
@@ -2480,8 +2493,10 @@ A description of PWM from the Arduino website follows:
 
 
 \section{Timer Interrupts}
+\label{sec:timer-interrupts}
 
 \fixme{fix text to support new heading: timer interrupts}
+
 
 The ATmega168/ATmega328 processors has three different hardware
 timers. One of them (timer 0) is used by Arduino software to provide a
