@@ -980,7 +980,7 @@ endrepeat
 \end{figure}
 
 \subsection{Idle waiters}
-
+\label{sec:idle waiters}
 For many embedded applications, a typical workflow would be to
 continuously poll an input source (such as a sensor), then adjusting
 some output device based on the reading.  For example, a
@@ -1654,31 +1654,31 @@ available on all Arduino variants in order to avoid using the same
 memory as the program stack.  While an interesting idea, EEPROM writes
 require unacceptable multi-millisecond delays.
 
-Thus, our event queue consists of a statically allocated
-(compile-time fixed-size) array that is not too big, and in which
-element insertions have hard real-time runtime guarantees.  If an
-attempt is made to insert an element into a full event queue, the
-result will be a silent failure.  This is a tradeoff: as mentioned in
-a previous section, we have to accept that it is possible for the
-Arduino to be swamped with more work per time unit (or asked to store
-more data) than it is physically able to do.  All we can do is to
-design Fladuino such that the fatal error conditions are rare, and the
-most common error conditions are survivable.  Stack (or heap)
-corruption will in most cases result in the complete malfunction of
-the program, and are thus the least desirable error case.  In
-Fladuino, use of the heap is limited (and in fact bounded by the
-static maximum size of the event queue), and stack/heap corruption
-will in practice only occur if the program is large enough to consume
-all available memory with its stack.  The most common error case, on
-the other hand, will be attempting to add an element to a full event
-queue, resulting in a silent failure.  There are many cases where this
-is not desirable, of course, but many reactive programs will not
-experience catastrophic failure if they lose even important events,
-such as button presses.  Still, we recognise that not all event loss
-can be brushed aside as merely an unimportant UI deficiency, and
-therefore we provide a facility, termed \textit{idle waiters}, meant
-to reduce the average load on the event queue and reduce the risk of
-filling it up.
+Thus, our event queue consists of a statically allocated (compile-time
+fixed-size) array that is not too big, and in which element insertions
+have hard real-time runtime guarantees.  If an attempt is made to
+insert an element into a full event queue, the result will be a silent
+failure.  This is a tradeoff: as mentioned in a previous section, we
+have to accept that it is possible for the Arduino to be swamped with
+more work per time unit (or asked to store more data) than it is
+physically able to do.  All we can do is to design Fladuino such that
+the fatal error conditions are rare, and the most common error
+conditions are survivable.  Stack (or heap) corruption will in most
+cases result in the complete malfunction of the program, and are thus
+the least desirable error case.  In Fladuino, use of the heap is
+limited (and in fact bounded by the static maximum size of the event
+queue), and stack/heap corruption will in practice only occur if the
+program is large enough to consume all available memory with its
+stack.  The most common error case, on the other hand, will be
+attempting to add an element to a full event queue, resulting in a
+silent failure.  There are many cases where this is not desirable, of
+course, but many reactive programs will not experience catastrophic
+failure if they lose even important events, such as button presses.
+Still, we recognise that not all event loss can be brushed aside as
+merely an unimportant UI deficiency, and therefore we provide a
+facility, termed \textit{idle waiters} (\Fref{sec:idle waiters}),
+meant to reduce the average load on the event queue and reduce the
+risk of filling it up.
 
 \section{User-extensible abstractions with typeclasses}
 As explained in earlier chapters, one of our main additions to Flask,
@@ -1701,16 +1701,16 @@ device (e.g. turned off).
 
 We need a way to represent these devices as values, i.e. a way of
 referring to a specific device and access information about its
-dependencies etc. A simple solution would be to implement all
-devices as a general \textit{Device} datatype with the above values as
+dependencies etc. A simple solution would be to implement all devices
+as a general \textit{Device} datatype with the above values as
 fields. But as discussed above devices differ and the additional data
 required would be clumsy to store in such a general datatype.  A
-second reason for why this isn't a good idea, is that we wouldn't have
-a way of distinguishing devices on their types. We solve this by
-requiring that the driver-writer creates a separate datatype for each
-device and makes it an instance of our \textit{Device} typeclass. We
-can thus identify devices by being instances of this typeclass and
-specific devices can be identified directly by their datatype. The
+second argument against this idea is that we wouldn't have a way of
+distinguishing devices on their types. We solve this by requiring that
+the driver-writer creates a separate datatype for each device and
+makes it an instance of our \textit{Device} typeclass. We can thus
+identify devices by being instances of this typeclass and specific
+devices can be identified directly by their datatype. The
 program-state is extended with a list of these devices. The required
 values are shown in figure \ref{device typeclass}.
 
@@ -1830,10 +1830,10 @@ instance Device PushButton where
     usages (PushButton pin) = [DPinUsage pin ["interrupt"] DigitalInput]
 \end{verbatim}
 
-Since logical change interrupts occurs twice on a pushbutton (when pushed and
-then when released) it is easy and god abstraction to define a
-\texttt{PushButtonPressEvent} and a \texttt{PushButtonReleaseEvent}, and thus
-the two type constructors is defined
+Since logical change interrupts occurs twice on a pushbutton (when
+pushed and then when released) it seems appropriate to define a
+\texttt{PushButtonPressEvent} and a \texttt{PushButtonReleaseEvent},
+and thus the two type constructors is defined
 
 \begin{verbatim}
 data PushButtonPressEvent = PushButtonPressEvent PushButton
@@ -1892,7 +1892,7 @@ pushbutton attached to digital pin 3 is pressed.
 
 A potentiometer interface can be defined in Fladuino quite easily as it doesn't
 make any sense to define any events upon this as its value needs to be pulled
-once in a vile to know if it has changed and/or to act upon that.
+once in a while to know if it has changed and/or to act upon that.
 
 The \texttt{Device} instance declaration of \texttt{Potentiometer} defines that
 it uses an Analog pin but with no functionality requirements.
