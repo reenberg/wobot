@@ -127,7 +127,7 @@ extendConfiguration pc@(PConf p usages ss) (u@(APinUsage pin caps) : us)
     | otherwise = fail $ "Cannot provide analog pin " ++ show pin ++ " with capabilities " ++ show caps
 extendConfiguration pc [] = return pc
 
-configureDevice :: (MonadFladuino m) => PConf m -> DRef m -> m (PConf m)
+configureDevice :: (MonadFladuino m) => PConf m -> DRef -> m (PConf m)
 configureDevice pc (DRef d) = do (PConf p u s) <- extendConfiguration pc (usages d)
                                  return (PConf p u (setupDevice d : s))
 
@@ -140,19 +140,19 @@ statevar d s = do
                       
 class (Eq e, Show e, Reify t) => Event e t | e -> t where
     interruptPins :: e -> [Pin]
-    setupEvent :: e -> FladuinoM (ERep FladuinoM)
+    setupEvent :: e -> FladuinoM ERep
 
 eventValueType :: forall e t. (Event e t) => e -> H.Type
 eventValueType _ = reify (undefined :: t)
 
-mkEvent :: forall e t. (Event e t) => e -> Maybe H.Var -> Maybe H.Var -> ERep FladuinoM
+mkEvent :: forall e t. (Event e t) => e -> Maybe H.Var -> Maybe H.Var -> ERep
 mkEvent e val pred = ERep { e_value = val
                           , e_predicate = pred
                           , e_id = show e
                           , e_interrupts = interruptPins e
                           , e_type = reify (undefined :: t) }
 
-lookupEvent :: forall t e m. (Event e t, MonadFladuino m) => e -> m (Maybe (ERep m))
+lookupEvent :: forall t e m. (Event e t, MonadFladuino m) => e -> m (Maybe ERep)
 lookupEvent event = do 
   events <- getsFladuinoEnv f_events 
   case find (\(ERep { e_id = id}) -> show event == id) events of
