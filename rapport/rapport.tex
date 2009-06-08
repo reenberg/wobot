@@ -218,6 +218,23 @@ frameworks for arbitrary devices.  Furthermore, due to the blandness
 of Arduino's technology itself, it would most likely not prove
 difficult to port our work to another architecture.
 
+In \fref{sec:pushbuttondef}, we show by example how this framework is
+used. \Fref{fig:fladuino-simple} shows a Fladuino program that toggles
+whether a diode is lit every time a button is pushed.
+
+\begin{figure}
+  \centering
+
+\begin{verbatim}
+  onEvent (PushButtonPressEvent $ PushButton 3) 
+>>> 
+  (toggle $ diode 13 True)
+\end{verbatim}  
+
+  \caption{Simple Fladuino program}
+  \label{fig:fladuino-simple}
+\end{figure}
+
 \subsection{Reactivity}
 Most control systems are reactive, especially robots fits the
 definition of reactive systems well. We've found the best description
@@ -1753,7 +1770,6 @@ that we feel has a universal solution.  This feature is unfortunately
 not implemented in Fladuino, however.
 
 \subsection{Implementation of the clock operator}
-
 To handle different \texttt{clock} operators in a Fladuino program, their
 greatest common divisor is calculated and used to calculate the timeout vale of
 a hardware timer (see \fref{sec:timer-interrupts}). Each time an overflow
@@ -1876,7 +1892,7 @@ device-driver for a simple push-button is discussed.
 Our general concept of \textit{events} is defined in
 \ref{sec:events_design}. As explained there, events are closely
 connected with the hardware concept of pin change interrupts
-(\ref{sec:external interrupts}) to enable automatic installation of event
+(\ref{sec:external-interrupts}) to enable automatic installation of event
 interrupt handlers. We also identified that it should be possible for
 the user to specify \textit{predicate} and \textit{value functions}. 
 These values, together with the payload type and a event-name, which
@@ -1888,12 +1904,12 @@ datatype \verb|ERep|, which is shown in \Fref{fig:Erep}.
   \centering
 \begin{verbatim}
 data ERep = ERep
-    { e_value      :: Maybe H.Var -- Value function
-    , e_predicate  :: Maybe H.Var -- Predicate
-    , e_type       :: H.Type      -- Payload type
-    , e_interrupts :: [Pin]       -- Interrupts to listen for
-    , e_id         :: String      -- Event name, used in code generation
-    }
+  { e_value      :: Maybe H.Var -- Value function
+  , e_predicate  :: Maybe H.Var -- Predicate
+  , e_type       :: H.Type      -- Payload type
+  , e_interrupts :: [Pin]       -- Interrupts to listen for
+  , e_id         :: String      -- Event name, for code generation
+  }
 \end{verbatim}
 
   \caption{ERep definition}
@@ -1915,7 +1931,8 @@ less enclosing type class, which is shown in \fref{fig:Event type
 event-user, to the event-implementer. Instead of making the user
 construct an \verb|ERep| whenever he uses an Event, we do this
 automatically by the function \verb|setupEvent| of the \textit{Event}
-type class. 
+type class, whenever any instance of the type class is used in the
+dataflow graph.
 
 \begin{figure}
 \centering
@@ -1937,15 +1954,36 @@ specify that an event can't have more than one type of payload
 payload).
 
 When specifying a new event-type, most of the work to do is in the
-\verb|setupEvent| function, which both initialises the event and
-creates the associated \verb|ERep| value. To simplify the tedious task
+\verb|setupEvent| function. To simplify the tedious task
 of constructing the event representation, we've added a utility
-function \verb|mkEvent|.
+function \verb|mkEvent|. 
 \begin{verbatim}
 mkEvent :: forall e t. (Event e t) 
-        => e -> Maybe H.Var -> Maybe H.Var -> ERep|
+        => e -> Maybe H.Var -> Maybe H.Var -> ERep
 \end{verbatim}
 
+\subsection{Subscribing to events}
+We provide a single operator, \verb|onEvent| for subscribing to
+events. It has the simple functionality of creating a stream of event
+values from a given event, thus its type:
+
+\begin{verbatim}
+onEvent :: forall e t. (Reify t, Event e t) => e -> S t
+\end{verbatim}
+
+\noindent
+It is this single function that connects events with the dataflow
+graph. An example of its use is shown in the next chapter,
+specifically \fref{fig:onEvent usage} illustrates it simplicity.
+
+Implementation wise, it essentially runs the
+\verb|setupEvent|-function, to create the event representation, which
+then is stored in the connection of the event in our monadic state.
+It leaves the rest of the work to an event-finalizing phase of code
+generation.  This finalizing phase does the job of installing the
+specified interrupt handlers for each event, to signal that specific
+event if the predicate is true, with the result of running the
+value-function.
 
 \chapter{Example programs}
 
@@ -1969,7 +2007,7 @@ defined which pin the physical device is connected to.
 
 \begin{verbatim}
 data PushButton = PushButton Integer
-                  deriving (Eq, Show)
+                    deriving (Eq, Show)
 \end{verbatim}
 
 \noindent
@@ -1991,9 +2029,9 @@ and thus the two type constructors is defined
 
 \begin{verbatim}
 data PushButtonPressEvent = PushButtonPressEvent PushButton
-                            deriving (Eq, Show)
-data PushButtonReleaseEvent = PushButtonReleaseEvent PushButton
                               deriving (Eq, Show)
+data PushButtonReleaseEvent = PushButtonReleaseEvent PushButton
+                                deriving (Eq, Show)
 \end{verbatim}
 
 \noindent
@@ -2034,9 +2072,15 @@ instance Event PushButtonReleaseEvent () where
 
 With this definition, we can define programs such as
 
+
+\begin{nonfloatingfigure}
 \begin{verbatim}
 onEvent (PushButtonPressEvent $ PushButton 3) >>> (toggle $ diode 13 True)
 \end{verbatim}
+\caption{Subscribing to the declared event, to toggle a light emitting
+diode.}
+\label{fig:onEvent usage}
+\end{nonfloatingfigure}
 
 This program will toggle the state of a diode connected to digital pin
 13 (a default device on almost all Arduino boards) whenever the
