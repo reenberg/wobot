@@ -501,13 +501,13 @@ void loop() {
 \label{sec:red}
 Red is an object-language from Flask that allows you to write concise
 node-level mapping functions, like predicates or conversion functions
-for simple tasks, without having to deal with NesC. It takes its syntax
-from Haskell, but is restricted to a small subset of what is
+for simple tasks, without having to deal with NesC. It takes its
+syntax from Haskell, but is restricted to a small subset of what is
 normally expressible in Haskell. The reason for disallowing these
 things are the same as for not compiling Haskell directly to the
 sensor nodes in the first place: the existing Haskell runtimes are too
-large to fit on the limited memory of a sensor node. Therefore we can't
-allow uses of features that e.g.  requires a garbage collector. Flask
+large to fit on the limited memory of a sensor node. Therefore we
+disallow features that e.g.  requires a garbage collector. Flask
 disallows the following Haskell 98-features (with probably some more,
 that we have overlooked) from Red:
 \begin{itemize}
@@ -1925,10 +1925,11 @@ predicate function, is the function that always returns $true$.
 As seen from \fref[plain]{fig:Erep}, its impossible to distinguish the
 different event-types by the Haskell-type of the \textit{event
   representation}. We could do this by adding a \textit{phantom type}
-directly to this datatype, but we've instead done this in a more or
-less enclosing type class, which is shown in \fref{fig:Event type
-  class}. This type class serves the purpose of moving work from the
-event-user, to the event-implementer. Instead of making the user
+directly to this datatype, but instead of doing it at the
+datatype-level, we've done it in a type class (shown in
+\fref{fig:Event type class})) that also somewhat conceals \verb|ERep| from
+the programmer. This type class serves the purpose of moving work from
+the event-user, to the event-implementer. Instead of making the user
 construct an \verb|ERep| whenever he uses an Event, we do this
 automatically by the function \verb|setupEvent| of the \textit{Event}
 type class, whenever any instance of the type class is used in the
@@ -1949,9 +1950,8 @@ In the type class definition, the phantom type $t$ is the type of
 event payload and $e$ is the user-defined event-type (which is useful
 for saving the \textit{Device} attached to the event). Notice, that we
 make use of the GHC extension \textit{FunctionalDependencies} to
-specify that an event can't have more than one type of payload
-(i.e. when we know the event type, we also know the type of its
-payload).
+specify that an event has at most one type of payload (i.e. when
+we know the event type, we also know the type of its payload).
 
 When specifying a new event-type, most of the work to do is in the
 \verb|setupEvent| function. To simplify the tedious task
