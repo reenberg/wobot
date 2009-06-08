@@ -401,11 +401,14 @@ Flask. We see that this is a single connected graph\footnote{This is
   \fref{sec:posting wires} about posting wires.}, but many Flask
 programs will consist of several \textit{atomic subgraphs}. We say
 that they are atomic in the sense that they have to run to completion
-before we can go on to the next action. \fixme{eventually add
-  something about the need for this} This point is actually easier to
-explain when talking about Fladuino. The good example here is that we
-might want two different \textit{atomic subgraphs} to execute
-depending on whether a button on our circuit was pushed or released.
+before we can go on to the next action, thus ensuring that any mutable
+state they encapsulate is atomically manipulated. \fixme{eventually
+  add something about the need for this} The details for this notion,
+as well as details about its implementation, can be found in
+\Fref{sec:dataflowevaluationstrategy} and
+\Fref{sec:dataflowtranslation}.  An example here is that we might want
+two different \textit{atomic subgraphs} to execute depending on
+whether a button on our circuit was pushed or released.
 
 \section{From Flask to sensor network-code}
 A fundamental aspect of Flask is its compilation and
