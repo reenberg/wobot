@@ -543,10 +543,10 @@ interval in milliseconds returns a stream of unit signals, that is
 sent with the given frequency. E.g. \texttt{clock 1000} is signalling
 every second. This isn't useful by itself, but is useful for
 activating some other task, like reading a sensor at some frequency.
-A discrete \textit{node-level value} of type $a$ has the type $N a$ in
-Haskell.  For example, node-level integers are referred to as $N
-Integer$, and a stream of such integers would have the type $S
-Integer$.
+Node-level code of type $a$ has the type $N a$ in Haskell.  For
+example, a node-level expression evaluating to an integer is referred
+to as $N Integer$, and a stream of such integers would have the type
+$S Integer$.
 
 We also need to process these signals, and as mentioned before, Flask
 provides a set of general stream operators for this task.
@@ -565,8 +565,10 @@ use is \texttt{undefined :: a}.
 \textit{LiftN} is a multi-parameter type class\footnote{This requires
   the GHC language extension MultiParameterTypeClasses.}. An instance
 \texttt{LiftN eta Integer} declares that a Haskell value of type $eta$
-can be lifted to a node-level value \textit{Integer} (by the
-\texttt{liftN :: a -> N a} function).\\
+can be lifted to code of node-level type \textit{Integer} (by the
+\texttt{liftN :: a -> N a} function).  N-Lifting is particularly used to
+lift quasiquoted Red function definitions to node-level code that can
+be called by the final node-level program.\\
 
 \noindent
 Let us consider an actual Flask stream operator, namely
