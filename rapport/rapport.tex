@@ -440,10 +440,10 @@ ultimately be generated.
 \end{nonfloatingfigure}
 
 Flask provides two object-languages: NesC and Red. Having NesC as an
-object-language, allows the user to write all programs that's
+object-language, allows the user to write all programs that are
 expressible in NesC, and NesC is also heavily used as object-language
-in the Flask-implementation. The other object-language, Red, is described
-in the next section (\ref{sec:red}).
+in the Flask-implementation. The other object-language, Red, is
+described in the next section (\ref{sec:red}).
 
 Both languages are integrated into Flask using the GHC quasiquotation
 library \cite{quasiquote07}, written by the Flask-author, Geoffrey
@@ -485,7 +485,7 @@ void loop() {
 \label{sec:red}
 Red is an object-language from Flask that allows you to write concise
 node-level mapping functions, like predicates or conversion functions
-for simple tasks, without having to deal with NesC. It takes it syntax
+for simple tasks, without having to deal with NesC. It takes its syntax
 from Haskell, but is restricted to a small subset of what is
 normally expressible in Haskell. The reason for disallowing these
 things are the same as for not compiling Haskell directly to the
@@ -504,7 +504,10 @@ that we have overlooked) from Red:
 \item Modules
 \end{itemize}
 
-And only a small subset of the Standard Prelude is included in Flask.
+Furthermore, only a small subset of the Standard Prelude is included
+in Flask, and the use of impure functions is prevalent.  In fact, the
+semantics of Red feel more like a restricted dialect of Standard ML,
+than of Haskell.
 
 Figure \ref{fig:redqq} is an example of a quasiquoted function in Red,
 which determines whether a ratio between two values is below a certain
