@@ -220,6 +220,23 @@ frameworks for arbitrary devices.  Furthermore, due to the blandness
 of Arduino's technology itself, it would most likely not prove
 difficult to port our work to another architecture.
 
+In \fref{sec:pushbuttondef}, we show by example how this framework is
+used. \Fref{fig:fladuino-simple} shows a Fladuino program that toggles
+whether a diode is lit every time a button is pushed.
+
+\begin{figure}
+  \centering
+
+\begin{verbatim}
+  onEvent (PushButtonPressEvent $ PushButton 3) 
+>>> 
+  (toggle $ diode 13 True)
+\end{verbatim}  
+
+  \caption{Simple Fladuino program}
+  \label{fig:fladuino-simple}
+\end{figure}
+
 \subsection{Reactivity}
 Most control systems are reactive, especially robots fits the
 definition of reactive systems well. We've found the best description
@@ -1839,12 +1856,12 @@ datatype \verb|ERep|, which is shown in \Fref{fig:Erep}.
   \centering
 \begin{verbatim}
 data ERep = ERep
-    { e_value      :: Maybe H.Var -- Value function
-    , e_predicate  :: Maybe H.Var -- Predicate
-    , e_type       :: H.Type      -- Payload type
-    , e_interrupts :: [Pin]       -- Interrupts to listen for
-    , e_id         :: String      -- Event name, used in code generation
-    }
+  { e_value      :: Maybe H.Var -- Value function
+  , e_predicate  :: Maybe H.Var -- Predicate
+  , e_type       :: H.Type      -- Payload type
+  , e_interrupts :: [Pin]       -- Interrupts to listen for
+  , e_id         :: String      -- Event name, for code generation
+  }
 \end{verbatim}
 
   \caption{ERep definition}
@@ -1888,14 +1905,15 @@ specify that an event can't have more than one type of payload
 payload).
 
 When specifying a new event-type, most of the work to do is in the
-\verb|setupEvent| function, which both initialises the event and
-creates the associated \verb|ERep| value. To simplify the tedious task
+\verb|setupEvent| function. To simplify the tedious task
 of constructing the event representation, we've added a utility
-function \verb|mkEvent|.
+function \verb|mkEvent|. 
 \begin{verbatim}
 mkEvent :: forall e t. (Event e t) 
-        => e -> Maybe H.Var -> Maybe H.Var -> ERep|
+        => e -> Maybe H.Var -> Maybe H.Var -> ERep
 \end{verbatim}
+
+\subsubsection{Subscribing to events}
 
 
 
@@ -1997,7 +2015,7 @@ defined which pin the physical device is connected to.
 
 \begin{verbatim}
 data PushButton = PushButton Integer
-                  deriving (Eq, Show)
+                    deriving (Eq, Show)
 \end{verbatim}
 
 \noindent
@@ -2019,9 +2037,9 @@ and thus the two type constructors is defined
 
 \begin{verbatim}
 data PushButtonPressEvent = PushButtonPressEvent PushButton
-                            deriving (Eq, Show)
-data PushButtonReleaseEvent = PushButtonReleaseEvent PushButton
                               deriving (Eq, Show)
+data PushButtonReleaseEvent = PushButtonReleaseEvent PushButton
+                                deriving (Eq, Show)
 \end{verbatim}
 
 \noindent
