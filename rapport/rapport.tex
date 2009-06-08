@@ -1503,7 +1503,10 @@ can parametrise the generation by the target platform.  This also
 implies that we postpone sanity-checking the graph (such as the
 checking of devices as described in \Fref{sec:devices}) until the last
 step, as we need the target platform information in order to perform
-it.
+it.  An interesting consequence is that it is possible to generate
+code based on the same dataflow graph for different platforms within
+the same program (see \Fref{chap:futurework} for further speculation
+on this).
 
 \section{Dataflow translation}
 \label{sec:dataflowtranslation}
@@ -2060,6 +2063,7 @@ pololu3pi = arduinoDuemilanove { p_capabilities = ["3pi", "3pi battery reader", 
 \end{itemize}
 
 \chapter{The Fladuino Future}
+\label{chap:futurework}
 \textit{Hvad vi ikke har, eller hvad der skal arbejdes videre med. }
 
 Lidt idéer:
