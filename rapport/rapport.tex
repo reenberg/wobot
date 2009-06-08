@@ -1706,6 +1706,25 @@ facility, termed \textit{idle waiters} (\Fref{sec:idle waiters}),
 meant to reduce the average load on the event queue and reduce the
 risk of filling it up.
 
+\subsubsection{Queueing events}
+
+At first glance, it may appear necessary to generate a C data
+structure definition for every kind of event, push these on to the
+event queue, and generate code to recognise and handle them all by
+invoking their listeners.  But as mentioned in
+\Fref{sec:dataflowtranslation}, all nodes are implemented as (one or
+more) functions taking their input value as arguments.  Therefore, we
+can get by with merely two different kinds of entries in the event
+queue: a function call with an argument, and a function call with no
+argument, and the latter entry is only necessary due to the fact that
+C does not permit values of type \texttt{void}.
+
+For every event $e$ we therefore define a function $\delta(e)$ that
+calls all listeners of $e$ with a single argument, the payload of $e$
+(recall from \Fref{sec:events_design} that the payload of an event is
+the dynamic runtime value that it carries -- and that it may be
+null).
+
 \section{User-extensible abstractions with typeclasses}
 As explained in earlier chapters, one of our main additions to Flask,
 is the possibility of defining drivers for peripherals and defining
