@@ -1211,12 +1211,12 @@ Arduino-based platform, and provide default descriptions of common
 Arduino-compatible such as the Arduino Duemilanove, Arduino Mega,
 Arduino BT, and Pololu 3pi.
 
-Defining the driver for each external component consist of a general
-device specification in the form of a Haskell type definition, a set
-of functions operating on the device type, and possibly a set of event
-specifications, provided the device supports the notion of events.
+% Defining the driver for each external component consist of a general
+% device specification in the form of a Haskell type definition, a set
+% of functions operating on the device type, and possibly a set of event
+% specifications, provided the device supports the notion of events.
 
-\fixme{find a good example to add here}
+% \fixme{find a good example to add here}
 
 \subsection{Platforms}
 \label{capabilities}
@@ -1304,9 +1304,10 @@ devices for such requirements at generation-time.
 \label{sec:devices}
 We use the term \textit{device} for any form of peripheral that can be
 connected to an Arduino board, e.g. buttons, electromotors and
-potentiometers.  The definition of a device consists of a list of
+potentiometers.  A device-driver consists of a list of
 \textit{usages}, each describing a discrete reservation of some
-hardware resource, and a unique identifier.  A device can be
+hardware resource, a function for initializing the device and possibly
+a set of functions for interacting with device.  A device can be
 parametric --- in fact, most are --- in for example the I/O pins that
 it is attached to.  As a concrete example, the device describing a
 plain digital output pin is parametric in the form of the single
@@ -1822,36 +1823,40 @@ one instruction before the next IHF is called \cite[Section 4.7 page 14]{atmel8p
 \section{User-extensible abstractions with typeclasses}
 As explained in earlier chapters, one of our main additions to Flask,
 is the possibility of defining drivers for peripherals and defining
-new event types.
+new event types. This section explains how our design analysis lead to
+the current implementation.
 
 \subsection{Defining new devices}
-We define a device-driver as:
+In \fref{sec:devices} we define a device-driver as:
 \begin{itemize}
-\item a set of functions for interacting with the device,
+\item a list of hardware-dependencies, e.g. which hardware pins or
+  timers it confiscates,
 \item a setup-function for doing initializing tasks on start-up
   (e.g. including C-header files), and
-\item a list of hardware-dependencies, e.g. which hardware pins or
-  timers it confiscates.
+\item a set of functions for interacting with the device.
 \end{itemize}
 
-Most device-drivers also needs some additional data, e.g.  which
-hardware-pin the device is connected to or the starting state of the
-device (e.g. turned off).
+As explained, most device-drivers are parameterised by some additional
+data, e.g.  which hardware-pin the device is connected to or the
+starting state of the device (e.g. turned off).
 
 We need a way to represent these devices as values, i.e. a way of
 referring to a specific device and access information about its
 dependencies etc. A simple solution would be to implement all devices
-as a general \textit{Device} datatype with the above values as
-fields. But as discussed above devices differ and the additional data
-required would be clumsy to store in such a general datatype.  A
-second argument against this idea is that we wouldn't have a way of
-distinguishing devices on their types. We solve this by requiring that
-the driver-writer creates a separate datatype for each device and
-makes it an instance of our \textit{Device} typeclass. We can thus
-identify devices by being instances of this typeclass and specific
-devices can be identified directly by their datatype. The
-program-state is extended with a list of these devices. The required
-values are shown in figure \ref{device typeclass}.
+as values of a general \textit{Device} datatype with the above values
+as fields. But as discussed elsewhere devices differ and the
+device-specific additional data required would be clumsy to store in
+such a general datatype.  An even better argument against this idea is
+that it would be impossible to distinguishing devices by their
+types. Instead, we require that the driver-writer creates a separate
+datatype for each device and makes it an instance of our
+\textit{Device} type class. We can thus verify that a value represents
+a device by its membership of this type class, and specific devices
+can be identified directly by their datatype. Our monadic state is
+extended with a list of these devices, both to enable conflict testing
+of hardware-dependencies and postpone the device-setup to a general
+device initialization-phase of the code generation. The \verb|Device|
+type class is shown in \Fref{fig:device typeclass}.
 
 \begin{nonfloatingfigure}
   \begin{verbatim}
@@ -1861,27 +1866,19 @@ class (Eq a, Show a) => Device a where
     uniqueId :: a -> String
 \end{verbatim}
   \caption{Type class definition for devices (default values omitted)}
-  \label{device typeclass}
+  \label{fig:device typeclass}
 \end{nonfloatingfigure}
 
-Remark that all 3 values requires the device itself as a
-parameter. This is because we can connect simultaneous with more than
-one device of each device-type, and they differ only in the values
-stored in the datatype-fields. These functions needs to know
-specifically which instance of the device-type that is referred to.
+Remark that all three values requires the device itself as a
+parameter. The values are general for the class of devices, and thus
+needs the specific device as input (more than one device of the same
+device can be connected to the Arduino simultaneously).
 
-The \texttt{setupDevice} function initializes the device, it is
-executed the first time the device is used (i.e. when it is added to
-our list of known devices). A common operation here is to add global C
-state-variables or adding certain includes of required header-files.
+\texttt{uniqueId} isn't discussed in the design-chapter. This is our
+way of comparing devices. It is impossible to make use of the
+\verb|Eq| type class, since it can only be used to compare values of
+the same type, and each type of device has their own datatype.
 
-\texttt{usages} is a list of the devices hardware-dependencies. We use
-this to make sure that user doesn't try to use two incompatible
-devices (e.g. two devices that both needs access to the same PWM
-output pin). 
-
-\texttt{uniqueId} is our way of comparing devices, we can't just make
-them instances of \texttt{Eq}, since
 
 In section \ref{sec:pushbuttondef}, the implementation of a
 device-driver for a simple push-button is discussed.
