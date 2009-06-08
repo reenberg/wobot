@@ -110,15 +110,12 @@ Department (DIKU), University of Copenhagen. The authors are Martin
 Dybdal, Troels Henriksen and Jesper Reenberg. The project is
 supervised by Ken Friis Larsen, assistant professor at DIKU.
 
-\fixme{maybe add thanks to Flask-guys}
-
 \clearpage
 
 \tableofcontents*
 
 
 
-\fixme{remove all uses of ``very''}
 \fixme{change $\backslash$ url to use the hyperref package so real links are
   used.}
 \fixme{check all quoted text for use of the same quotes!!!!}
@@ -126,7 +123,6 @@ supervised by Ken Friis Larsen, assistant professor at DIKU.
   not.}
 \fixme{Check all refs. Should be converted to vref to utilize the
   varioref package (Where appropriate!!)}
-\fixme{dataflow eller data flow? --- ensret}
 
 \listoffixmes 
 
@@ -209,17 +205,19 @@ adaptable to reactive programming domain, and in the sense that our
 result, Fladuino, is sufficient for a wide range of control systems.
 
 Our domain, control systems, is quite wide. It is
-often\fixme{citations needed} defined as \textit{programmable systems that
-  senses and regulates some task by the use of sensors and actuators},
-which includes almost any computer-system. Selecting the
+often\fixme{citations needed} defined as \textit{programmable systems
+  that senses and regulates some task by the use of sensors and
+  actuators}, which includes almost any computer-system. Selecting the
 Arduino-platform restrains our scope to the tasks it can handle. The
 Arduino is generic and handles a broad range of tasks, when connected
 with the right peripherals. This extendability makes us argue that
-concentrating on the Arduino isn't a very strict limitation. This has
-the obvious impact, that our framework should be general enough to
-support almost any Arduino-connectable external device. We do this by
-providing a way of writing drivers or small frameworks for arbitrary
-devices.
+concentrating on the Arduino isn't a particularly strict
+limitation. This has the obvious impact, that our framework should be
+general enough to support almost any Arduino-connectable external
+device. We do this by providing a way of writing drivers or small
+frameworks for arbitrary devices.  Furthermore, due to the blandness
+of Arduino's technology itself, it would most likely not prove
+difficult to port our work to another architecture.
 
 \subsection{Reactivity}
 Most control systems are reactive, especially robots fits the
@@ -402,11 +400,13 @@ Flask. We see that this is a single connected graph\footnote{This is
   \fref{sec:posting wires} about posting wires.}, but many Flask
 programs will consist of several \textit{atomic subgraphs}. We say
 that they are atomic in the sense that they have to run to completion
-before we can go on to the next action. \fixme{eventually add
-  something about the need for this} This point is actually easier to
-explain when talking about Fladuino. The good example here is that we
-might want two different \textit{atomic subgraphs} to execute
-depending on whether a button on our circuit was pushed or released.
+before we can go on to the next action, thus ensuring that any mutable
+state they encapsulate is atomically manipulated.  The details for
+this notion, as well as details about its implementation, can be found
+in \Fref{sec:dataflowevaluationstrategy} and
+\Fref{sec:dataflowtranslation}.  An example here is that we might want
+two different \textit{atomic subgraphs} to execute depending on
+whether a button on our circuit was pushed or released.
 
 \section{From Flask to sensor network-code}
 A fundamental aspect of Flask is its compilation and
@@ -440,10 +440,10 @@ ultimately be generated.
 \end{nonfloatingfigure}
 
 Flask provides two object-languages: NesC and Red. Having NesC as an
-object-language, allows the user to write all programs that's
+object-language, allows the user to write all programs that are
 expressible in NesC, and NesC is also heavily used as object-language
-in the Flask-implementation. The other object-language, Red, is described
-in the next section (\ref{sec:red}).
+in the Flask-implementation. The other object-language, Red, is
+described in the next section (\ref{sec:red}).
 
 Both languages are integrated into Flask using the GHC quasiquotation
 library \cite{quasiquote07}, written by the Flask-author, Geoffrey
@@ -485,7 +485,7 @@ void loop() {
 \label{sec:red}
 Red is an object-language from Flask that allows you to write concise
 node-level mapping functions, like predicates or conversion functions
-for simple tasks, without having to deal with NesC. It takes it syntax
+for simple tasks, without having to deal with NesC. It takes its syntax
 from Haskell, but is restricted to a small subset of what is
 normally expressible in Haskell. The reason for disallowing these
 things are the same as for not compiling Haskell directly to the
@@ -504,8 +504,10 @@ that we have overlooked) from Red:
 \item Modules
 \end{itemize}
 
-And only a very small subset of the Standard Prelude is included
-in Flask.
+Furthermore, only a small subset of the Standard Prelude is included
+in Flask, and the use of impure functions is prevalent.  In fact, the
+semantics of Red feel more like a restricted dialect of Standard ML,
+than of Haskell.
 
 Figure \ref{fig:redqq} is an example of a quasiquoted function in Red,
 which determines whether a ratio between two values is below a certain
@@ -541,10 +543,10 @@ interval in milliseconds returns a stream of unit signals, that is
 sent with the given frequency. E.g. \texttt{clock 1000} is signalling
 every second. This isn't useful by itself, but is useful for
 activating some other task, like reading a sensor at some frequency.
-A discrete \textit{node-level value} of type $a$ has the type $N a$ in
-Haskell.  For example, node-level integers are referred to as $N
-Integer$, and a stream of such integers would have the type $S
-Integer$.
+Node-level code of type $a$ has the type $N a$ in Haskell.  For
+example, a node-level expression evaluating to an integer is referred
+to as $N Integer$, and a stream of such integers would have the type
+$S Integer$.
 
 We also need to process these signals, and as mentioned before, Flask
 provides a set of general stream operators for this task.
@@ -563,8 +565,10 @@ use is \texttt{undefined :: a}.
 \textit{LiftN} is a multi-parameter type class\footnote{This requires
   the GHC language extension MultiParameterTypeClasses.}. An instance
 \texttt{LiftN eta Integer} declares that a Haskell value of type $eta$
-can be lifted to a node-level value \textit{Integer} (by the
-\texttt{liftN :: a -> N a} function).\\
+can be lifted to code of node-level type \textit{Integer} (by the
+\texttt{liftN :: a -> N a} function).  N-Lifting is particularly used to
+lift quasiquoted Red function definitions to node-level code that can
+be called by the final node-level program.\\
 
 \noindent
 Let us consider an actual Flask stream operator, namely
@@ -980,7 +984,7 @@ endrepeat
 \end{figure}
 
 \subsection{Idle waiters}
-
+\label{sec:idle waiters}
 For many embedded applications, a typical workflow would be to
 continuously poll an input source (such as a sensor), then adjusting
 some output device based on the reading.  For example, a
@@ -1281,6 +1285,7 @@ the capability notion allows us to statically sanity-check any used
 devices for such requirements at generation-time.
 
 \subsection{Devices}
+\label{sec:devices}
 We use the term \textit{device} for any form of peripheral that can be
 connected to an Arduino board, e.g. buttons, electromotors and
 potentiometers.  The definition of a device consists of a list of
@@ -1482,6 +1487,30 @@ code, and the additional amount of work required would be significant.
 Flask chooses the same approach, in that it produces NesC-code for
 running on sensor motes, likely for the same reasons.
 
+The task of adapting Flask for our purposes was greatly aided by the
+fact that the low-level code generation machinery, the part of the
+system responsible for translating Red to NesC, was already
+parametrised to support generation of C via a C-quasiquotation library
+that Geoffrey Mainland graciously made available to us.  Indeed, we
+barely modified any part of Flask below the layer that manages the
+dataflow graph representation.  We had to disable some features that
+were intrinsic to Flask's target domain of sensor networks (such as
+the \textit{Flows}-abstraction for communicating between nodes), and
+extend the intermediate data structures and high-level code generation
+procedures with our own abstractions for platforms, devices, events,
+and idle waiters.
+
+The implementation separates the construction of the dataflow graph
+from the generation of code, which has the resulting property that we
+can parametrise the generation by the target platform.  This also
+implies that we postpone sanity-checking the graph (such as the
+checking of devices as described in \Fref{sec:devices}) until the last
+step, as we need the target platform information in order to perform
+it.  An interesting consequence is that it is possible to generate
+code based on the same dataflow graph for different platforms within
+the same program (see \Fref{chap:futurework} for further speculation
+on this).
+
 \section{Dataflow translation}
 \label{sec:dataflowtranslation}
 At their heart, both Flask and Fladuino-programs consist of an
@@ -1595,7 +1624,7 @@ the Pololu 3pi's reflectance sensors.
 
 Operations of this kind are acceptable however.  Barring hardware
 failure, we are \textit{guaranteed} that the above loop will terminate
-in a deterministic (and very short) period of time.  In general, any
+in a deterministic (and short) period of time.  In general, any
 operation that can be guaranteed to terminate, no matter how long it
 would take, is safe and permitted as far as Fladuino is concerned.
 There are, of course, still practical issues with such long-running
@@ -1654,31 +1683,75 @@ available on all Arduino variants in order to avoid using the same
 memory as the program stack.  While an interesting idea, EEPROM writes
 require unacceptable multi-millisecond delays.
 
-Thus, our event queue consists of a statically allocated
-(compile-time fixed-size) array that is not too big, and in which
-element insertions have hard real-time runtime guarantees.  If an
-attempt is made to insert an element into a full event queue, the
-result will be a silent failure.  This is a tradeoff: as mentioned in
-a previous section, we have to accept that it is possible for the
-Arduino to be swamped with more work per time unit (or asked to store
-more data) than it is physically able to do.  All we can do is to
-design Fladuino such that the fatal error conditions are rare, and the
-most common error conditions are survivable.  Stack (or heap)
-corruption will in most cases result in the complete malfunction of
-the program, and are thus the least desirable error case.  In
-Fladuino, use of the heap is limited (and in fact bounded by the
-static maximum size of the event queue), and stack/heap corruption
-will in practice only occur if the program is large enough to consume
-all available memory with its stack.  The most common error case, on
-the other hand, will be attempting to add an element to a full event
-queue, resulting in a silent failure.  There are many cases where this
-is not desirable, of course, but many reactive programs will not
-experience catastrophic failure if they lose even important events,
-such as button presses.  Still, we recognise that not all event loss
-can be brushed aside as merely an unimportant UI deficiency, and
-therefore we provide a facility, termed \textit{idle waiters}, meant
-to reduce the average load on the event queue and reduce the risk of
-filling it up.
+Thus, our event queue consists of a statically allocated (compile-time
+fixed-size) array that is not too big, and in which element insertions
+have hard real-time runtime guarantees.  If an attempt is made to
+insert an element into a full event queue, the result will be a silent
+failure.  This is a tradeoff: as mentioned in a previous section, we
+have to accept that it is possible for the Arduino to be swamped with
+more work per time unit (or asked to store more data) than it is
+physically able to do.  All we can do is to design Fladuino such that
+the fatal error conditions are rare, and the most common error
+conditions are survivable.  Stack (or heap) corruption will in most
+cases result in the complete malfunction of the program, and are thus
+the least desirable error case.  In Fladuino, use of the heap is
+limited (and in fact bounded by the static maximum size of the event
+queue), and stack/heap corruption will in practice only occur if the
+program is large enough to consume all available memory with its
+stack.  The most common error case, on the other hand, will be
+attempting to add an element to a full event queue, resulting in a
+silent failure.  There are many cases where this is not desirable, of
+course, but many reactive programs will not experience catastrophic
+failure if they lose even important events, such as button presses.
+Still, we recognise that not all event loss can be brushed aside as
+merely an unimportant UI deficiency, and therefore we provide a
+facility, termed \textit{idle waiters} (\Fref{sec:idle waiters}),
+meant to reduce the average load on the event queue and reduce the
+risk of filling it up.
+
+\subsubsection{Queueing events}
+
+At first glance, it may appear necessary to generate a C data
+structure definition for every kind of event, push these on to the
+event queue, and generate code to recognise and handle them all by
+invoking their listeners.  But as mentioned in
+\Fref{sec:dataflowtranslation}, all nodes are implemented as (one or
+more) functions taking their input value as arguments.  Therefore, we
+can get by with merely two different kinds of entries in the event
+queue: a function call with an argument, and a function call with no
+argument, and the latter entry is only necessary due to the fact that
+C does not permit values of type \texttt{void}.
+
+For every event $e$ we therefore define a function $\delta(e)$ that
+calls all listeners of $e$ with a single argument, the payload of $e$
+(recall from \Fref{sec:events_design} that the payload of an event is
+the dynamic runtime value that it carries -- and that it may be null).
+In the interrupt handler, to dispatch an event, we queue a call to
+function $\delta(e)$ with the payload stored in dynamically allocated
+memory.  This is the only situation in which we use dynamic memory in
+Fladuino: the alternative would be to maintain a static array
+proportionate to the size of the event queue, with each element being
+the maximum size of any possible event payload.  This will in no cases
+use less memory than the dynamic memory solution (ignoring memory
+allocator overhead); in fact, it will \textit{always} use as much
+memory as the dynamic solution will \textit{ever} use.  Yet, use of
+dynamic memory is no panacea either: \textit{malloc()} has highly
+unpredictable runtime behaviour, and as mentioned in
+\Fref{sec:dataflowevaluationstrategy}, interrupt handlers should
+terminate swiftly or we risk losing information.  The tradeoff is
+essentially between a lower bound on memory usage in the users
+program, and the risk of external interrupts being silently ignored
+due to an interrupt handler (wherein further interrupts are disabled)
+taking too long to run.  We cautiously prefer the latter, as it is a
+mere possible problem (and given the small memory spaces of our target
+devices, \texttt{malloc()} will almost always be extremely fast
+anyway), rather than a certain restriction, but admit that the
+use-cases faced by some programs may well tip the scales in the other
+direction.  Ultimately, as crude as it may sound, we believe that it
+would be appropriate to allow the programmer to select his preferred
+implementation with a parameter to Fladuino, as it is not a problem
+that we feel has a universal solution.  This feature is unfortunately
+not implemented in Fladuino, however.
 
 \section{User-extensible abstractions with typeclasses}
 As explained in earlier chapters, one of our main additions to Flask,
@@ -1701,16 +1774,16 @@ device (e.g. turned off).
 
 We need a way to represent these devices as values, i.e. a way of
 referring to a specific device and access information about its
-dependencies etc. A simple solution would be to implement all
-devices as a general \textit{Device} datatype with the above values as
+dependencies etc. A simple solution would be to implement all devices
+as a general \textit{Device} datatype with the above values as
 fields. But as discussed above devices differ and the additional data
 required would be clumsy to store in such a general datatype.  A
-second reason for why this isn't a good idea, is that we wouldn't have
-a way of distinguishing devices on their types. We solve this by
-requiring that the driver-writer creates a separate datatype for each
-device and makes it an instance of our \textit{Device} typeclass. We
-can thus identify devices by being instances of this typeclass and
-specific devices can be identified directly by their datatype. The
+second argument against this idea is that we wouldn't have a way of
+distinguishing devices on their types. We solve this by requiring that
+the driver-writer creates a separate datatype for each device and
+makes it an instance of our \textit{Device} typeclass. We can thus
+identify devices by being instances of this typeclass and specific
+devices can be identified directly by their datatype. The
 program-state is extended with a list of these devices. The required
 values are shown in figure \ref{device typeclass}.
 
@@ -1828,42 +1901,77 @@ mkEvent :: forall e t. (Event e t)
 \label{sec:external interrupts}
 \fixme{Lav rigtigt overskrift.}
 
-The default behaviour of the Atmega chip platform when interrupts occur is that
-the GIE (Global Interrupt Enable) bit\footnote{which is the L-bit in the SREG
-  (Status Register)} is cleared and thus all interrupt are disabled. The GIE bit
-is automatically set again when the IHF (Interrupt Handler Function) returns,
-using the RETI instruction. The software running on the chip could however
-enable the GIE bit when the IHF is called, thus allowing nested interrupts. If
-interrupts triggers when GIE is disabled, their individual flag bits is set and
-when GIE is enabled again those interrupts will trigger in the order the flags
-is located in the registers, and not necessarily in the order the interrupts
-happened. When GIE is disabled and the same interrupt happens multiple times,
-only the first one set the flag and thus it is not possible to know how many
-times the interrupt actually occurred \cite[Section 4.7 page 14]{atmel8p}
+Fladuino events such as the \texttt{PushButtonPressEvent} and
+\texttt{PushButtonReleaseEvent} uses hardware interrupt on the Atmega chip. The
+default behaviour when such an event occurs is that the GIE (Global Interrupt
+Enable) bit is cleared which disables all further interrupt handling until the
+IHF (Interrupt Handler Function) finish and returns which enables the GIE bit
+again. It is however possible to enable the GIE bit when entering a IHF which
+would allow nested interrupts \cite[Section 4.7 page 14]{atmel8p} but
+potentially also reverse the order of events, e.g. if a press event occurs and
+while processing this a release event occurs. This would result in the release
+event being processed first and then the press event. Therefore this is
+generally not a good idea.
 
-\subsection{Types of interrupts}
+This leads to the possibility of losing external interrupts when GIE is cleared and
+nested interrupts isn't used. Arduino digital pins 0 and 1 is however a bit
+different as they have an internal flag register that indicates if an interrupt
+occurs. If this register is flagged for either of the pins their individual
+IHF's will be executed as soon as GIE is set. Any other interrupts or multiple
+occurrences of interrupts will not be recorded while GIE is cleared.
 
-The Atmega chip support two types of interrupts. The sophisticated INT0..1 pins
-and the simple PCI0..2 which controls the PCINT0..23 pins. The sophisticated
-interrupts supports low level, logical change, falling edge and rising edge,
-though Fladuino only supports the logical change on any of the interrupt
-types. These interrupts are triggered if the INT0..1 bit is enabled in the
-EIMSK (External Interrupt Mask) Register and the GIE bit is set.
+The disadvantage of not allowing nested interrupts is that when the Fladuino
+clock timer interrupt occurs while an another IHF is running, its IHF will not
+be run but it will be flagged and run when then current running IHF returns. As
+with external interrupts multiple occurrences while GIE is cleared will not be
+recorded. As there is a predefined order \cite[Section 9 page 57]{atmel8p}
+(lowest vector no. is run first) of running IHF's when multiple is flagged and
+GIE is set, it is not guaranteed that interrupt is handled in they order they
+occurred. However in general this is not a problem as Fladuino utilises an event
+queue and all Fladuino defined IHF's only push function calls to this event
+queue, making sure the IHF is quickly executed leaving time for the main program
+loop.
 
-The simple interrupts only support logical change and doesn't directly support
-separate IHF's for each PCINT pins but only for each of the three PCI0..2. These
-interrupts are triggered if the GIE bit is set, either of the PCIE0..2 bits is
-enabled in the PCICR (Pin Change Interrupt Control Register) and any of the
-PCINT0..7, PCINT8..14, PCINT16..23 bits respectively, is enabled in the
-PCMSK0..2 (Pin Change Mask) register. As any logical change to any of the
-PCINT0..7 pins will only trigger the PCI0 IHF, this function must then see which
-of the enabled PCINT0..7 pins that has changed its value since last time, by
-keeping a track of their state, and then trigger the defined IHF for each of the
-changed pins and so fourth for all the PCI0..2. An example of this can be seen
-on the Arduino Playerground
-\footnote{\url{http://www.arduino.cc/playground/Main/PcInt}, last checked 23rd
-  June 2009} which have been modified to work on all the supported platforms in
-Fladuino system \cite[Section 10 page 70]{atmel8p}.
+When a IHF returns it is guaranteed that the main program loop executed at least
+one instruction before the next IHF is called \cite[Section 4.7 page 14]{atmel8p}.
+
+
+% The default behaviour of the Atmega chip, when interrupts occur, is that
+% the GIE (Global Interrupt Enable) bit\footnote{which is the L-bit in the SREG
+%   (Status Register)} is cleared and thus all interrupt are disabled. The GIE bit
+% is automatically set again when the IHF (Interrupt Handler Function) returns,
+% using the RETI instruction. The software running on the chip could however
+% enable the GIE bit when the IHF is called, thus allowing nested interrupts. If
+% interrupts triggers when GIE is disabled, their individual flag bits is set and
+% when GIE is enabled again those interrupts will trigger in the order the flags
+% is located in the registers, and not necessarily in the order the interrupts
+% happened. When GIE is disabled and the same interrupt happens multiple times,
+% only the first one set the flag and thus it is not possible to know how many
+% times the interrupt actually occurred \cite[Section 4.7 page 14]{atmel8p}
+
+% \subsection{Types of interrupts}
+
+% The Atmega chip support two types of interrupts. The sophisticated INT0..1 pins
+% and the simple PCI0..2 which controls the PCINT0..23 pins. The sophisticated
+% interrupts supports low level, logical change, falling edge and rising edge,
+% though Fladuino only supports the logical change on any of the interrupt
+% types. These interrupts are triggered if the INT0..1 bit is enabled in the
+% EIMSK (External Interrupt Mask) Register and the GIE bit is set.
+
+% The simple interrupts only support logical change and doesn't directly support
+% separate IHF's for each PCINT pins but only for each of the three PCI0..2. These
+% interrupts are triggered if the GIE bit is set, either of the PCIE0..2 bits is
+% enabled in the PCICR (Pin Change Interrupt Control Register) and any of the
+% PCINT0..7, PCINT8..14, PCINT16..23 bits respectively, is enabled in the
+% PCMSK0..2 (Pin Change Mask) register. As any logical change to any of the
+% PCINT0..7 pins will only trigger the PCI0 IHF, this function must then see which
+% of the enabled PCINT0..7 pins that has changed its value since last time, by
+% keeping a track of their state, and then trigger the defined IHF for each of the
+% changed pins and so fourth for all the PCI0..2. An example of this can be seen
+% on the Arduino Playerground
+% \footnote{\url{http://www.arduino.cc/playground/Main/PcInt}, last checked 23rd
+%   June 2009} which have been modified to work on all the supported platforms in
+% Fladuino system \cite[Section 10 page 70]{atmel8p}.
 
 \chapter{Example programs}
 
@@ -1902,10 +2010,10 @@ instance Device PushButton where
     usages (PushButton pin) = [DPinUsage pin ["interrupt"] DigitalInput]
 \end{verbatim}
 
-Since logical change interrupts occurs twice on a pushbutton (when pushed and
-then when released) it is easy and god abstraction to define a
-\texttt{PushButtonPressEvent} and a \texttt{PushButtonReleaseEvent}, and thus
-the two type constructors is defined
+Since logical change interrupts occurs twice on a pushbutton (when
+pushed and then when released) it seems appropriate to define a
+\texttt{PushButtonPressEvent} and a \texttt{PushButtonReleaseEvent},
+and thus the two type constructors is defined
 
 \begin{verbatim}
 data PushButtonPressEvent = PushButtonPressEvent PushButton
@@ -1964,7 +2072,7 @@ pushbutton attached to digital pin 3 is pressed.
 
 A potentiometer interface can be defined in Fladuino quite easily as it doesn't
 make any sense to define any events upon this as its value needs to be pulled
-once in a vile to know if it has changed and/or to act upon that.
+once in a while to know if it has changed and/or to act upon that.
 
 The \texttt{Device} instance declaration of \texttt{Potentiometer} defines that
 it uses an Analog pin but with no functionality requirements.
@@ -1986,11 +2094,12 @@ This allows programs such as
 idle >>> (valueOf $ Potentiometer 0) >>> smap [$exp|(/4)|] >>> (setValue $ AnalogOutputPin 10 0)
 \end{verbatim}
 
-The reason why the pulled value is devided by 4 is that the Atmega chip by
-default returns values between 0 and 1024 when doing analog reads but can only
-write values between 0 and 256 unless explicitley changed. The mapping 0 to 1024
-when reading analog values is from GND to AREF which is nomally 0v and 5v
-respectively though AREF can be explicitley changed.
+The reason why the pulled value is devided by 4 is that the Atmega
+chip by default returns values in the range 0 to 1023 when doing
+analog reads but can only write values in the range 0 to 255 unless
+explicitley changed. The scale 0 to 1024 when reading analog values is
+proportional to the relationship between GND and AREF, which is
+nomally 0v and 5v respectively, though AREF can be explicitly changed.
 
 \subsection{Defining a battery reader for 3pi}
 
@@ -2031,9 +2140,9 @@ definitions
   with the pin number and a list of the capabilities supported by the
   pin.
 
-\item[Pin map] A mapping from \textit{logical pins} to
-  \textit{hardware pins} (see \Fref{sec:pins}).  E.g. the Arduino
-  Duemilanove maps analog pin 0 to physical pin 14.
+\item[Pin map] A mapping from \textit{arduino pins} to
+  \textit{logical pins} (see \Fref{sec:pins}).  E.g. the Arduino
+  Duemilanove maps analog pin 0 to logical pin 14.
 
 \item[Capabilities] A list of platform specific capabilities
   expressing support for notions not otherwise expressable.  All
@@ -2108,6 +2217,7 @@ pololu3pi = arduinoDuemilanove { p_capabilities = ["3pi", "3pi battery reader", 
 \end{itemize}
 
 \chapter{The Fladuino Future}
+\label{chap:futurework}
 \textit{Hvad vi ikke har, eller hvad der skal arbejdes videre med. }
 
 Lidt idéer:
@@ -2416,6 +2526,7 @@ feature are not to be used. Also because of this the duty cycle of pin
 \fixme{Interference problems with the PWM output pins.}  
 
 \section{External Interrupts}
+\label{sec:external-interrupts}
 
 Essentially all the pins on the Arduino board supports external
 interrupts, though only digital pins 2 and 3 is supported directly by
