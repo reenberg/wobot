@@ -1722,8 +1722,33 @@ C does not permit values of type \texttt{void}.
 For every event $e$ we therefore define a function $\delta(e)$ that
 calls all listeners of $e$ with a single argument, the payload of $e$
 (recall from \Fref{sec:events_design} that the payload of an event is
-the dynamic runtime value that it carries -- and that it may be
-null).
+the dynamic runtime value that it carries -- and that it may be null).
+In the interrupt handler, to dispatch an event, we queue a call to
+function $\delta(e)$ with the payload stored in dynamically allocated
+memory.  This is the only situation in which we use dynamic memory in
+Fladuino: the alternative would be to maintain a static array
+proportionate to the size of the event queue, with each element being
+the maximum size of any possible event payload.  This will in no cases
+use less memory than the dynamic memory solution (ignoring memory
+allocator overhead); in fact, it will \textit{always} use as much
+memory as the dynamic solution will \textit{ever} use.  Yet, use of
+dynamic memory is no panacea either: \textit{malloc()} has highly
+unpredictable runtime behaviour, and as mentioned in
+\Fref{sec:dataflowevaluationstrategy}, interrupt handlers should
+terminate swiftly or we risk losing information.  The tradeoff is
+essentially between a lower bound on memory usage in the users
+program, and the risk of external interrupts being silently ignored
+due to an interrupt handler (wherein further interrupts are disabled)
+taking too long to run.  We cautiously prefer the latter, as it is a
+mere possible problem (and given the small memory spaces of our target
+devices, \texttt{malloc()} will almost always be extremely fast
+anyway), rather than a certain restriction, but admit that the
+use-cases faced by some programs may well tip the scales in the other
+direction.  Ultimately, as crude as it may sound, we believe that it
+would be appropriate to allow the programmer to select his preferred
+implementation with a parameter to Fladuino, as it is not a problem
+that we feel has a universal solution.  This feature is unfortunately
+not implemented in Fladuino, however.
 
 \section{User-extensible abstractions with typeclasses}
 As explained in earlier chapters, one of our main additions to Flask,
