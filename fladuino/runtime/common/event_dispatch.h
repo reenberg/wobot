@@ -45,9 +45,12 @@ struct event_queue {
   unsigned char n;
 };
 
-void event_queue_push(struct event_queue* queue, struct event event) {
+unsigned char event_queue_push(struct event_queue* queue, struct event event) {
   if (queue->n < EVENT_QUEUE_SIZE) {
     queue->events[(queue->p + queue->n++) % EVENT_QUEUE_SIZE] = event;
+    return 1;
+  } else {
+    return 0;
   }
 }
 
@@ -67,8 +70,8 @@ void setup_event_queue() {
   event_queue.n = 0;
 }
 
-void push_event(struct event event) {
-  event_queue_push(&event_queue, event);
+unsigned char push_event(struct event event) {
+  return event_queue_push(&event_queue, event);
 }
 
 struct event pop_event() {
@@ -79,21 +82,21 @@ unsigned char event_available() {
   return !event_queue_empty(&event_queue);
 }
 
-void queue_funcall(void (*func)()) {
+unsigned char queue_funcall(void (*func)()) {
   struct event event;
   struct fcall_event_data data;
   data.func = func;
   event.type = FCALL_EVENT;
   event.data.fcall_event_data = data;
-  push_event(event);
+  return push_event(event);
 }
 
-void queue_fargcall(void (*func)(void*), void* cb_data) {
+unsigned char queue_fargcall(void (*func)(void*), void* cb_data) {
   struct event event;
   struct fargcall_event_data data;
   data.func = func;
   data.data = cb_data;
   event.type = FARGCALL_EVENT;
   event.data.fargcall_event_data = data;
-  push_event(event);
+  return push_event(event);
 }

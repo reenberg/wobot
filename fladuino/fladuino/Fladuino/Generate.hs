@@ -448,7 +448,9 @@ finalizeEvents p = do
                                                 if ($exp:predcall) {
                                                   $ty:ty *vp = ($ty:ty*) malloc(sizeof($ty:ty));
                                                   *vp = $exp:eventcall;
-                                                  queue_fargcall(&$id:eventCP, (void*) vp);
+                                                  if (!queue_fargcall(&$id:eventCP, (void*) vp)) {
+                                                    free(vp);
+                                                  }
                                                 }
                                               }|]
                         Nothing -> do
