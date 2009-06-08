@@ -1770,7 +1770,6 @@ that we feel has a universal solution.  This feature is unfortunately
 not implemented in Fladuino, however.
 
 \subsection{Implementation of the clock operator}
-\label{sec:external interrupts}
 To handle different \texttt{clock} operators in a Fladuino program, their
 greatest common divisor is calculated and used to calculate the timeout vale of
 a hardware timer (see \fref{sec:timer-interrupts}). Each time an overflow
@@ -1893,7 +1892,7 @@ device-driver for a simple push-button is discussed.
 Our general concept of \textit{events} is defined in
 \ref{sec:events_design}. As explained there, events are closely
 connected with the hardware concept of pin change interrupts
-(\ref{sec:external interrupts}) to enable automatic installation of event
+(\ref{sec:external-interrupts}) to enable automatic installation of event
 interrupt handlers. We also identified that it should be possible for
 the user to specify \textit{predicate} and \textit{value functions}. 
 These values, together with the payload type and a event-name, which
