@@ -1483,6 +1483,19 @@ code, and the additional amount of work required would be significant.
 Flask chooses the same approach, in that it produces NesC-code for
 running on sensor motes, likely for the same reasons.
 
+The task of adapting Flask for our purposes was greatly aided by the
+fact that the low-level code generation machinery, the part of the
+system responsible for translating Red to NesC, was already
+parametrised to support generation of C via a C-quasiquotation library
+that Geoffrey Mainland graciously made available to us.  Indeed, we
+barely modified any part of Flask below the layer that manages the
+dataflow graph representation.  We had to disable some features that
+were intrinsic to Flask's target domain of sensor networks (such as
+the \textit{Flows}-abstraction for communicating between nodes), and
+extend the intermediate data structures and high-level code generation
+procedures with our own abstractions for platforms, devices, events,
+and idle waiters.
+
 \section{Dataflow translation}
 \label{sec:dataflowtranslation}
 At their heart, both Flask and Fladuino-programs consist of an
