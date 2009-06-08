@@ -2979,8 +2979,11 @@ alternative schematic\cite{oik_chematic_arduino}.
 \fixme{this section needs restructuring.}
 \fixme{this section is outdated. Firmware update has been done another way.}
 
-\chapter{Problems in Flask}
-We've detected a few Flask problems, that we think should be fixed.
+\chapter{Problems discovered in Flask }
+We've detected a few problems with the current Flask implementation,
+that we think should needs to be resolved. The same problems appears
+in Fladuino, as we haven't set much time aside to look for solutions
+to the problems.
 
 \begin{itemize}
 \item Pattern-matching isn't handled correctly. The following program
@@ -2992,12 +2995,12 @@ f (1, (2, x)) = 3
 f (2, _) = 3
 \end{verbatim}
 
-\item In Haskell 0 can both be an $Integer$, a $Double$, or any member
-  instances of the $Num$-type class. In Red this isn't the case and
-  thus \texttt{negate} and \texttt{(-)} --- which are defined by
-  \verb|negate x = 0 - x| --- only works for integers.(Related to the
-  lack of type-classes). Instead, you can define a negation function
-  for \textit{Doubles}, by: .
+\item In Haskell, 42 can both be interpreted as an $Integer$, a
+  $Double$, or any other member of the $Num$-type class. In Red this
+  isn't the case and thus \texttt{negate} and \texttt{(-)} --- which
+  are defined by \verb|negate x = 0 - x| --- only works for
+  integers.(Related to the lack of type-classes). Instead, you can
+  define a negation function for \textit{Doubles}, by: .
 \end{itemize}
 
 \chapter{Code snippets}
