@@ -30,7 +30,7 @@
 \usepackage{ulem} % \sout - strike-through
 \usepackage{tikz}
 
-\renewcommand{\ttdefault}{pcr} % Bedre typewriter font
+\renewcommand{\ttdefault}{txtt} % Bedre typewriter font
 %\usepackage[sc]{mathpazo}     % Palatino font
 \renewcommand{\rmdefault}{ugm} % Garamond
 %\usepackage[garamond]{mathdesign}
@@ -63,8 +63,9 @@
 \title{Controlling embedded devices with functional reactive programming}
 
 \author{Martin Dybdal (dybber@dybber.dk), \\
-Jesper Reenberg (jesper.reenberg@gmail.com) \\ og
-Troels Henriksen (athas@sigkill.dk)}
+Troels Henriksen (athas@sigkill.dk) and \\
+Jesper Reenberg (jesper.reenberg@gmail.com)
+}
 
 \date{\today}
 \pagestyle{plain}
@@ -696,7 +697,7 @@ specifies which NesC interface to use for querying the sensor.
 
 The function \texttt{ewma} retains an exponentially weighted moving
 average with the given gain, which is updated for each input
-value. It is implemented in \cite{flask08} by following declaration:
+value. Its implementation in \cite{flask08} follows:
 
 \begin{verbatim}
 ewma :: Double -> S Double -> S Double
@@ -1878,12 +1879,13 @@ class (Eq e, Show e, Reify t) => Event e t | e -> t where
 \label{fig:Event type class}
 \end{figure}
 
-In the type class definition, the phantom type $t$ is the payload-type
-and $e$ is a user-defined event-type (useful for saving the
-\textit{Device} attached to the event). Notice, that we make use of
-the GHC extension \textit{FunctionalDependencies} to specify that an
-event can't have more than one type of payload (i.e. when we know the
-event type, we also know the type of its payload).
+In the type class definition, the phantom type $t$ is the type of
+event payload and $e$ is the user-defined event-type (which is useful
+for saving the \textit{Device} attached to the event). Notice, that we
+make use of the GHC extension \textit{FunctionalDependencies} to
+specify that an event can't have more than one type of payload
+(i.e. when we know the event type, we also know the type of its
+payload).
 
 When specifying a new event-type, most of the work to do is in the
 \verb|setupEvent| function, which both initialises the event and
@@ -2975,16 +2977,13 @@ f (1, (2, x)) = 3
 f (2, _) = 3
 \end{verbatim}
 
-\item Lack of type-classes in Red
-\item In Red, negation with \texttt{negate} and \texttt{(-)} only works for
-  integers. (Probably related to the lack of type-classes).
+\item In Haskell 0 can both be an $Integer$, a $Double$, or any member
+  instances of the $Num$-type class. In Red this isn't the case and
+  thus \texttt{negate} and \texttt{(-)} --- which are defined by
+  \verb|negate x = 0 - x| --- only works for integers.(Related to the
+  lack of type-classes). Instead, you can define a negation function
+  for \textit{Doubles}, by: .
 \end{itemize}
-
-\chapter{Guide to electronics}
-
-\fixme{Maybe a little refresher on electronics (e.g. how each
-  component are drawn in a diagram, if we are going to use diagrams in
-  the article). }
 
 \chapter{Code snippets}
 
