@@ -1931,7 +1931,8 @@ less enclosing type class, which is shown in \fref{fig:Event type
 event-user, to the event-implementer. Instead of making the user
 construct an \verb|ERep| whenever he uses an Event, we do this
 automatically by the function \verb|setupEvent| of the \textit{Event}
-type class. 
+type class, whenever any instance of the type class is used in the
+dataflow graph.
 
 \begin{figure}
 \centering
@@ -1961,8 +1962,28 @@ mkEvent :: forall e t. (Event e t)
         => e -> Maybe H.Var -> Maybe H.Var -> ERep
 \end{verbatim}
 
-\subsubsection{Subscribing to events}
+\subsection{Subscribing to events}
+We provide a single operator, \verb|onEvent| for subscribing to
+events. It has the simple functionality of creating a stream of event
+values from a given event, thus its type:
 
+\begin{verbatim}
+onEvent :: forall e t. (Reify t, Event e t) => e -> S t
+\end{verbatim}
+
+\noindent
+It is this single function that connects events with the dataflow
+graph. An example of its use is shown in the next chapter,
+specifically \fref{fig:onEvent usage} illustrates it simplicity.
+
+Implementation wise, it essentially runs the
+\verb|setupEvent|-function, to create the event representation, which
+then is stored in the connection of the event in our monadic state.
+It leaves the rest of the work to an event-finalizing phase of code
+generation.  This finalizing phase does the job of installing the
+specified interrupt handlers for each event, to signal that specific
+event if the predicate is true, with the result of running the
+value-function.
 
 \chapter{Example programs}
 
@@ -2051,9 +2072,15 @@ instance Event PushButtonReleaseEvent () where
 
 With this definition, we can define programs such as
 
+
+\begin{nonfloatingfigure}
 \begin{verbatim}
 onEvent (PushButtonPressEvent $ PushButton 3) >>> (toggle $ diode 13 True)
 \end{verbatim}
+\caption{Subscribing to the declared event, to toggle a light emitting
+diode.}
+\label{fig:onEvent usage}
+\end{nonfloatingfigure}
 
 This program will toggle the state of a diode connected to digital pin
 13 (a default device on almost all Arduino boards) whenever the
