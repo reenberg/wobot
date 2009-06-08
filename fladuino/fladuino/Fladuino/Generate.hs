@@ -338,7 +338,8 @@ arduinoMega = emptyPlatform { p_pins = [ PinDecl (DPin n) $ pc n | n <- [0..53] 
                     | otherwise = []
 
 
-pololu3pi = arduinoDuemilanove { p_capabilities = ["3pi", "3pi battery reader", "3pi reflectance sensor array",
+pololu3pi = arduinoDuemilanove { p_capabilities = ["3pi", "3pi battery reader", 
+                                                   "3pi reflectance sensor array",
                                                    "3pi motors"]
                                , p_base_setup = addCInclude "3pi/3pi.h"
                                }
