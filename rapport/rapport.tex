@@ -1914,11 +1914,12 @@ This allows programs such as
 idle >>> (valueOf $ Potentiometer 0) >>> smap [$exp|(/4)|] >>> (setValue $ AnalogOutputPin 10 0)
 \end{verbatim}
 
-The reason why the pulled value is devided by 4 is that the Atmega chip by
-default returns values between 0 and 1024 when doing analog reads but can only
-write values between 0 and 256 unless explicitley changed. The mapping 0 to 1024
-when reading analog values is from GND to AREF which is nomally 0v and 5v
-respectively though AREF can be explicitley changed.
+The reason why the pulled value is devided by 4 is that the Atmega
+chip by default returns values in the range 0 to 1023 when doing
+analog reads but can only write values in the range 0 to 255 unless
+explicitley changed. The scale 0 to 1024 when reading analog values is
+proportional to the relationship between GND and AREF, which is
+nomally 0v and 5v respectively, though AREF can be explicitly changed.
 
 \subsection{Defining a battery reader for 3pi}
 
