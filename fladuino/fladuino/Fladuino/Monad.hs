@@ -93,10 +93,10 @@ data FladuinoEnv m = FladuinoEnv
     ,  f_timers            :: Map.Map Int String
     ,  f_timer_connections :: Map.Map Int [(SCode m, H.Var)]
 
-    ,  f_devices :: [DRef m]
+    ,  f_devices :: [DRef]
 
-    ,  f_events            :: [ERep m]
-    ,  f_event_connections :: [(ERep m, [(SCode m, H.Var)])]
+    ,  f_events            :: [ERep]
+    ,  f_event_connections :: [(ERep, [(SCode m, H.Var)])]
 
     ,  f_adcs         :: Int
     ,  f_adc_getdata  :: Map.Map Int Exp
@@ -184,20 +184,24 @@ instance Show (SCode m) where
     show (SCode { s_id = sid }) = show sid
 
 -- A bit of indirection for convenience...
-data DRef m = forall a. (Device a) => DRef a
+--
+-- GHC doesn't support accessor functions if you try to add an
+-- existentially quantified value to record.
+-- Therefore this indirection.
+data DRef = forall a. (Device a) => DRef a
 
-instance Eq (DRef m) where
+instance Eq DRef where
     DRef d1 == DRef d2 = uniqueId d1 == uniqueId d2
 
-data ERep m = ERep
-    { e_value      :: Maybe H.Var
-    , e_predicate  :: Maybe H.Var
-    , e_type       :: H.Type
-    , e_interrupts :: [Pin]
-    , e_id         :: String
+data ERep = ERep
+    { e_value      :: Maybe H.Var -- ^ Value function
+    , e_predicate  :: Maybe H.Var -- ^ Predicate
+    , e_type       :: H.Type      -- ^ Payload type
+    , e_interrupts :: [Pin]       -- ^ Interrupts to listen for
+    , e_id         :: String      -- ^ Event name, used in code generation
     }
 
-instance Eq (ERep m) where
+instance Eq (ERep) where
     e1 == e2 = e_id e1 == e_id e2
 
 data SRep m  =  SConst NCode (SCode m)
@@ -523,3 +527,4 @@ class (Eq a, Show a) => Device a where
     usages _ = []
     uniqueId :: a -> String
     uniqueId = cIdent . show
+

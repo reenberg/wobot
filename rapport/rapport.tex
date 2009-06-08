@@ -29,7 +29,7 @@
 \usepackage{ulem} % \sout - strike-through
 \usepackage{tikz}
 
-\renewcommand{\ttdefault}{pcr} % Bedre typewriter font
+\renewcommand{\ttdefault}{txtt} % Bedre typewriter font
 %\usepackage[sc]{mathpazo}     % Palatino font
 \renewcommand{\rmdefault}{ugm} % Garamond
 %\usepackage[garamond]{mathdesign}
@@ -61,8 +61,9 @@
 \title{Controlling embedded devices with functional reactive programming}
 
 \author{Martin Dybdal (dybber@dybber.dk), \\
-Jesper Reenberg (jesper.reenberg@gmail.com) \\ og
-Troels Henriksen (athas@sigkill.dk)}
+Troels Henriksen (athas@sigkill.dk) and \\
+Jesper Reenberg (jesper.reenberg@gmail.com)
+}
 
 \date{\today}
 \pagestyle{plain}
@@ -108,15 +109,12 @@ Department (DIKU), University of Copenhagen. The authors are Martin
 Dybdal, Troels Henriksen and Jesper Reenberg. The project is
 supervised by Ken Friis Larsen, assistant professor at DIKU.
 
-\fixme{maybe add thanks to Flask-guys}
-
 \clearpage
 
 \tableofcontents*
 
 
 
-\fixme{remove all uses of ``very''}
 \fixme{change $\backslash$ url to use the hyperref package so real links are
   used.}
 \fixme{check all quoted text for use of the same quotes!!!!}
@@ -206,17 +204,19 @@ adaptable to reactive programming domain, and in the sense that our
 result, Fladuino, is sufficient for a wide range of control systems.
 
 Our domain, control systems, is quite wide. It is
-often\fixme{citations needed} defined as \textit{programmable systems that
-  senses and regulates some task by the use of sensors and actuators},
-which includes almost any computer-system. Selecting the
+often\fixme{citations needed} defined as \textit{programmable systems
+  that senses and regulates some task by the use of sensors and
+  actuators}, which includes almost any computer-system. Selecting the
 Arduino-platform restrains our scope to the tasks it can handle. The
 Arduino is generic and handles a broad range of tasks, when connected
 with the right peripherals. This extendability makes us argue that
-concentrating on the Arduino isn't a very strict limitation. This has
-the obvious impact, that our framework should be general enough to
-support almost any Arduino-connectable external device. We do this by
-providing a way of writing drivers or small frameworks for arbitrary
-devices.
+concentrating on the Arduino isn't a particularly strict
+limitation. This has the obvious impact, that our framework should be
+general enough to support almost any Arduino-connectable external
+device. We do this by providing a way of writing drivers or small
+frameworks for arbitrary devices.  Furthermore, due to the blandness
+of Arduino's technology itself, it would most likely not prove
+difficult to port our work to another architecture.
 
 \subsection{Reactivity}
 Most control systems are reactive, especially robots fits the
@@ -439,10 +439,10 @@ ultimately be generated.
 \end{nonfloatingfigure}
 
 Flask provides two object-languages: NesC and Red. Having NesC as an
-object-language, allows the user to write all programs that's
+object-language, allows the user to write all programs that are
 expressible in NesC, and NesC is also heavily used as object-language
-in the Flask-implementation. The other object-language, Red, is described
-in the next section (\ref{sec:red}).
+in the Flask-implementation. The other object-language, Red, is
+described in the next section (\ref{sec:red}).
 
 Both languages are integrated into Flask using the GHC quasiquotation
 library \cite{quasiquote07}, written by the Flask-author, Geoffrey
@@ -484,7 +484,7 @@ void loop() {
 \label{sec:red}
 Red is an object-language from Flask that allows you to write concise
 node-level mapping functions, like predicates or conversion functions
-for simple tasks, without having to deal with NesC. It takes it syntax
+for simple tasks, without having to deal with NesC. It takes its syntax
 from Haskell, but is restricted to a small subset of what is
 normally expressible in Haskell. The reason for disallowing these
 things are the same as for not compiling Haskell directly to the
@@ -503,8 +503,10 @@ that we have overlooked) from Red:
 \item Modules
 \end{itemize}
 
-And only a very small subset of the Standard Prelude is included
-in Flask.
+Furthermore, only a small subset of the Standard Prelude is included
+in Flask, and the use of impure functions is prevalent.  In fact, the
+semantics of Red feel more like a restricted dialect of Standard ML,
+than of Haskell.
 
 Figure \ref{fig:redqq} is an example of a quasiquoted function in Red,
 which determines whether a ratio between two values is below a certain
@@ -540,10 +542,10 @@ interval in milliseconds returns a stream of unit signals, that is
 sent with the given frequency. E.g. \texttt{clock 1000} is signalling
 every second. This isn't useful by itself, but is useful for
 activating some other task, like reading a sensor at some frequency.
-A discrete \textit{node-level value} of type $a$ has the type $N a$ in
-Haskell.  For example, node-level integers are referred to as $N
-Integer$, and a stream of such integers would have the type $S
-Integer$.
+Node-level code of type $a$ has the type $N a$ in Haskell.  For
+example, a node-level expression evaluating to an integer is referred
+to as $N Integer$, and a stream of such integers would have the type
+$S Integer$.
 
 We also need to process these signals, and as mentioned before, Flask
 provides a set of general stream operators for this task.
@@ -562,8 +564,10 @@ use is \texttt{undefined :: a}.
 \textit{LiftN} is a multi-parameter type class\footnote{This requires
   the GHC language extension MultiParameterTypeClasses.}. An instance
 \texttt{LiftN eta Integer} declares that a Haskell value of type $eta$
-can be lifted to a node-level value \textit{Integer} (by the
-\texttt{liftN :: a -> N a} function).\\
+can be lifted to code of node-level type \textit{Integer} (by the
+\texttt{liftN :: a -> N a} function).  N-Lifting is particularly used to
+lift quasiquoted Red function definitions to node-level code that can
+be called by the final node-level program.\\
 
 \noindent
 Let us consider an actual Flask stream operator, namely
@@ -595,7 +599,7 @@ sconst :: forall a b eta. (Reify b, LiftN eta a)
 \end{verbatim}
      Maps all values on the input-stream to a constant (node-level) output value.
 
-\item \texttt{($\ggg$) :: forall a. Reify a => S a -> (S a -> S a)}
+\item \verb|(>>>) :: forall a. Reify a => S a -> (S a -> S a)|
   \hfill \\ Connects a stream with a stream operator.
   E.g. \texttt{clock 10 $\ggg$ sconst (liftN [\$exp|42|])} is a stream
   of 42 values, that is passed on every 10th millisecond. This is
@@ -691,7 +695,7 @@ specifies which NesC interface to use for querying the sensor.
 
 The function \texttt{ewma} retains an exponentially weighted moving
 average with the given gain, which is updated for each input
-value. It is implemented in \cite{flask08} by following declaration:
+value. Its implementation in \cite{flask08} follows:
 
 \begin{verbatim}
 ewma :: Double -> S Double -> S Double
@@ -908,8 +912,8 @@ that are the heart of reactive programming.  Indeed, we have to
 analyse the constraints of our target platform(s) in order to reach an
 adequate solution.  Since events are fundamentally connected to the
 concept of a hardware interrupt (though we do not reject the ability
-for sinks to manually signal events), we cannot at any time predict,
-or control, their arrival.
+for sinks\fixme{sinks ikke forklaret tidligere} to manually signal
+events), we cannot at any time predict, or control, their arrival.
 
 The simplest strategy would be to, upon arrival of an event via an
 asynchronous hardware-level interrupt, immediately evaluate all atomic
@@ -1390,7 +1394,7 @@ In the definition of an event, a list of Arduino pins (see \Fref{sec:pins})
 indicates which pin-change interrupts might trigger the event.
 Additionally, two object-language functions are defined: a
 \textit{predicate}, for checking whether a given pin-change interrupt
-is actually should actually cause the event to trigger, and a
+should actually cause the event to trigger, and a
 \textit{value function}, that calculates the payload (if any) of the
 event.  This yields total control to the event implementor, at the
 cost of having to check all events possibly triggerable by an
@@ -1413,7 +1417,7 @@ anything.  See \Fref{sec:pushbuttondef} for example code.
 Events initiate dataflow at nodes marked as \textit{listeners} for the
 specific event.  Design-wise there is nothing that prevents these
 listeners from being successors of other nodes in some atomic
-subgraph, but have not been able to identify a general use for such a
+subgraph, but we have not been able to identify a general use for such a
 structure during our work (though see \Fref{sec:postingwireimpl} for a
 notable exception).  As a result, we generally consider an
 event-listening node to have no way of firing except for the
@@ -1567,7 +1571,7 @@ apart from its existence; \texttt{()} is perfectly valid as a signal.
 \label{sec:postingwireimpl}
 We have opted to implement posting wires as a thin layer of
 abstraction on top of events, with a unique event associated with each
-posting wire (see \Fref{sec:definingevents} for how events are
+posting wire (see \Fref{sec:defining events} for how events are
 defined).  Implementing posting wires as a separate subsystem offers
 no advantages over an implementation via abstractions built on the
 existing event-dispatch infrastructure.  When creating a posting wire
@@ -1619,7 +1623,7 @@ the Pololu 3pi's reflectance sensors.
 
 Operations of this kind are acceptable however.  Barring hardware
 failure, we are \textit{guaranteed} that the above loop will terminate
-in a deterministic (and very short) period of time.  In general, any
+in a deterministic (and short) period of time.  In general, any
 operation that can be guaranteed to terminate, no matter how long it
 would take, is safe and permitted as far as Fladuino is concerned.
 There are, of course, still practical issues with such long-running
@@ -1868,7 +1872,79 @@ device-driver for a simple push-button is discussed.
 
 
 \subsection{Defining new events}
-\label{sec:definingevents}
+\label{sec:defining events}
+Our general concept of \textit{events} is defined in
+\ref{sec:events_design}. As explained there, events are closely
+connected with the hardware concept of pin change interrupts
+(\ref{sec:external interrupts}) to enable automatic installation of event
+interrupt handlers. We also identified that it should be possible for
+the user to specify \textit{predicate} and \textit{value functions}. 
+These values, together with the payload type and a event-name, which
+only is used for code-generation purposes, constitutes our
+\textit{event representation}. This is simply implemented as a Haskell
+datatype \verb|ERep|, which is shown in \Fref{fig:Erep}. 
+
+\begin{figure}
+  \centering
+\begin{verbatim}
+data ERep = ERep
+    { e_value      :: Maybe H.Var -- Value function
+    , e_predicate  :: Maybe H.Var -- Predicate
+    , e_type       :: H.Type      -- Payload type
+    , e_interrupts :: [Pin]       -- Interrupts to listen for
+    , e_id         :: String      -- Event name, used in code generation
+    }
+\end{verbatim}
+
+  \caption{ERep definition}
+  \label{fig:Erep}
+\end{figure}
+
+For convenience, we don't require definitions of the
+\textit{predicate} and \textit{value functions}, as we've identified
+commonly used default behaviors for both. When \verb|e_value| is
+\verb|Nothing|, we return \textit{unit} as payload, and the default
+predicate function, is the function that always returns $true$.
+
+As seen from \fref[plain]{fig:Erep}, its impossible to distinguish the
+different event-types by the Haskell-type of the \textit{event
+  representation}. We could do this by adding a \textit{phantom type}
+directly to this datatype, but we've instead done this in a more or
+less enclosing type class, which is shown in \fref{fig:Event type
+  class}. This type class serves the purpose of moving work from the
+event-user, to the event-implementer. Instead of making the user
+construct an \verb|ERep| whenever he uses an Event, we do this
+automatically by the function \verb|setupEvent| of the \textit{Event}
+type class. 
+
+\begin{figure}
+\centering
+ \begin{verbatim}
+class (Eq e, Show e, Reify t) => Event e t | e -> t where
+    interruptPins :: e -> [Pin]
+    setupEvent :: e -> FladuinoM ERep
+\end{verbatim}
+\caption{The Event type class}
+\label{fig:Event type class}
+\end{figure}
+
+In the type class definition, the phantom type $t$ is the type of
+event payload and $e$ is the user-defined event-type (which is useful
+for saving the \textit{Device} attached to the event). Notice, that we
+make use of the GHC extension \textit{FunctionalDependencies} to
+specify that an event can't have more than one type of payload
+(i.e. when we know the event type, we also know the type of its
+payload).
+
+When specifying a new event-type, most of the work to do is in the
+\verb|setupEvent| function, which both initialises the event and
+creates the associated \verb|ERep| value. To simplify the tedious task
+of constructing the event representation, we've added a utility
+function \verb|mkEvent|.
+\begin{verbatim}
+mkEvent :: forall e t. (Event e t) 
+        => e -> Maybe H.Var -> Maybe H.Var -> ERep|
+\end{verbatim}
 
 
 \chapter{Example programs}
@@ -2834,16 +2910,13 @@ f (1, (2, x)) = 3
 f (2, _) = 3
 \end{verbatim}
 
-\item Lack of type-classes in Red
-\item In Red, negation with \texttt{negate} and \texttt{(-)} only works for
-  integers. (Probably related to the lack of type-classes).
+\item In Haskell 0 can both be an $Integer$, a $Double$, or any member
+  instances of the $Num$-type class. In Red this isn't the case and
+  thus \texttt{negate} and \texttt{(-)} --- which are defined by
+  \verb|negate x = 0 - x| --- only works for integers.(Related to the
+  lack of type-classes). Instead, you can define a negation function
+  for \textit{Doubles}, by: .
 \end{itemize}
-
-\chapter{Guide to electronics}
-
-\fixme{Maybe a little refresher on electronics (e.g. how each
-  component are drawn in a diagram, if we are going to use diagrams in
-  the article). }
 
 \chapter{Code snippets}
 
