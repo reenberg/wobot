@@ -97,7 +97,7 @@ Jesper Reenberg (jesper.reenberg@gmail.com)
   (e.g. sensors, motors or displays) should be possible to
   program. Specifically we include a framework for specifying
   interfaces to these peripherals and primitives for
-  event-handling. \fixme{Any other major additions?}
+  event-handling.
 
   \fixme{Evaluation}
 \end{abstract}
@@ -364,10 +364,9 @@ devices that form our domain.
 We expect that readers of this report has a small background knowledge
 of electronics.
 
-Knows the terms: Quasiquotation, phantom types, 
-Knows the difference between metalanguages versus object-languages.
-
-\fixme{formulering}
+Additionally, we expect the reader to have casual familiarity with the
+concepts of Quasiquotation \cite{quasiquote07}, phantom types, and to
+know the difference between meta-languages versus object-languages.
 
 \section{Structure outline}
 In the following chapter (\Fref[plain]{chap:Flask}) we will go
@@ -772,9 +771,7 @@ A summary of the most important requirements for our system follows:
   running on the Arduino platform from a description of a dataflow graph. This
   graph must be expressed in the form of a Haskell program.
   \footnote{This requirement stems from the selection of
-    Arduino (see \fref{sec:hardware platform}) as platform and from the
-    ???below??? requirement of mirroring Flask.}
-\fixme{fix footnote}
+    Arduino (see \fref{sec:hardware platform}) as platform.}
 \end{itemize}
 
 And we set the scope of our project as follows:
