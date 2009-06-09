@@ -187,7 +187,7 @@ systems.
 Flask is a domain-specific language embedded in Haskell for writing
 sensor network code, with Haskell functioning as a meta-language. A
 Flask program takes the form of an acyclic dataflow graph, which
-represents how data streams its sensors are processed and sent to
+represents how data streams from its sensors are processed and sent to
 other nodes in the network. When a Flask program is ``run'', it
 generates a program in another more low-level sensor network
 language. Our framework, Fladuino, follows exactly the same concepts
@@ -438,7 +438,7 @@ When compiling the Haskell program description of the dataflow graph,
 you end up with an executable that generates and outputs code in a
 sensor network language called NesC\footnote{NesC is an extension to
   C, with some additional constructs suitable for low-level sensor
-  network programming for TinyOS.}.
+  network programming for TinyOS.} \cite{nesc}.
 
 The generated NesC code can then be translated by an ordinary
 NesC compiler to machine code running on the nodes in the
@@ -525,8 +525,8 @@ than of Haskell.
 
 Figure \ref{fig:redqq} is an example of a quasiquoted function in Red,
 which determines whether a ratio between two values is below a certain
-threshold. The threshold is a generation-time computed value, which is
-inserted at generation-time by the \texttt{flo}-antiquoter.
+threshold. The threshold could be a generation-time computed value, which is
+inserted by the \texttt{flo}-antiquoter (float) at generation-time.
 \begin{nonfloatingfigure}
 \begin{verbatim}
 [$exp|\(hi, lo) -> hi / lo > $flo:threshold|]
@@ -550,17 +550,17 @@ Flask therefore still feels quite the same as when using the Arrows
 library, but you won't get the Arrow syntax (introduced in
 \cite{PatersonRA:notation}).
 
-In Flask a stream of type $\alpha$ values has the type \texttt{S
-  $\alpha$}. The arguably simplest way to generate such a stream is
+In Flask a stream of type $a$ has the type \texttt{S
+  $a$}. The arguably simplest way to generate such a stream is
 the Flask-function \texttt{clock :: Int -> S ()}, which given a time
 interval in milliseconds returns a stream of unit signals, that is
 sent with the given frequency. E.g. \texttt{clock 1000} is signalling
 every second. This isn't useful by itself, but is useful for
 activating some other task, like reading a sensor at some frequency.
-Node-level code of type $a$ has the type $N a$ in Haskell.  For
+Node-level code of type $a$ has the type \texttt{N $a$} in Haskell.  For
 example, a node-level expression evaluating to an integer is referred
-to as $N Integer$, and a stream of such integers would have the type
-$S Integer$.
+to as \texttt{N Integer}, and a stream of such integers would have the type
+\texttt{S Integer}.
 
 We also need to process these signals, and as mentioned before, Flask
 provides a set of general stream operators for this task.
@@ -570,17 +570,17 @@ provides a set of general stream operators for this task.
 Before we go on to explain the stream operators, we need to discuss
 two Haskell type classes: \textit{Reify} and \textit{LiftN}.
 Instances of the \textit{Reify} type classes are Haskell types that
-have node-level equivalents. An instance \textit{Reify a} has to
-provide a function \texttt{reify :: a -> Type} that, given a Haskell
+have node-level equivalents. An instance \texttt{Reify $a$} has to
+provide a function \texttt{reify :: $a$ -> Type} that, given a Haskell
 value of type $a$ returns a representation of its node-level type.
 The actual value is never used, only its type, so a common value to
-use is \texttt{undefined :: a}.
+use is \texttt{undefined :: $a$}.
 
 \textit{LiftN} is a multi-parameter type class\footnote{This requires
   the GHC language extension MultiParameterTypeClasses.}. An instance
-\texttt{LiftN eta Integer} declares that a Haskell value of type $eta$
+\texttt{LiftN $eta$ Integer} declares that a Haskell value of type $eta$
 can be lifted to code of node-level type \textit{Integer} (by the
-\texttt{liftN :: a -> N a} function).  N-Lifting is particularly used to
+function \texttt{liftN :: $a$ -> N $a$}).  N-Lifting is particularly used to
 lift quasiquoted Red function definitions to node-level code that can
 be called by the final node-level program.\\
 
@@ -589,8 +589,8 @@ Let us consider an actual Flask stream operator, namely
 \texttt{sfilter}. Its type signature is:
 
 \begin{verbatim}
-sfilter :: forall a eta . (Reify a, LiftN eta (a -> Bool))
-              => eta -> S a -> S a
+sfilter :: forall $a$ $eta$ . (Reify $a$, LiftN $eta$ ($a$ -> Bool))
+              => $eta$ -> S $a$ -> S $a$
 \end{verbatim}
 
 Thus the stream operator \texttt{sfilter} takes as its first argument
@@ -600,7 +600,7 @@ function (\texttt{S a -> S a}) that for each input value uses the
 predicate to decide whether it should be passed on to its output
 stream or not.
 
-\newpage
+
 \subsection{Streamoperators}
 \label{sec:streamoperators}
 In this section we will describe the stream-operators and signal
@@ -616,7 +616,7 @@ sconst :: forall a b eta. (Reify b, LiftN eta a)
 
 \item \verb|(>>>) :: forall a. Reify a => S a -> (S a -> S a)|
   \hfill \\ Connects a stream with a stream operator.
-  E.g. \texttt{clock 10 $\ggg$ sconst (liftN [\$exp|42|])} is a stream
+  E.g. {\ttfamily clock 10 \verb|>>>| sconst (liftN [\$exp|42|])} is a stream
   of 42 values, that is passed on every 10th millisecond. This is
   simply implemented as a Haskell function application.
 
@@ -650,9 +650,9 @@ smap :: forall eta a b . (Reify a, Reify b, LiftN eta (a -> b))
 
 \item
 \begin{verbatim}
-sintegrate  ::  forall a b c eta . (Reify a, Reify b, Reify c,
-                                 LiftN eta ((a, c) -> (b, c)))
-         =>  N c ->  eta ->  S a ->  S b
+sintegrate :: forall a b c eta . (Reify a, Reify b, Reify c,
+                              LiftN eta ((a, c) -> (b, c)))
+       =>  N c ->  eta ->  S a ->  S b
 \end{verbatim}
   When supplied with an initial (node-level) state value and a
   node-level function that takes the current state and the next value
@@ -1168,10 +1168,10 @@ value to the counter node, telling it to send another request to the
 sensor if the counter is nonzero.  The problem in this scheme is the
 wire from the output node to the accumulator node --- this graph edge
 would form a cycle, something that is expressly forbidden.  On figure
-\ref{queue-with-ignore}, we solve this issue by an \textit{event node}
+\fref{fig:queue-with-ignore}, we solve this issue by an \textit{event node}
 that listens to a discrete event broadcast by the output node (the
 Fladuino event system is described in detail in
-\Fref{sec:events_design}).  Using the event system in such a way is
+\fref{sec:events_design}).  Using the event system in such a way is
 technically feasible, but violates the spirit of the design.  The
 connection from output to event node can be considered to be a
 particularly weak kind of posting wire --- informally, they are to
@@ -1181,7 +1181,7 @@ real posting wires, as software interrupts are to hardware interrupts.
   \includegraphics[width=0.9\textwidth]{images/queue-with-ignore}
   \caption{Simulating Queue}
   \centering
-  \label{queue-with-ignore}
+  \label{fig:queue-with-ignore}
 \end{figure}
 
 \section{Representing peripherals} Arduino is a flexible system for
