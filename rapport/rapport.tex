@@ -296,6 +296,10 @@ Arduino BT\footnote{\url{http://www.arduino.cc/en/Guide/ArduinoBT}},
 Arduino
 Mega\footnote{\url{http://arduino.cc/en/Main/ArduinoBoardMega}}, and
 Pololu 3pi\footnote{\url{http://www.pololu.com/catalog/product/975}}.
+The Pololu 3pi is an Arduino-compatible robot which, as they states in
+the user manual, is ``designed to excel in line-following and
+line-maze-solving competitions''.
+
 
 \section{Motivation}
 One of the most noticeable consequences of the dramatic reductions in
@@ -365,13 +369,14 @@ needed when programming control systems that isn't already in Flask
 and how we have embodied this in Fladuino (i.e. our core design
 decisions).
 
-In \Fref{chap:implementation} we will talk about the
-technically modification we have made to transform Flask to Fladuino.
+In \Fref{chap:implementation} we will talk about the technically
+modification we have made to transform Flask to Fladuino.
 
-In \Fref{chap:evaluation} we will present an evaluation of
-the complete Fladuino system, judging its benefits over traditional
-methods of programming control programs, as well as covering
-any identified shortcomings.
+In \Fref{chap:evaluation} we will present an evaluation of the
+complete Fladuino system, judging its benefits over traditional
+methods of programming control programs, as well as covering any
+identified shortcomings. We present a minimal driver for the Pololu
+3pi robot and a line-following program written in Fladuino.
 
 \chapter{Flask}
 \label{chap:Flask}
@@ -1181,18 +1186,19 @@ real posting wires, as software interrupts are to hardware interrupts.
   \label{fig:queue-with-ignore}
 \end{figure}
 
-\section{Representing peripherals}
-Arduino is a flexible system for general embedded development, with no
-specific application in mind.  The Arduino platform can therefore be
-connected to a diverse amount of peripheral devices, all with their
-own specific functionality and programming interface.  It is thus
-natural to support this diversity as a core concept of Fladuino; not
-(solely) as a library of drivers for various devices, but rather as a
-framework and set of tools provided to the programmer so that Fladuino
-can be extended to transparently support the devices he has need of.
-For demonstration, we have \fixme{not really done yet} written a
-framework for programming the Pololu 3pi robot and the peripherals
-connected to it (electromotors, sensors, buttons, etc.).
+\section{Representing peripherals} Arduino is a flexible system for
+general embedded development, with no specific application in mind.
+The Arduino platform can therefore be connected to a diverse amount of
+peripheral devices, all with their own specific functionality and
+programming interface.  It is thus natural to support this diversity
+as a core concept of Fladuino; not (solely) as a library of drivers
+for various devices, but rather as a framework and set of tools
+provided to the programmer so that Fladuino can be extended to
+transparently support the devices he has need of.  For demonstration,
+we have written a minimal framework for programming the Pololu 3pi
+robot and \textit{some} of the peripherals connected to it
+(electromotors, reflectance sensors, etc.). This framework is
+discussed in \Fref{chap:example code} and evaluated in \Fref{chap:evaluation}
 
 Furthermore, Arduino is a broad term encompassing a range of
 more-or-less compatible platforms, though each of them differ slightly
@@ -1978,6 +1984,7 @@ event if the predicate is true, with the result of running the
 value-function.
 
 \chapter{Example programs}
+\label{chap:example code}
 
 \textit{Beskrivelse af vores fedeste eksempelprogrammer: 3pi,
   binærtæller etc. og hvorfor det er smart.}
@@ -2111,32 +2118,6 @@ explicitley changed. The scale 0 to 1024 when reading analog values is
 proportional to the relationship between GND and AREF, which is
 nomally 0v and 5v respectively, though AREF can be explicitly changed.
 
-\subsection{Defining a battery reader for 3pi}
-
-The Pololu 3pi robot has a few extra features that the Arduino boards
-doesn't. One of these features is the possibility of reading how many millivolts
-is left on the batteries that power the device. This feature can be used to
-indicate if the batteries needs replacement, e.g. by signalling with the buzzer
-or writing text to the display.
-
-The \texttt{Device} instance definition \texttt{BatteryReader} requires that the
-platform supply the functionality \textit{3pi battery reader} which is only
-defined for the Pololu 3pi platform.
-
-\begin{verbatim}
-data BatteryReader = BatteryReader
-                        deriving (Eq, Show)
-
-instance Device BatteryReader where
-    usages _ = [CapabilityRequired "3pi battery reader"]
-    uniqueId _ = "3pi_battery_reader" -- there only need to be one
-
-instance AnalogInputDevice BatteryReader where
-    genReadCode _ resultvar = [[$cstm|$id:resultvar = read_battery_millivolts();|]]
-\end{verbatim}
-
-\fixme{not done}
-
 \subsection{Defining a new platform}
 
 When adding support for a new platform, e.g. the Pololu 3pi, one has the option
@@ -2215,6 +2196,34 @@ pololu3pi = arduinoDuemilanove { p_capabilities = ["3pi", "3pi battery reader",
                                , p_base_setup = addCInclude "3pi/3pi.h"
                                }
 \end{verbatim}
+
+
+
+
+\subsection{Defining a battery reader for 3pi}
+
+The Pololu 3pi robot has a few extra features that the Arduino boards
+doesn't. One of these features is the possibility of reading how many millivolts
+is left on the batteries that power the device. This feature can be used to
+indicate if the batteries needs replacement, e.g. by signalling with the buzzer
+or writing text to the display.
+
+The \texttt{Device} instance definition \texttt{BatteryReader} requires that the
+platform supply the functionality \textit{3pi battery reader} which is only
+defined for the Pololu 3pi platform.
+
+\begin{verbatim}
+data BatteryReader = BatteryReader
+                        deriving (Eq, Show)
+
+instance Device BatteryReader where
+    usages _ = [CapabilityRequired "3pi battery reader"]
+    uniqueId _ = "3pi_battery_reader" -- there only need to be one
+
+instance AnalogInputDevice BatteryReader where
+    genReadCode _ resultvar = [[$cstm|$id:resultvar = read_battery_millivolts();|]]
+\end{verbatim}
+
 
 
 \chapter{Evaluation}
@@ -2461,6 +2470,42 @@ Yet its simplicity comes at a cost.  The interrupt handlers for the
 buttons carry out their logic themselves, potentially causing race
 conditions if they are invoked during the processing of the main loop.
 Said loop is problematic as well, as the timing is embedded within it.
+
+
+\subsection{Pololu 3pi: Line following robot}
+To examplify our .. we've implemented a few bindings for 
+
+
+
+
+
+\begin{verbatim}
+sensors = ReflectanceSensorArray 5
+linereader = LineReader sensors
+speed = 100
+\end{verbatim}
+
+
+
+\begin{verbatim}
+defaultMain $ do
+  addDevice sensors
+  genStream $ idle 
+              >>> valueOf linereader 
+              >>> smap velocity 
+              >>> set_motors_native Motors
+\end{verbatim}
+
+
+\begin{verbatim}
+velocity :: N (Integer -> (Integer, Integer))
+velocity = liftN [$decls|f linepos = 
+                    if linepos < 1000 then (0, $int:speed)
+                    else if linepos > 3000 then ($int:speed, $int:speed)
+                    else ($int:speed, 0)|]
+\end{verbatim}
+
+
 
 \chapter{The Fladuino Future}
 \label{chap:futurework}

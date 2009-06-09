@@ -20,20 +20,18 @@ import Fladuino.Device
 import Fladuino.Devices
 import Fladuino.Pololu3pi
 
-sensors = ReflectanceSensorArray 5
-linereader = LineReader sensors
-speed = 100
+
+speed = 0.5
 
 main :: IO ()
 main =
     defaultMain $ do
-      addDevice sensors
       genStream $ idle 
-                  >>> valueOf linereader 
+                  >>> valueOf ReflectanceSensors
                   >>> smap velocity 
-                  >>> set_motors_native Motors
+                  >>> set_motors Motors
           where 
-            velocity :: N (Integer -> (Integer, Integer))
-            velocity = liftN [$decls|f linepos = if linepos < 1000 then (0, $int:speed)
-                                                 else if linepos > 3000 then ($int:speed, $int:speed)
-                                                 else ($int:speed, 0)|]
+            velocity :: N (Integer -> (Float, Float))
+            velocity = liftN [$decls|f linepos = if linepos < 1000 then (0.0-1.0, $flo:speed)
+                                                 else if linepos > 3000 then (0.0, $flo:speed)
+                                                 else (1.0, 0.0)|]
