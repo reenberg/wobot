@@ -35,21 +35,38 @@ data ReflectanceSensorArray = ReflectanceSensorArray
                                   Integer -- ^ Number of Sensors in array (5 for 3pi)
                               deriving (Eq, Show)
 
+sensorarrayname (ReflectanceSensorArray n) = "sensors" ++ show n
+
 instance Device ReflectanceSensorArray where
     usages _ = [CapabilityRequired "3pi reflectance sensor array"]
-    setupDevice (ReflectanceSensorArray n) = 
-        do addCVardef [$cedecl|unsigned int $id:arrayname[$int:n];|]
-           addCInitStm [$cstm|calibrate_line_sensors(IR_EMITTERS_ON);|]
-        where arrayname = "sensors" ++ show n
-    uniqueId _ = "reflectance_sensor_array" -- only one should be needed
+    setupDevice rsa@(ReflectanceSensorArray n) = 
+        do addCDecldef [$cedecl|unsigned int $id:aname[$int:n];|]
+           addCFundef [$cedecl|void calibrate_3pi_sensors () {              
+                        int counter;
+                        for(counter=0;counter<80;counter++) {
+                            if(counter < 20 || counter >= 60)
+                              set_motors(40,-40);
+                            else
+                              set_motors(-40,40);
+                            calibrate_line_sensors(IR_EMITTERS_ON);
+                            delay_ms(20);
+                        }
+                        set_motors(0,0);
+                        }|]
 
+           addCInitStm [$cstm|pololu_3pi_init(2000);|]
+           addCInitStm [$cstm|while(!button_is_pressed(BUTTON_B));|]
+           addCInitStm [$cstm|calibrate_3pi_sensors ();|]
+           addCInitStm [$cstm|while(!button_is_pressed(BUTTON_B));|]
+        where aname = sensorarrayname rsa
+    uniqueId _ = "reflectance_sensor_array" -- only one should be needed
 
 calibrateSensors :: forall a. (Reify a) => ReflectanceSensorArray -> S a -> S ()
 calibrateSensors d@(ReflectanceSensorArray n) = modDev "calibrateSensors" d $
                   \_ c_v_in _ (params, _) ->
                          [$cedecl|void $id:c_v_in($params:params)
                           { 
-                            calibrate_line_sensors(IR_EMITTERS_ON);
+                            calibrate_3pi_sensors ();
                           }|]
 
 
@@ -61,9 +78,9 @@ instance Device LineReader where
     uniqueId _ = "line_reader"
 
 instance AnalogInputDevice LineReader where
-    genReadCode (LineReader (ReflectanceSensorArray n)) resultvar = 
-        [[$cstm|$id:resultvar = read_line($id:arrayname, IR_EMITTERS_ON);|]]
-        where arrayname = "sensors" ++ show n
+    genReadCode (LineReader rsa@(ReflectanceSensorArray n)) resultvar = 
+        [[$cstm|$id:resultvar = read_line($id:aname, IR_EMITTERS_ON);|]]
+        where aname = sensorarrayname rsa
 
 data Motors = Motors
               deriving (Eq, Show)
@@ -83,7 +100,10 @@ set_motors_native Motors = modDev "motors" Motors $
                              { 
                                set_motors($exp:motor0Value, $exp:motor1Value);
                              }|]
--- This interprets the two integers on the input as rotational and 
+
+-- This interprets the two integers on the input as rotational and
+-- transitional speed.  The first element of the pair is rotational
+-- speed, the last is speed.
 set_motors :: Motors -> S (Float, Float) -> S ()
 set_motors Motors from = from >>> f >>> set_motors_native Motors
     where
