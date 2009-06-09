@@ -2174,8 +2174,8 @@ arduinoDuemilanove = emptyPlatform { p_pins = [ PinDecl (DPin n) $ pc n | n <- [
 \end{verbatim}
 
 Since the \texttt{arduinoDiecimila} platform is fully compatible and has
-exactley the same pin configuration as the \texttt{arduinoDuemilanove} platform, it can
-be defined by just extending it
+exactley the same pin configuration as the \texttt{arduinoDuemilanove} platform,
+it can be defined by just extending it
 
 \begin{verbatim}
 arduinoDiecimila = arduinoDuemilanove { p_capabilities = ["Diecimila"] }
@@ -2191,7 +2191,8 @@ the \texttt{pololu3pi} platform can be defined by extending the
 \texttt{arduinoDuemilanove} and adding the extra capabilities and base setup
 
 \begin{verbatim}
-pololu3pi = arduinoDuemilanove { p_capabilities = ["3pi", "3pi battery reader", "3pi reflectance sensor array",
+pololu3pi = arduinoDuemilanove { p_capabilities = ["3pi", "3pi battery reader", 
+                                                   "3pi reflectance sensor array",
                                                    "3pi motors"]
                                , p_base_setup = addCInclude "3pi/3pi.h"
                                }
