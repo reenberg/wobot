@@ -545,17 +545,17 @@ Flask therefore still feels quite the same as when using the Arrows
 library, but you won't get the Arrow syntax (introduced in
 \cite{PatersonRA:notation}).
 
-In Flask a stream of type $\alpha$ has the type \texttt{S
-  $\alpha$}. The arguably simplest way to generate such a stream is
+In Flask a stream of type $a$ has the type \texttt{S
+  $a$}. The arguably simplest way to generate such a stream is
 the Flask-function \texttt{clock :: Int -> S ()}, which given a time
 interval in milliseconds returns a stream of unit signals, that is
 sent with the given frequency. E.g. \texttt{clock 1000} is signalling
 every second. This isn't useful by itself, but is useful for
 activating some other task, like reading a sensor at some frequency.
-Node-level code of type $a$ has the type $N a$ in Haskell.  For
+Node-level code of type $a$ has the type \texttt{N $a$} in Haskell.  For
 example, a node-level expression evaluating to an integer is referred
-to as $N Integer$, and a stream of such integers would have the type
-$S Integer$.
+to as \texttt{N Integer}, and a stream of such integers would have the type
+\texttt{S Integer}.
 
 We also need to process these signals, and as mentioned before, Flask
 provides a set of general stream operators for this task.
@@ -565,17 +565,17 @@ provides a set of general stream operators for this task.
 Before we go on to explain the stream operators, we need to discuss
 two Haskell type classes: \textit{Reify} and \textit{LiftN}.
 Instances of the \textit{Reify} type classes are Haskell types that
-have node-level equivalents. An instance \textit{Reify a} has to
-provide a function \texttt{reify :: a -> Type} that, given a Haskell
+have node-level equivalents. An instance \texttt{Reify $a$} has to
+provide a function \texttt{reify :: $a$ -> Type} that, given a Haskell
 value of type $a$ returns a representation of its node-level type.
 The actual value is never used, only its type, so a common value to
-use is \texttt{undefined :: a}.
+use is \texttt{undefined :: $a$}.
 
 \textit{LiftN} is a multi-parameter type class\footnote{This requires
   the GHC language extension MultiParameterTypeClasses.}. An instance
-\texttt{LiftN eta Integer} declares that a Haskell value of type $eta$
+\texttt{LiftN $eta$ Integer} declares that a Haskell value of type $eta$
 can be lifted to code of node-level type \textit{Integer} (by the
-\texttt{liftN :: a -> N a} function).  N-Lifting is particularly used to
+function \texttt{liftN :: $a$ -> N $a$}).  N-Lifting is particularly used to
 lift quasiquoted Red function definitions to node-level code that can
 be called by the final node-level program.\\
 
@@ -584,8 +584,8 @@ Let us consider an actual Flask stream operator, namely
 \texttt{sfilter}. Its type signature is:
 
 \begin{verbatim}
-sfilter :: forall a eta . (Reify a, LiftN eta (a -> Bool))
-              => eta -> S a -> S a
+sfilter :: forall $a$ $eta$ . (Reify $a$, LiftN $eta$ ($a$ -> Bool))
+              => $eta$ -> S $a$ -> S $a$
 \end{verbatim}
 
 Thus the stream operator \texttt{sfilter} takes as its first argument
@@ -595,7 +595,7 @@ function (\texttt{S a -> S a}) that for each input value uses the
 predicate to decide whether it should be passed on to its output
 stream or not.
 
-\newpage
+
 \subsection{Streamoperators}
 \label{sec:streamoperators}
 In this section we will describe the stream-operators and signal
@@ -611,7 +611,7 @@ sconst :: forall a b eta. (Reify b, LiftN eta a)
 
 \item \verb|(>>>) :: forall a. Reify a => S a -> (S a -> S a)|
   \hfill \\ Connects a stream with a stream operator.
-  E.g. \texttt{clock 10 $\ggg$ sconst (liftN [\$exp|42|])} is a stream
+  E.g. {\ttfamily clock 10 \verb|>>>| sconst (liftN [\$exp|42|])} is a stream
   of 42 values, that is passed on every 10th millisecond. This is
   simply implemented as a Haskell function application.
 
@@ -645,9 +645,9 @@ smap :: forall eta a b . (Reify a, Reify b, LiftN eta (a -> b))
 
 \item
 \begin{verbatim}
-sintegrate  ::  forall a b c eta . (Reify a, Reify b, Reify c,
-                                 LiftN eta ((a, c) -> (b, c)))
-         =>  N c ->  eta ->  S a ->  S b
+sintegrate :: forall a b c eta . (Reify a, Reify b, Reify c,
+                              LiftN eta ((a, c) -> (b, c)))
+       =>  N c ->  eta ->  S a ->  S b
 \end{verbatim}
   When supplied with an initial (node-level) state value and a
   node-level function that takes the current state and the next value
