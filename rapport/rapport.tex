@@ -187,7 +187,7 @@ systems.
 Flask is a domain-specific language embedded in Haskell for writing
 sensor network code, with Haskell functioning as a meta-language. A
 Flask program takes the form of an acyclic dataflow graph, which
-represents how data streams its sensors are processed and sent to
+represents how data streams from its sensors are processed and sent to
 other nodes in the network. When a Flask program is ``run'', it
 generates a program in another more low-level sensor network
 language. Our framework, Fladuino, follows exactly the same concepts
@@ -1163,10 +1163,10 @@ value to the counter node, telling it to send another request to the
 sensor if the counter is nonzero.  The problem in this scheme is the
 wire from the output node to the accumulator node --- this graph edge
 would form a cycle, something that is expressly forbidden.  On figure
-\ref{queue-with-ignore}, we solve this issue by an \textit{event node}
+\fref{fig:queue-with-ignore}, we solve this issue by an \textit{event node}
 that listens to a discrete event broadcast by the output node (the
 Fladuino event system is described in detail in
-\Fref{sec:events_design}).  Using the event system in such a way is
+\fref{sec:events_design}).  Using the event system in such a way is
 technically feasible, but violates the spirit of the design.  The
 connection from output to event node can be considered to be a
 particularly weak kind of posting wire --- informally, they are to
@@ -1176,7 +1176,7 @@ real posting wires, as software interrupts are to hardware interrupts.
   \includegraphics[width=0.9\textwidth]{images/queue-with-ignore}
   \caption{Simulating Queue}
   \centering
-  \label{queue-with-ignore}
+  \label{fig:queue-with-ignore}
 \end{figure}
 
 \section{Representing peripherals}
