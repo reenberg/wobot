@@ -433,7 +433,7 @@ When compiling the Haskell program description of the dataflow graph,
 you end up with an executable that generates and outputs code in a
 sensor network language called NesC\footnote{NesC is an extension to
   C, with some additional constructs suitable for low-level sensor
-  network programming for TinyOS.}.
+  network programming for TinyOS.} \cite{nesc}.
 
 The generated NesC code can then be translated by an ordinary
 NesC compiler to machine code running on the nodes in the
@@ -520,8 +520,8 @@ than of Haskell.
 
 Figure \ref{fig:redqq} is an example of a quasiquoted function in Red,
 which determines whether a ratio between two values is below a certain
-threshold. The threshold is a generation-time computed value, which is
-inserted at generation-time by the \texttt{flo}-antiquoter.
+threshold. The threshold could be a generation-time computed value, which is
+inserted by the \texttt{flo}-antiquoter (float) at generation-time.
 \begin{nonfloatingfigure}
 \begin{verbatim}
 [$exp|\(hi, lo) -> hi / lo > $flo:threshold|]
@@ -545,7 +545,7 @@ Flask therefore still feels quite the same as when using the Arrows
 library, but you won't get the Arrow syntax (introduced in
 \cite{PatersonRA:notation}).
 
-In Flask a stream of type $\alpha$ values has the type \texttt{S
+In Flask a stream of type $\alpha$ has the type \texttt{S
   $\alpha$}. The arguably simplest way to generate such a stream is
 the Flask-function \texttt{clock :: Int -> S ()}, which given a time
 interval in milliseconds returns a stream of unit signals, that is
