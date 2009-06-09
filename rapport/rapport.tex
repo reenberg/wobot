@@ -97,9 +97,12 @@ Jesper Reenberg (jesper.reenberg@gmail.com)
   (e.g. sensors, motors or displays) should be possible to
   program. Specifically we include a framework for specifying
   interfaces to these peripherals and primitives for
-  event-handling. \fixme{Any other major additions?}
+  event-handling.
 
-  \fixme{Evaluation}
+  The result of our work is a system with which it is possible to
+  define a large class of reactive programs, though the gains,
+  compared to earlier methods of programming, are greatest in those
+  that are as stateless as possible.
 \end{abstract}
 
 \clearpage 
@@ -302,6 +305,8 @@ line-maze-solving competitions''.
 
 
 \section{Motivation}
+\label{sec:motivation}
+
 One of the most noticeable consequences of the dramatic reductions in
 cost that we have observed in programmable electronic devices over the
 last five decades, is the sheer ubiquity of small computers in our
@@ -362,10 +367,9 @@ devices that form our domain.
 We expect that readers of this report has a small background knowledge
 of electronics.
 
-Knows the terms: Quasiquotation, phantom types, 
-Knows the difference between metalanguages versus object-languages.
-
-\fixme{formulering}
+Additionally, we expect the reader to have casual familiarity with the
+concepts of Quasiquotation \cite{quasiquote07}, phantom types, and to
+know the difference between meta-languages versus object-languages.
 
 \section{Structure outline}
 In the following chapter (\Fref[plain]{chap:Flask}) we will go
@@ -770,9 +774,7 @@ A summary of the most important requirements for our system follows:
   running on the Arduino platform from a description of a dataflow graph. This
   graph must be expressed in the form of a Haskell program.
   \footnote{This requirement stems from the selection of
-    Arduino (see \fref{sec:hardware platform}) as platform and from the
-    ???below??? requirement of mirroring Flask.}
-\fixme{fix footnote}
+    Arduino (see \fref{sec:hardware platform}) as platform.}
 \end{itemize}
 
 And we set the scope of our project as follows:
@@ -2357,12 +2359,33 @@ Arduino-based control systems:
   many applications in the (admittedly broad) domain of arbitrary
   control programs may benefit from the ability to dynamically rewire
   dataflow.
+\item There is no distinction between private and public interface.
+  All Haskell modules in Fladuino export their entire contents (as
+  they do in Flask itself), and it is possible to violate some of our
+  guarantees through improper use of internal functions.  As a
+  specific example, type-safety can be violated by explicitly calling
+  the internal function \texttt{connectEvent} (which registers a node
+  as a listener for a specific event), though the C compiler will most
+  likely catch the type error in the generated program.
 \end{itemize}
 
 Fladuino \textit{does}, however, fully implement its target feature
 set in a manner that is practically useful.  If a program can be
 expressed within the abstractions that we provide, then using Fladuino
 to implement it should not be a problem.
+
+\section{The use of Flask as a foundation}
+
+Flask turned out to be an excellent vehicle for our experimentation.
+One of the most technically hairy, yet also relatively irrelevant,
+aspects of Fladuino is the compilation of Red to C.  Flask
+encapsulates this code transformer well, and expresses its actual
+logic of constructing and generating code from dataflow graphs as a
+few thousand lines of Haskell.
+
+Additionally, we could reuse most of the stream operators with little
+work, the conversion of their implementation from NesC to C being
+trivial in most cases.
 
 \section{Experimental comparison}
 
@@ -2688,17 +2711,20 @@ int main() {
 
 \chapter{The Fladuino Future}
 \label{chap:futurework}
-\textit{Hvad vi ikke har, eller hvad der skal arbejdes videre med. }
+
+While we consider Fladuino to be a useful tool for some programs, a
+number of improvements could be made that would drastically improve
+its utility as a practical vessel for programming embedded systems.
+These can be divided into three main categories: extensions or fixes
+of existing features, the addition of relatively simple or isolated
+technical additions, or features that more fundamentally change core
+design decisions.
 
 Lidt idéer:
 \begin{itemize}
 \item Find på noget bedre end Red 
 \item Se om man kan få lavet en instans af Arrow-typeklassen, så man
   kan bruge Yampas Arrow-syntax.
-\item Bedre fejlmeddelelser (Pt. udskrives syntaxtræet efter parse af
-  quasiquotet tekst ved fejl. Dette skal dog rettes i
-  Quasiquotation-modulet eller måske kræver det speciel integration
-  med compileren)
 \item \textit{(Bør vi måske satse på at få med inden aflevering:)}
   Gør det endnu nemmere at skrive drivers til nye
   robotter. F.eks. så man kun skal angive en typeklasse instans der
@@ -2707,10 +2733,6 @@ Lidt idéer:
   hastighed. Hvorefter man så får adgang til en række generelle
   styringsabstraktioner.
 
-\item 3pi robotten er langt fra understøttet komplet. Fx er der lidt problemer
-  mht. at 3pi robotten bruger alle timere til motor, motor, og sensor/buzzer
-  etc. Fladuino går her ind og overskriver timeren til bl.a. buzzer og andet.
-
 \item  Yderligere er der også problemer med det meste af 3pi platoformen, ikke
   er precist nok defineret., Fx hvilke pins der kun kan specielle ting.
 \end{itemize}
@@ -2718,6 +2740,70 @@ Lidt idéer:
 \section{Needs further work}
 \fixme{bedre overskrift}
 
+Some aspects of Fladuino still have undesirable quirks or warts,
+others miss minor features that might be useful.  This section will
+summarise some of these.
+
+\begin{itemize}
+\item As a purely cosmetic issue, the quasiquotation library that we
+  make so heavy use of has a tendency to obscure compiler error
+  messages.  When the compiler prints an erroneous expression
+  containing a quasiquotation, said quasiquotation will not be shown
+  as it appears in the source file, but rather as a complete parse
+  tree.  As even simple expressions can easily balloon to parse trees
+  that take up hundreds of lines when displayed, this can make it hard
+  to navigate through compiler errors.  The solution to this problem
+  might need compiler integration, namely storing the original source
+  text associated with every quasiquotation in the Haskell parse tree,
+  and use that for displaying errors.
+\item The Pololu 3pi robot is not yet fully supported.  In particular,
+  support for timers is flaky, as the Pololu libraries themselves
+  makes use of them all.  Additionally, some built-in features, such
+  as the LCD, are not properly represented as Fladuino devices.  The
+  cause of these deficiencies is that the 3pi robot is somewhat
+  further from Arduino compatibility than we were lead to believe.
+\end{itemize}
+
+\section{Handy new tools}
+
+\section{Major structural changes}
+
+Through our device and event abstraction layer, we take steps to
+sanity-check such low-level assumptions as I/O pin allocation on the
+target Arduino.  But as stated in \Fref{sec:motivation}, the primary
+catalyst for our interest in these relatively hardware-constrained
+embedded systems is the potential to deploy them in vast numbers as
+technological advances make their manufacture increasingly
+inexpensive, thus implying that they will somehow communicate with
+each other.  In Fladuino as-is, we do not provide any way to
+sanity-check the communication between programs.  Should you wish to
+create a network of Arduinos, some running different programs, you
+have no choice but to write several independent programs and hope that
+they work together, without much help from Fladuino.  It would be
+quite interesting the investigate the possibility of turning Fladuino
+into a system for describing \textit{networks} of machines, describing
+not merely the dataflow within each machine node, but also the overall
+communication between them.  Not all of the nodes in the network need
+even be the same platform, meaning that it would be possible to
+express a network consisting of a central node processing data from a
+multitude of smaller sensors, all created by a single generator
+program.  Lifting inter-machine communication to first class status in
+Fladuino could help prevent several error classes:
+
+\begin{description}
+\item[Format errors], such as the classic endian issues, would be
+  eliminated as Fladuino would take care of all data conversion.
+\item[Type mismatches] would also be impossible, as Fladuino would
+  have a high-level overview of the communication between machines,
+  and would ensure that there are no type errors.  With separate
+  programs, as now, it is quite possible for a program to send the
+  binary representation of a floating-point value to another program
+  expecting a signed integer.
+\end{description}
+
+Additionally, support for ad-hoc networking (through radio
+transmitters, for example) could be built-in and controlled by rules
+specified in the Fladuino program.
 
 \subsection{C++ Quasiquoter}
 
