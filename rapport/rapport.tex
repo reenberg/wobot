@@ -375,7 +375,7 @@ modification we have made to transform Flask to Fladuino.
 In \Fref{chap:evaluation} we will present an evaluation of the
 complete Fladuino system, judging its benefits over traditional
 methods of programming control programs, as well as covering any
-identified shortcomings. We present a minimal driver for the Pololu
+identified shortcomings. We present a subset of drivers for the Pololu
 3pi robot and a line-following program written in Fladuino.
 
 \chapter{Flask}
@@ -734,8 +734,8 @@ ewma gain = sintegrate zero
 In this chapter we will outline the overall design of Fladuino, as
 well as present some of the technical decisions that have a notable
 impact on how Fladuino is used.  Technical details that have less of
-an impact on the final usage of the system are described in chapter
-\ref{chap:implementation}.
+an impact on the final usage of the system are described in
+\fref{chap:implementation}.
 
 Fladuino is a modification of Flask that can be used to program
 Arduino devices in a functional reactive manner. In this chapter we
@@ -759,11 +759,12 @@ A summary of the most important requirements for our system follows:
 \item We want to statically analyse and validate the program for
   certain classes of type and logic errors.
 \item Fladuino must be able to generate a valid C-program suitable for
-  running on an Arduino from a description of a dataflow graph. This
+  running on the Arduino platform from a description of a dataflow graph. This
   graph must be expressed in the form of a Haskell program.
   \footnote{This requirement stems from the selection of
-    Arduino (see section \ref{sec:hardware platform}) as platform and from the
+    Arduino (see \fref{sec:hardware platform}) as platform and from the
     ???below??? requirement of mirroring Flask.}
+\fixme{fix footnote}
 \end{itemize}
 
 And we set the scope of our project as follows:
@@ -825,14 +826,14 @@ included or integrated by the user, of course.
 
 \subsection{Hardware constraints}
 
-While we do not use ``Arduino'' to refer to any specific hardware
+While we do not use Arduino to refer to any specific hardware
 configuration, implementations of our target platform still share some
 fundamental characteristics that have influenced many design choices
 and tradeoffs in Fladuino.  In particular, the low amount of available
 main memory, and the comparatively large amount of available flash
 memory for program code, suggests that we optimise for low memory
 usage over low code size.  Indeed, as we shall see in
-\ref{sec:dataflowtranslation}, we have opted to directly express much of
+\fref{sec:dataflowtranslation}, we have opted to directly express much of
 the control flow in the code itself, where a typical program, with
 plenty of available memory, might instead opt a more data-driven
 approach.  This choice was also made in Flask itself, and as
@@ -895,9 +896,9 @@ parts can be divided into the following:
   Arduino name, all with slightly different capabilities, we permit
   selection of the exact Arduino variant targeted by the program.
 
-  Finally, since Arduino is a fundamentally extensible platform, we
-  provide facilities for implementing \textit{drivers} for entirely
-  new devices, such that use of these is also automatically
+  Finally, since Arduino is a fundamentally extensible platform, we provide
+  facilities for implementing drivers (see \fref{sec:user-extens-abstr} ) for
+  entirely new devices, such that use of these is also automatically
   sanity-checked.
 \end{itemize}
 
@@ -1822,6 +1823,7 @@ one instruction before the next IHF is called \cite[Section 4.7 page 14]{atmel8p
 
 
 \section{User-extensible abstractions with typeclasses}
+\label{sec:user-extens-abstr}
 As explained in earlier chapters, one of our main additions to Flask,
 is the possibility of defining drivers for peripherals and defining
 new event types. This section explains how our design analysis lead to
