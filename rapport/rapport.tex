@@ -2726,10 +2726,6 @@ Lidt idéer:
 \item Find på noget bedre end Red 
 \item Se om man kan få lavet en instans af Arrow-typeklassen, så man
   kan bruge Yampas Arrow-syntax.
-\item Bedre fejlmeddelelser (Pt. udskrives syntaxtræet efter parse af
-  quasiquotet tekst ved fejl. Dette skal dog rettes i
-  Quasiquotation-modulet eller måske kræver det speciel integration
-  med compileren)
 \item \textit{(Bør vi måske satse på at få med inden aflevering:)}
   Gør det endnu nemmere at skrive drivers til nye
   robotter. F.eks. så man kun skal angive en typeklasse instans der
@@ -2738,16 +2734,36 @@ Lidt idéer:
   hastighed. Hvorefter man så får adgang til en række generelle
   styringsabstraktioner.
 
-\item 3pi robotten er langt fra understøttet komplet. Fx er der lidt problemer
-  mht. at 3pi robotten bruger alle timere til motor, motor, og sensor/buzzer
-  etc. Fladuino går her ind og overskriver timeren til bl.a. buzzer og andet.
-
 \item  Yderligere er der også problemer med det meste af 3pi platoformen, ikke
   er precist nok defineret., Fx hvilke pins der kun kan specielle ting.
 \end{itemize}
 
 \section{Needs further work}
 \fixme{bedre overskrift}
+
+Some aspects of Fladuino still have undesirable quirks or warts,
+others miss minor features that might be useful.  This section will
+summarise some of these.
+
+\begin{itemize}
+\item As a purely cosmetic issue, the quasiquotation library that we
+  make so heavy use of has a tendency to obscure compiler error
+  messages.  When the compiler prints an erroneous expression
+  containing a quasiquotation, said quasiquotation will not be shown
+  as it appears in the source file, but rather as a complete parse
+  tree.  As even simple expressions can easily balloon to parse trees
+  that take up hundreds of lines when displayed, this can make it hard
+  to navigate through compiler errors.  The solution to this problem
+  might need compiler integration, namely storing the original source
+  text associated with every quasiquotation in the Haskell parse tree,
+  and use that for displaying errors.
+\item The Pololu 3pi robot is not yet fully supported.  In particular,
+  support for timers is flaky, as the Pololu libraries themselves
+  makes use of them all.  Additionally, some built-in features, such
+  as the LCD, are not properly represented as Fladuino devices.  The
+  cause of these deficiencies is that the 3pi robot is somewhat
+  further from Arduino compatibility than we were lead to believe.
+\end{itemize}
 
 \section{Handy new tools}
 
