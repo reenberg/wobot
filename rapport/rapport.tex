@@ -569,7 +569,7 @@ have node-level equivalents. An instance \texttt{Reify $a$} has to
 provide a function \texttt{reify :: $a$ -> Type} that, given a Haskell
 value of type $a$ returns a representation of its node-level type.
 The actual value is never used, only its type, so a common value to
-use is \texttt{undefined :: $a$}.
+use is \texttt{undefined :: $a$}. \hfill
 
 \textit{LiftN} is a multi-parameter type class\footnote{This requires
   the GHC language extension MultiParameterTypeClasses.}. An instance
@@ -584,8 +584,8 @@ Let us consider an actual Flask stream operator, namely
 \texttt{sfilter}. Its type signature is:
 
 \begin{verbatim}
-sfilter :: forall $a$ $eta$ . (Reify $a$, LiftN $eta$ ($a$ -> Bool))
-              => $eta$ -> S $a$ -> S $a$
+sfilter :: forall a eta . (Reify a, LiftN eta (a -> Bool))
+              => eta -> S a -> S a
 \end{verbatim}
 
 Thus the stream operator \texttt{sfilter} takes as its first argument
@@ -609,11 +609,14 @@ sconst :: forall a b eta. (Reify b, LiftN eta a)
 \end{verbatim}
      Maps all values on the input-stream to a constant (node-level) output value.
 
-\item \verb|(>>>) :: forall a. Reify a => S a -> (S a -> S a)|
-  \hfill \\ Connects a stream with a stream operator.
-  E.g. {\ttfamily clock 10 \verb|>>>| sconst (liftN [\$exp|42|])} is a stream
-  of 42 values, that is passed on every 10th millisecond. This is
-  simply implemented as a Haskell function application.
+\item
+\begin{verbatim}
+(>>>) :: forall a. Reify a => S a -> (S a -> S a)
+\end{verbatim}
+  Connects a stream with a stream operator.  E.g. {\ttfamily clock 10 \verb|>>>|
+    sconst (liftN [\$exp|42|])} is a stream of 42 values, that is passed on
+  every 10th millisecond. This is simply implemented as a Haskell function
+  application.
 
 
 \item 
@@ -647,7 +650,7 @@ smap :: forall eta a b . (Reify a, Reify b, LiftN eta (a -> b))
 \begin{verbatim}
 sintegrate :: forall a b c eta . (Reify a, Reify b, Reify c,
                               LiftN eta ((a, c) -> (b, c)))
-       =>  N c ->  eta ->  S a ->  S b
+       =>  N c -> eta -> S a -> S b
 \end{verbatim}
   When supplied with an initial (node-level) state value and a
   node-level function that takes the current state and the next value
@@ -686,8 +689,7 @@ in Flask like below (the code is an almost verbatim copy from
 \cite{flask08}). The result is a stream that only produces values when
 an earthquake is detected.
 \begin{verbatim}
-detect :: Double -> Double -> Double -> 
-          S Double -> S (Double, Double)
+detect :: Double -> Double -> Double -> S (Double, Double)
 detect low high threshold = 
      clock 10
    >>>
