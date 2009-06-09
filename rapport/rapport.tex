@@ -582,7 +582,7 @@ have node-level equivalents. An instance \texttt{Reify $a$} has to
 provide a function \texttt{reify :: $a$ -> Type} that, given a Haskell
 value of type $a$ returns a representation of its node-level type.
 The actual value is never used, only its type, so a common value to
-use is \texttt{undefined :: $a$}.
+use is \texttt{undefined :: $a$}. \hfill
 
 \textit{LiftN} is a multi-parameter type class\footnote{This requires
   the GHC language extension MultiParameterTypeClasses.}. An instance
@@ -597,8 +597,8 @@ Let us consider an actual Flask stream operator, namely
 \texttt{sfilter}. Its type signature is:
 
 \begin{verbatim}
-sfilter :: forall $a$ $eta$ . (Reify $a$, LiftN $eta$ ($a$ -> Bool))
-              => $eta$ -> S $a$ -> S $a$
+sfilter :: forall a eta . (Reify a, LiftN eta (a -> Bool))
+              => eta -> S a -> S a
 \end{verbatim}
 
 Thus the stream operator \texttt{sfilter} takes as its first argument
@@ -622,11 +622,14 @@ sconst :: forall a b eta. (Reify b, LiftN eta a)
 \end{verbatim}
      Maps all values on the input-stream to a constant (node-level) output value.
 
-\item \verb|(>>>) :: forall a. Reify a => S a -> (S a -> S a)|
-  \hfill \\ Connects a stream with a stream operator.
-  E.g. {\ttfamily clock 10 \verb|>>>| sconst (liftN [\$exp|42|])} is a stream
-  of 42 values, that is passed on every 10th millisecond. This is
-  simply implemented as a Haskell function application.
+\item
+\begin{verbatim}
+(>>>) :: forall a. Reify a => S a -> (S a -> S a)
+\end{verbatim}
+  Connects a stream with a stream operator.  E.g. {\ttfamily clock 10 \verb|>>>|
+    sconst (liftN [\$exp|42|])} is a stream of 42 values, that is passed on
+  every 10th millisecond. This is simply implemented as a Haskell function
+  application.
 
 
 \item 
@@ -660,7 +663,7 @@ smap :: forall eta a b . (Reify a, Reify b, LiftN eta (a -> b))
 \begin{verbatim}
 sintegrate :: forall a b c eta . (Reify a, Reify b, Reify c,
                               LiftN eta ((a, c) -> (b, c)))
-       =>  N c ->  eta ->  S a ->  S b
+       =>  N c -> eta -> S a -> S b
 \end{verbatim}
   When supplied with an initial (node-level) state value and a
   node-level function that takes the current state and the next value
@@ -699,8 +702,7 @@ in Flask like below (the code is an almost verbatim copy from
 \cite{flask08}). The result is a stream that only produces values when
 an earthquake is detected.
 \begin{verbatim}
-detect :: Double -> Double -> Double -> 
-          S Double -> S (Double, Double)
+detect :: Double -> Double -> Double -> S (Double, Double)
 detect low high threshold = 
      clock 10
    >>>
@@ -712,7 +714,7 @@ detect low high threshold =
 \end{verbatim}
 
 \noindent
-The function \texttt{adc :: String -> S () -> Double ()} is a Flask
+The function \verb#adc :: String -> S () -> Double ()# is a Flask
 built-in operator for reading sensor-values, the String-argument
 specifies which NesC interface to use for querying the sensor.
 
@@ -2449,6 +2451,11 @@ void changeTimer(unsigned int delta) {
   for (unsigned int d = startDiode; d < startDiode+stateBits; ++d) {
     digitalWrite(d, timer & (1 << (d-startDiode)) ? HIGH : LOW);
   }
+  if (timer > 0) {
+    analogWrite(alarmPin, 0);
+  } else {
+    analogWrite(alarmPin, 128);
+  }
 }
 
 void increaseButton() {
@@ -2457,6 +2464,10 @@ void increaseButton() {
 
 void decreaseButton() {
   changeTimer(-secondsPerUnit);
+}
+
+void timerHit() {
+  changeTimer(-1);
 }
 
 void setup()
@@ -2468,24 +2479,37 @@ void setup()
   analogWrite(alarmPin, 0);
   PCattachInterrupt(incButtonPin, increaseButton, CHANGE);
   PCattachInterrupt(decButtonPin, decreaseButton, CHANGE);
+  SetupTimer2(1000.0, timer_hit);
 }
 
 void loop()
 {
-  changeTimer(-1);
-  if (timer > 0) {
-    analogWrite(alarmPin, 0);
-  } else {
-    analogWrite(alarmPin, 128);
-  }
-  delay(1000);
 }
 \end{verbatim}
 
-Yet its simplicity comes at a cost.  The interrupt handlers for the
-buttons carry out their logic themselves, potentially causing race
-conditions if they are invoked during the processing of the main loop.
-Said loop is problematic as well, as the timing is embedded within it.
+Yet its simplicity comes at a cost: there is no static checking that
+the pin references make sense and hardware interrupts are explicitly
+commanded for the purpose of the program.  Should there be need to
+extend the program, perhaps to make it part of a larger control system
+with many features (consider just how many different electronic
+devices have some sort of timer-based functionality built in), the
+simplicity will degrade.  It will no longer be safe to have
+long-running vector interrupt handlers (recall that further interrupts
+are disabled while a handler runs), and the maintenance of a structure
+like the Fladuino event queue will prove necessary.  We can thus
+conclude that the C program is simpler for this particular restricted
+domain, but that we may run into trouble when we attempt to combine
+multiple programs, where Fladuino would allow us to simply merge the
+dataflow graphs and automatically complain if they conflict in their
+usage of devices.
+
+Yet here is no doubt that the modification of state is one of the more
+clumsy aspects of Fladuino.  This deficiency has been inherited from
+Flask, where complex state may not be necessary for the programming of
+sensor networks.  In fact, the problem is deeper yet: Fladuino does
+not support fully dynamic state at all!  This deficiency (and
+suggested solutions) will be discussed further in
+\Fref{chap:futurework}.
 
 
 \subsection{Pololu 3pi: Line following robot}
