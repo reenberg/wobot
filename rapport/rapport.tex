@@ -114,14 +114,11 @@ supervised by Ken Friis Larsen, assistant professor at DIKU.
 \tableofcontents*
 
 
-
-\fixme{change $\backslash$ url to use the hyperref package so real links are
-  used.}
 \fixme{check all quoted text for use of the same quotes!!!!}
 \fixme{Check all cites. Should there be a space between the word and cite or
   not.}
-\fixme{Check all refs. Should be converted to vref to utilize the
-  varioref package (Where appropriate!!)}
+\fixme{Check all refs. Should be converted to fref to utilise the
+  fancyref package (Where appropriate!!)}
 
 \listoffixmes 
 
@@ -183,7 +180,7 @@ supervised by Ken Friis Larsen, assistant professor at DIKU.
 
 \section{Problem statement}
 In this report we present our framework for reactive programming of
-embedded devices, \textit{Fladuino}. Fladuino is an adaption of the
+embedded devices, Fladuino. Fladuino is an adaption of the
 sensor network framework \textit{Flask} for the domain of control
 systems.
 
@@ -195,28 +192,25 @@ other nodes in the network. When a Flask program is ``run'', it
 generates a program in another more low-level sensor network
 language. Our framework, Fladuino, follows exactly the same concepts
 as Flask, although it generates C-code written specifically for our
-platform: Arduino, which we will discuss in the next section,
-\ref{sec:hardware platform}.
+platform: Arduino, which we will discuss in \fref{sec:hardware platform}.
 
 In the following chapters we want to argue that taking our outset from
 Flask has been successful. Both in the sense that Flask was easily
-adaptable to reactive programming domain, and in the sense that our
+adaptable to another reactive programming domain, and in the sense that our
 result, Fladuino, is sufficient for a wide range of control systems.
 
-Our domain, control systems, is quite wide. It is
-often\fixme{citations needed} defined as \textit{programmable systems
-  that senses and regulates some task by the use of sensors and
-  actuators}, which includes almost any computer-system. Selecting the
-Arduino-platform restrains our scope to the tasks it can handle. The
-Arduino is generic and handles a broad range of tasks, when connected
-with the right peripherals. This extendability makes us argue that
-concentrating on the Arduino isn't a particularly strict
-limitation. This has the obvious impact, that our framework should be
-general enough to support almost any Arduino-connectable external
-device. We do this by providing a way of writing drivers or small
-frameworks for arbitrary devices.  Furthermore, due to the blandness
-of Arduino's technology itself, it would most likely not prove
-difficult to port our work to another architecture.
+Our domain, control systems, is quite wide and we define it as
+\textit{programmable systems that senses and regulates some task by the use of
+  sensors and actuators}, which includes almost any computer system.  Selecting
+the Arduino platform restrains our scope to the tasks it can handle. The Arduino
+is generic and handles a broad range of tasks, when connected with the right
+peripherals. This extendability makes us argue that concentrating on the Arduino
+isn't a particularly strict limitation. This has the obvious impact, that our
+framework should be general enough to support almost any connectable
+external Arduino device. We do this by providing a way of writing drivers or small
+frameworks for arbitrary devices.  Furthermore, due to the blandness of
+Arduino's technology itself, it would most likely not prove difficult to port
+our work to another architecture.
 
 In \fref{sec:pushbuttondef}, we show by example how this framework is
 used. \Fref{fig:fladuino-simple} shows a Fladuino program that toggles
@@ -226,9 +220,8 @@ whether a diode is lit every time a button is pushed.
   \centering
 
 \begin{verbatim}
-  onEvent (PushButtonPressEvent $ PushButton 3) 
->>> 
-  (toggle $ diode 13 True)
+   onEvent (PushButtonPressEvent $ PushButton 3)  
+   >>> (toggle $ diode 13 True)
 \end{verbatim}  
 
   \caption{Simple Fladuino program}
@@ -270,9 +263,9 @@ Flask and Fladuino are thus reactive programming languages.
 
 \section{Hardware platform}
 \label{sec:hardware platform}
-The choice of hardware-platform has an influence on how to design such
+The choice of hardware platform has an influence on how to design such
 a language. We've chosen to make our language and framework target the
-Arduino-platform \cite{arduino}.
+Arduino platform \cite{arduino}.
 
 The term ``Arduino'' is somewhat ambiguous.  It is both a registered
 trademark of the Arduino team that can be used by licensed
@@ -1334,7 +1327,7 @@ reserve exclusive access to the hardware resource that they refer to:
   \item[Digital input]
   \item[Analog output,] in which case a starting value must be
     specified in the range $[0,255]$.  Note that this ``analog'' value
-    is, of course, implemented via PWM (see \ref{pwm}), and the
+    is, of course, implemented via PWM (see \ref{sec:pwm}), and the
     capability ``PWM'' should thus be required of the pin.
   \end{description}
 \item[Analog input pin usage] denotes exclusive access to a specified
@@ -2124,7 +2117,7 @@ is left on the batteries that power the device. This feature can be used to
 indicate if the batteries needs replacement, e.g. by signalling with the buzzer
 or writing text to the display.
 
-The \texttt{Drevice} instance definition \texttt{BatteryReader} requires that the
+The \texttt{Device} instance definition \texttt{BatteryReader} requires that the
 platform supply the functionality \textit{3pi battery reader} which is only
 defined for the Pololu 3pi platform.
 
@@ -2197,8 +2190,8 @@ arduinoDuemilanove = emptyPlatform { p_pins = [ PinDecl (DPin n) $ pc n | n <- [
 \end{verbatim}
 
 Since the \texttt{arduinoDiecimila} platform is fully compatible and has
-exactley the same pin configuration as the \texttt{arduinoDuemilanove} platform, it can
-be defined by just extending it
+exactley the same pin configuration as the \texttt{arduinoDuemilanove} platform,
+it can be defined by just extending it
 
 \begin{verbatim}
 arduinoDiecimila = arduinoDuemilanove { p_capabilities = ["Diecimila"] }
@@ -2214,7 +2207,8 @@ the \texttt{pololu3pi} platform can be defined by extending the
 \texttt{arduinoDuemilanove} and adding the extra capabilities and base setup
 
 \begin{verbatim}
-pololu3pi = arduinoDuemilanove { p_capabilities = ["3pi", "3pi battery reader", "3pi reflectance sensor array",
+pololu3pi = arduinoDuemilanove { p_capabilities = ["3pi", "3pi battery reader", 
+                                                   "3pi reflectance sensor array",
                                                    "3pi motors"]
                                , p_base_setup = addCInclude "3pi/3pi.h"
                                }
@@ -2270,7 +2264,201 @@ to implement it should not be a problem.
 We cannot hope to make a general comparison of utility between
 Fladuino and the programming of Arduino in C, but this section will
 present a number of programs implemented in both, in order to showcase
-the advantages and shortcomings of Fladuino.
+the advantages and shortcomings of Fladuino.  Along the way, we shall
+also make general observations on the use of Fladuino, such as
+mentioning various utilities that were not substantial enough to be
+covered in previous chapters.  For simplicity, we shall ignore module
+imports and the like in the following.
+
+\subsection{Alarm clock}
+
+We shall describe the implementation of an alarm clock.  The clock
+will keep time in seconds internally, but for simplicity of interface,
+all user-interaction will be done via \textit{units} -- fifteen
+minutes per unit.  The interface will be two buttons, one to add a
+unit to the internal timer, and one to remove a unit.  Whenever the
+timer is zero, an alarm will be sounded through a piezoelectric
+speaker.  The buttons will be connected to pins 2 and 3, while the
+speaker will be connected to pin 13.
+
+\begin{verbatim}
+secondsPerUnit = 15*60 -- One quarter of an hour.
+increaseButton = PushButton 2
+decreaseButton = PushButton 3
+increase       = onPress increaseButton >>> sconst [$exp|$int:secondsPerUnit|]
+decrease       = onPress decreaseButton >>> sconst [$exp|-1 * $int:secondsPerUnit|]
+clockInts      = clock 1000 >>> sconst [$exp|-1|]
+alarm          = AnalogOutputPin 13 0
+\end{verbatim}
+
+We represent the speaker as an analog output pin, as PWM (see
+\Fref{sec:pwm}) is an excellent built-in facility to create the
+voltage change frequency necessary to make it issue a siren.  We
+define three streams of type \texttt{S Integer}, the integral values
+expressing the desired change in the internal countdown.
+
+We shall show the internal state of the internal timer as a binary
+value expressed through diodes.  To generate the dataflow graph, we
+define a function \texttt{streamsForAlarm :: Integer -> Integer -> [S
+  ()]}.  The first parameter determines the size of the internal
+counter in bits, the second the starting pin for the output diodes.
+For example, \texttt{streamsForAlarm 4 4} would be a four-bit counter
+using diodes connected to digital pins 4, 5, 6 and 7.  The list of
+\texttt{S ()} streams returned express the \textit{endpoints} of the
+dataflow graph, and thus implicitly represent its entire structure.
+The function is used in the \texttt{main} function like thus:
+
+\begin{verbatim}
+main :: IO ()
+main =
+    defaultMain $ do
+    addCImport "isBitSet" [$ty|(Integer, Integer) -> Bool|] [$cexp|isBitSet|]
+    addCFundef [$cedecl|int isBitSet(int x, int bit) {
+                                  return (x & _BV(bit));
+                                }|]
+    genStreams $ map unS (streamsForAlarm 4 4)
+\end{verbatim}
+
+In \texttt{streamsForAlarm} we shall have need of the ability to query
+whether a given bit is set in the binary representation of some
+integer.  The Red prelude does not define a function for this, so we
+define a function, in C, to do it for us.  Note that the Red-type of
+the function has to be provided explicitly: we do not check that this
+type is congruent with the actual C code (and it might not always be
+possible, such as if the function is not defined via
+\texttt{addCFundef}, but linked in by the C compiler).  Providing an
+incorrect type is one way to construct a Fladuino program that does
+not signal an error at compile- or generation-time, but will result in
+an invalid C program.
+
+To maintain (and modify) the internal state of the alarm clock, we
+define a function \texttt{modNum}:
+
+\begin{verbatim}
+modNum :: S Integer -> S Integer
+modNum = sintegrate zero int
+    where
+      zero :: N Integer
+      zero = liftN [$exp|0|]
+
+      int  :: N ((Integer, Integer) -> (Integer, Integer))
+      int  = liftN [$exp|\(n, x) -> let v = bounded(0, x + n, $int:maxNum)
+                                    in (v, v)|]
+      
+      maxNum = (2^n-1)*secondsPerUnit
+\end{verbatim}
+
+The function \texttt{sintegrate} is fully described in
+\Fref{sec:streamoperators}, but in short it provides a facility for
+maintaining state and mutating the state based on new new input.  The
+state is a simple integer that we modify by any value arriving as
+input to \texttt{modNum}, though bounded by the interval zero to the
+largest integer expressable with $n$ bits (\texttt{modNum} is actually
+a local function defined within \texttt{streamsForAlarm}, but
+presented by itself here for clarity; $n$ is the first parameter to
+\texttt{streamsForAlarm} as mentioned above).
+
+We have a list of all streams that result in a modification of the
+alarm state:
+
+\begin{verbatim}
+interactions = [increase >>> modNum,
+                decrease >>> modNum,
+                clockInts >>> modNum]
+\end{verbatim}
+
+The remaining definitions consist of determining the response to
+modification of the state:
+
+\begin{verbatim}
+streamsForAlarm n sp = [interaction >>> maybeBeep | interaction <- interactions]
+                       ++ [ interaction >>> smap [$exp|(/ $int:secondsPerUnit)|] >>> response n | 
+                            response <- [maybeTurnOn, maybeTurnOff],
+                            n <- [0..n],
+                            interaction <- interactions ]
+    where
+      maybeBeep :: S Integer -> S ()
+      maybeBeep from = from
+                       >>> smap [$exp|(\x -> if x==0 then 128 else 0)|]
+                       >>> setValue alarm
+
+      bitStatus :: Integer -> S Integer -> S Bool
+      bitStatus i = smap [$exp|\p -> isBitSet(p, $int:i)|]
+
+      maybeTurnOn :: Integer -> S Integer -> S ()
+      maybeTurnOn i from = from 
+                           >>> bitStatus i 
+                           >>> sfilter [$exp|id|] 
+                           >>> turnOn (diode (sp+i) False)
+
+      maybeTurnOff :: Integer -> S Integer -> S ()
+      maybeTurnOff i from = from 
+                            >>> bitStatus i 
+                            >>> sfilter [$exp|(\v -> not v)|]
+                            >>> turnOff (diode (sp+i) False)
+\end{verbatim}
+
+The C program is somewhat shorter, perhaps simpler:
+
+\begin{verbatim}
+#define incButtonPin 2
+#define decButtonPin 3
+#define alarmPin 13
+
+#define secondsPerUnit (15*60)
+
+#define stateBits 4
+#define startDiode 4
+
+
+volatile unsigned int timer = 0;
+
+void changeTimer(unsigned int delta) {
+  if (delta > timer) {
+    timer = 0;
+  } else {
+    timer = min(1<<stateBits, timer + secondsPerUnit);
+  }
+  for (unsigned int d = startDiode; d < startDiode+stateBits; ++d) {
+    digitalWrite(d, timer & (1 << (d-startDiode)) ? HIGH : LOW);
+  }
+}
+
+void increaseButton() {
+  changeTimer(secondsPerUnit);
+}
+
+void decreaseButton() {
+  changeTimer(-secondsPerUnit);
+}
+
+void setup()
+{
+  for (unsigned int d = startDiode; d < startDiode+stateBits; ++d) {
+    pinMode(d, OUTPUT);
+    digitalWrite(d, LOW);
+  }
+  analogWrite(alarmPin, 0);
+  PCattachInterrupt(incButtonPin, increaseButton, CHANGE);
+  PCattachInterrupt(decButtonPin, decreaseButton, CHANGE);
+}
+
+void loop()
+{
+  changeTimer(-1);
+  if (timer > 0) {
+    analogWrite(alarmPin, 0);
+  } else {
+    analogWrite(alarmPin, 128);
+  }
+  delay(1000);
+}
+\end{verbatim}
+
+Yet its simplicity comes at a cost.  The interrupt handlers for the
+buttons carry out their logic themselves, potentially causing race
+conditions if they are invoked during the processing of the main loop.
+Said loop is problematic as well, as the timing is embedded within it.
 
 \chapter{The Fladuino Future}
 \label{chap:futurework}
@@ -2467,7 +2655,7 @@ why the 6 analog output pins is located among the digital IO pins is
 that the platform uses PWM to generate the desired voltage level.
 
 \subsubsection{PWM}
-\label{pwm}
+\label{sec:pwm}
 A description of PWM from the Arduino website follows:
 \footnote{\url{http://www.arduino.cc/en/Tutorial/PWM} downloaded the
   28. of April at 17:14}
