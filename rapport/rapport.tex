@@ -302,6 +302,8 @@ line-maze-solving competitions''.
 
 
 \section{Motivation}
+\label{sec:motivation}
+
 One of the most noticeable consequences of the dramatic reductions in
 cost that we have observed in programmable electronic devices over the
 last five decades, is the sheer ubiquity of small computers in our
@@ -2689,7 +2691,14 @@ int main() {
 
 \chapter{The Fladuino Future}
 \label{chap:futurework}
-\textit{Hvad vi ikke har, eller hvad der skal arbejdes videre med. }
+
+While we consider Fladuino to be a useful tool for some programs, a
+number of improvements could be made that would drastically improve
+its utility as a practical vessel for programming embedded systems.
+These can be divided into three main categories: extensions or fixes
+of existing features, the addition of relatively simple or isolated
+technical additions, or features that more fundamentally change core
+design decisions.
 
 Lidt idéer:
 \begin{itemize}
@@ -2719,6 +2728,46 @@ Lidt idéer:
 \section{Needs further work}
 \fixme{bedre overskrift}
 
+\section{Handy new tools}
+
+\section{Major structural changes}
+
+Through our device and event abstraction layer, we take steps to
+sanity-check such low-level assumptions as I/O pin allocation on the
+target Arduino.  But as stated in \Fref{sec:motivation}, the primary
+catalyst for our interest in these relatively hardware-constrained
+embedded systems is the potential to deploy them in vast numbers as
+technological advances make their manufacture increasingly
+inexpensive, thus implying that they will somehow communicate with
+each other.  In Fladuino as-is, we do not provide any way to
+sanity-check the communication between programs.  Should you wish to
+create a network of Arduinos, some running different programs, you
+have no choice but to write several independent programs and hope that
+they work together, without much help from Fladuino.  It would be
+quite interesting the investigate the possibility of turning Fladuino
+into a system for describing \textit{networks} of machines, describing
+not merely the dataflow within each machine node, but also the overall
+communication between them.  Not all of the nodes in the network need
+even be the same platform, meaning that it would be possible to
+express a network consisting of a central node processing data from a
+multitude of smaller sensors, all created by a single generator
+program.  Lifting inter-machine communication to first class status in
+Fladuino could help prevent several error classes:
+
+\begin{description}
+\item[Format errors], such as the classic endian issues, would be
+  eliminated as Fladuino would take care of all data conversion.
+\item[Type mismatches] would also be impossible, as Fladuino would
+  have a high-level overview of the communication between machines,
+  and would ensure that there are no type errors.  With separate
+  programs, as now, it is quite possible for a program to send the
+  binary representation of a floating-point value to another program
+  expecting a signed integer.
+\end{description}
+
+Additionally, support for ad-hoc networking (through radio
+transmitters, for example) could be built-in and controlled by rules
+specified in the Fladuino program.
 
 \subsection{C++ Quasiquoter}
 
