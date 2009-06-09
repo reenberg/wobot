@@ -32,6 +32,6 @@ main =
                   >>> set_motors Motors
           where 
             velocity :: N (Integer -> (Float, Float))
-            velocity = liftN [$decls|f linepos = if linepos < 1000 then (0.0-1.0, $flo:speed)
-                                                 else if linepos > 3000 then (0.0, $flo:speed)
-                                                 else (1.0, 0.0)|]
+            velocity = liftN [$decls|f linepos = if linepos < 1000 then ($flo:speed, 1.0)
+                                                 else if linepos < 3000 then ($flo:speed, 0.0)
+                                                 else ($flo:speed, 0.0-1.0)|]

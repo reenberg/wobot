@@ -1,12 +1,12 @@
 \documentclass[a4paper, oneside, final]{memoir}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
-\usepackage[english]{babel}
+\usepackage[british]{babel}
 
 % bedre orddeling Gør at der som minimum skal blive to tegn på linien ved
 % orddeling og minimum flyttes to tegn ned på næste linie. Desværre er værdien
 % anvendt af babel »12«, hvilket kan give orddelingen »h-vor«.
-\renewcommand{\englishhyphenmins}{22} 
+\renewcommand{\britishhyphenmins}{22} 
 
 % Fix of fancyref to work with memoir. Makes references look
 % nice. Redefines memoir \fref and \Fref to \refer and \Refer.
@@ -97,9 +97,12 @@ Jesper Reenberg (jesper.reenberg@gmail.com)
   (e.g. sensors, motors or displays) should be possible to
   program. Specifically we include a framework for specifying
   interfaces to these peripherals and primitives for
-  event-handling. \fixme{Any other major additions?}
+  event-handling.
 
-  \fixme{Evaluation}
+  The result of our work is a system with which it is possible to
+  define a large class of reactive programs, though the gains,
+  compared to earlier methods of programming, are greatest in those
+  that are as stateless as possible.
 \end{abstract}
 
 \clearpage 
@@ -302,6 +305,8 @@ line-maze-solving competitions''.
 
 
 \section{Motivation}
+\label{sec:motivation}
+
 One of the most noticeable consequences of the dramatic reductions in
 cost that we have observed in programmable electronic devices over the
 last five decades, is the sheer ubiquity of small computers in our
@@ -362,10 +367,9 @@ devices that form our domain.
 We expect that readers of this report has a small background knowledge
 of electronics.
 
-Knows the terms: Quasiquotation, phantom types, 
-Knows the difference between metalanguages versus object-languages.
-
-\fixme{formulering}
+Additionally, we expect the reader to have casual familiarity with the
+concepts of Quasiquotation \cite{quasiquote07}, phantom types, and to
+know the difference between meta-languages versus object-languages.
 
 \section{Structure outline}
 In the following chapter (\Fref[plain]{chap:Flask}) we will go
@@ -770,9 +774,7 @@ A summary of the most important requirements for our system follows:
   running on the Arduino platform from a description of a dataflow graph. This
   graph must be expressed in the form of a Haskell program.
   \footnote{This requirement stems from the selection of
-    Arduino (see \fref{sec:hardware platform}) as platform and from the
-    ???below??? requirement of mirroring Flask.}
-\fixme{fix footnote}
+    Arduino (see \fref{sec:hardware platform}) as platform.}
 \end{itemize}
 
 And we set the scope of our project as follows:
@@ -2247,6 +2249,80 @@ us. The C-function \verb|read_line| gives us a value between $0$ and
 $4000$ indicating the position on the line followed. This is described
 in detail in the Pololu 3pi User's Guide\fixme{reference}.
 
+For the \verb|read_line| function to work, the robot needs some
+calibration for detecting the line. The user guide provides the steps
+needed for this calibration. The C-implementation of this is shown in
+\fref{fig:sensor calibration}. We have added statements that wait for
+the user to click on the Pololu's B-button, before and after
+calibration.  This is done in the C-code and not in Fladuino for
+reasons we will discuss in the our evaluation of Fladuino (we found it
+impossible to do through our Fladuino interface). This waiting is done
+so the user has a chance of placing the robot correctly on the black
+line before calibration.
+
+\begin{figure}
+  \centering
+\begin{verbatim}
+void calibrate_3pi_sensors () {
+  int counter;
+  while(!button_is_pressed(BUTTON_B));
+  for(counter=0; counter<80; counter++) {
+      if(counter < 20 || counter >= 60)
+        set_motors(40,-40);
+      else
+        set_motors(-40,40);
+
+      calibrate_line_sensors(IR_EMITTERS_ON);
+      delay_ms(20);
+  }
+  set_motors(0,0);
+  while(!button_is_pressed(BUTTON_B));
+}
+\end{verbatim}  
+  \caption{Sensor calibration}
+  \label{fig:sensor calibration}
+\end{figure}
+
+The rest of the declaration of the \verb|ReflectanceSensors| device is
+quite like the potentiometer example (\fref[plain]{sec:potentiometer
+  device}), and we wont discuss it further.
+
+\subsection{Motors}
+Pololu 3pi motors are controlled by the C-function
+\verb|set_motors|. Its arguments are two integers between -255 and 255
+indicating the speed of each of the two 3pi-electromotors. The motors
+rotates in reverse for negative values.
+
+Our framework provides a simple wrapper of this function which we call
+\verb|set_motors_native :: Motors -> S (Integer, Integer) -> S ()|.
+This interface isn't a very natural way of expressing movement, so we
+also provide another interface,
+\verb|set_motors :: Motors -> S (Float, Float) -> S ()|. This function
+input stream is two values, a rotational velocity and a translational
+velocity. Both values are \textit{Doubles} between $-1.0$ and
+$1.0$. This is simply implemented as a Fladuino function utilising the
+\verb|set_motors_native| function. The implementation is shown in
+\fref{fig:set_motors implementation}.
+
+\begin{figure}
+  \centering
+\begin{verbatim}
+set_motors :: Motors -> S (Float, Float) -> S ()
+set_motors Motors from = from >>> f >>> set_motors_native Motors
+    where
+      f :: S (Float, Float) -> S (Integer, Integer)
+      f = smap computeSpeeds
+      computeSpeeds :: N ((Float, Float) -> (Integer, Integer))
+      computeSpeeds = liftN [$decls|
+compute (v, omega) = let motorLvel = v * (if omega <= 0.0 then 1.0 else 1.0 - omega)
+                         motorRvel = v * (if omega >= 0.0 then 1.0 else 1.0 + omega)
+                     in (round (motorLvel * 255.0), round (motorRvel * 255.0))
+                       |]
+\end{verbatim}  
+  \caption{Implementation af \texttt{set\_motors}}
+  \label{fig:set_motors implementation}
+\end{figure}
+
 
 \chapter{Evaluation}
 \label{chap:evaluation}
@@ -2285,12 +2361,33 @@ Arduino-based control systems:
   many applications in the (admittedly broad) domain of arbitrary
   control programs may benefit from the ability to dynamically rewire
   dataflow.
+\item There is no distinction between private and public interface.
+  All Haskell modules in Fladuino export their entire contents (as
+  they do in Flask itself), and it is possible to violate some of our
+  guarantees through improper use of internal functions.  As a
+  specific example, type-safety can be violated by explicitly calling
+  the internal function \texttt{connectEvent} (which registers a node
+  as a listener for a specific event), though the C compiler will most
+  likely catch the type error in the generated program.
 \end{itemize}
 
 Fladuino \textit{does}, however, fully implement its target feature
 set in a manner that is practically useful.  If a program can be
 expressed within the abstractions that we provide, then using Fladuino
 to implement it should not be a problem.
+
+\section{The use of Flask as a foundation}
+
+Flask turned out to be an excellent vehicle for our experimentation.
+One of the most technically hairy, yet also relatively irrelevant,
+aspects of Fladuino is the compilation of Red to C.  Flask
+encapsulates this code transformer well, and expresses its actual
+logic of constructing and generating code from dataflow graphs as a
+few thousand lines of Haskell.
+
+Additionally, we could reuse most of the stream operators with little
+work, the conversion of their implementation from NesC to C being
+trivial in most cases.
 
 \section{Experimental comparison}
 
@@ -2517,53 +2614,120 @@ suggested solutions) will be discussed further in
 
 
 \subsection{Pololu 3pi: Line following robot}
-To examplify our .. we've implemented a few bindings for 
+In this section we first show Fladuino-code for a line following
+robot. The body of the implementation is shown in the following
+figure (\ref{fig:linefollow}).
 
-
-
-
-
-\begin{verbatim}
-sensors = ReflectanceSensorArray 5
-linereader = LineReader sensors
-speed = 100
-\end{verbatim}
-
-
+\begin{nonfloatingfigure}
+  \centering
 
 \begin{verbatim}
 defaultMain $ do
-  addDevice sensors
   genStream $ idle 
-              >>> valueOf linereader 
+              >>> valueOf ReflectanceSensors
               >>> smap velocity 
-              >>> set_motors_native Motors
+              >>> set_motors Motors
 \end{verbatim}
+  
+  \caption{Line-follower}
+  \label{fig:linefollow}
+\end{nonfloatingfigure}
 
+It expresses a simple line-following strategy. Whenever the CPU is
+ready (\texttt{idle}), read the value of the reflectance sensors
+(\texttt{valueOf ReflectanceSensors}), uses these values to calculate
+the speed of the two motors (\texttt{smap velocity}, the
+\texttt{velocity} function is explained below), and update the
+velocities of the motors with these values (\verb|set_motors Motors|).
 
+The \verb|velocity| function converts the result of the sensor reading
+to rotational and translational velocities. The sensor reading is a
+value between $0$ and $4000$ indicating the position of the line. When
+the line is to the right of the robot, the value is below $1000$ and
+we turn left. If the line is centered on the line, the value is
+somewhere between $1000$ and $3000$ and we continue straight a
+head. Values above $3000$ indicates that the line is to the left of
+the robot and we turn right. The implementation of this is shown in
+\fref{fig:velocity-function}
+
+\begin{figure}
 \begin{verbatim}
 velocity :: N (Integer -> (Integer, Integer))
 velocity = liftN [$decls|f linepos = 
                     if linepos < 1000 then (0, $int:speed)
                     else if linepos > 3000 then ($int:speed, $int:speed)
                     else ($int:speed, 0)|]
+\end{verbatim}  
+  \caption{\texttt{velocity}-function}
+  \label{fig:velocity-function}
+\end{figure}
+
+This line-following algorithm was inspired by an algorithm in the
+Pololu 3pi user manual. A simplified version (without status messages
+written to the LCD display etc.) is shown in \fref{fig:linefollow-in-c}
+
+\begin{figure}
+  \centering
+\begin{verbatim}
+#include <pololu/3pi.h>
+
+void calibrate_3pi_sensors () {
+  int counter;
+  while(!button_is_pressed(BUTTON_B));
+  for(counter=0; counter<80; counter++) {
+      if(counter < 20 || counter >= 60)
+        set_motors(40,-40);
+      else
+        set_motors(-40,40);
+
+      calibrate_line_sensors(IR_EMITTERS_ON);
+      delay_ms(20);
+  }
+  set_motors(0,0);
+  while(!button_is_pressed(BUTTON_B));
+}
+
+int main() {
+  unsigned int sensors[5];
+
+  pololu_3pi_init(2000);
+  calibrate_3pi_sensors();
+
+  while(1) {
+      unsigned int position = read_line(sensors,IR_EMITTERS_ON);
+
+      if(position < 1000)
+          set_motors(0,100);
+      else if(position < 3000) 
+          set_motors(100,100);
+      else 
+          set_motors(100,0);
+  }
+}
 \end{verbatim}
+  \caption{Line following in C}
+  \label{fig:linefollow-in-c}
+\end{figure}
+
 
 
 
 \chapter{The Fladuino Future}
 \label{chap:futurework}
-\textit{Hvad vi ikke har, eller hvad der skal arbejdes videre med. }
+
+While we consider Fladuino to be a useful tool for some programs, a
+number of improvements could be made that would drastically improve
+its utility as a practical vessel for programming embedded systems.
+These can be divided into three main categories: extensions or fixes
+of existing features, the addition of relatively simple or isolated
+technical additions, or features that more fundamentally change core
+design decisions.
 
 Lidt idéer:
 \begin{itemize}
 \item Find på noget bedre end Red 
 \item Se om man kan få lavet en instans af Arrow-typeklassen, så man
   kan bruge Yampas Arrow-syntax.
-\item Bedre fejlmeddelelser (Pt. udskrives syntaxtræet efter parse af
-  quasiquotet tekst ved fejl. Dette skal dog rettes i
-  Quasiquotation-modulet eller måske kræver det speciel integration
-  med compileren)
 \item \textit{(Bør vi måske satse på at få med inden aflevering:)}
   Gør det endnu nemmere at skrive drivers til nye
   robotter. F.eks. så man kun skal angive en typeklasse instans der
@@ -2572,10 +2736,6 @@ Lidt idéer:
   hastighed. Hvorefter man så får adgang til en række generelle
   styringsabstraktioner.
 
-\item 3pi robotten er langt fra understøttet komplet. Fx er der lidt problemer
-  mht. at 3pi robotten bruger alle timere til motor, motor, og sensor/buzzer
-  etc. Fladuino går her ind og overskriver timeren til bl.a. buzzer og andet.
-
 \item  Yderligere er der også problemer med det meste af 3pi platoformen, ikke
   er precist nok defineret., Fx hvilke pins der kun kan specielle ting.
 \end{itemize}
@@ -2583,6 +2743,70 @@ Lidt idéer:
 \section{Needs further work}
 \fixme{bedre overskrift}
 
+Some aspects of Fladuino still have undesirable quirks or warts,
+others miss minor features that might be useful.  This section will
+summarise some of these.
+
+\begin{itemize}
+\item As a purely cosmetic issue, the quasiquotation library that we
+  make so heavy use of has a tendency to obscure compiler error
+  messages.  When the compiler prints an erroneous expression
+  containing a quasiquotation, said quasiquotation will not be shown
+  as it appears in the source file, but rather as a complete parse
+  tree.  As even simple expressions can easily balloon to parse trees
+  that take up hundreds of lines when displayed, this can make it hard
+  to navigate through compiler errors.  The solution to this problem
+  might need compiler integration, namely storing the original source
+  text associated with every quasiquotation in the Haskell parse tree,
+  and use that for displaying errors.
+\item The Pololu 3pi robot is not yet fully supported.  In particular,
+  support for timers is flaky, as the Pololu libraries themselves
+  makes use of them all.  Additionally, some built-in features, such
+  as the LCD, are not properly represented as Fladuino devices.  The
+  cause of these deficiencies is that the 3pi robot is somewhat
+  further from Arduino compatibility than we were lead to believe.
+\end{itemize}
+
+\section{Handy new tools}
+
+\section{Major structural changes}
+
+Through our device and event abstraction layer, we take steps to
+sanity-check such low-level assumptions as I/O pin allocation on the
+target Arduino.  But as stated in \Fref{sec:motivation}, the primary
+catalyst for our interest in these relatively hardware-constrained
+embedded systems is the potential to deploy them in vast numbers as
+technological advances make their manufacture increasingly
+inexpensive, thus implying that they will somehow communicate with
+each other.  In Fladuino as-is, we do not provide any way to
+sanity-check the communication between programs.  Should you wish to
+create a network of Arduinos, some running different programs, you
+have no choice but to write several independent programs and hope that
+they work together, without much help from Fladuino.  It would be
+quite interesting the investigate the possibility of turning Fladuino
+into a system for describing \textit{networks} of machines, describing
+not merely the dataflow within each machine node, but also the overall
+communication between them.  Not all of the nodes in the network need
+even be the same platform, meaning that it would be possible to
+express a network consisting of a central node processing data from a
+multitude of smaller sensors, all created by a single generator
+program.  Lifting inter-machine communication to first class status in
+Fladuino could help prevent several error classes:
+
+\begin{description}
+\item[Format errors], such as the classic endian issues, would be
+  eliminated as Fladuino would take care of all data conversion.
+\item[Type mismatches] would also be impossible, as Fladuino would
+  have a high-level overview of the communication between machines,
+  and would ensure that there are no type errors.  With separate
+  programs, as now, it is quite possible for a program to send the
+  binary representation of a floating-point value to another program
+  expecting a signed integer.
+\end{description}
+
+Additionally, support for ad-hoc networking (through radio
+transmitters, for example) could be built-in and controlled by rules
+specified in the Fladuino program.
 
 \subsection{C++ Quasiquoter}
 
