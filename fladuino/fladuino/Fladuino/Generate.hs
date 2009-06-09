@@ -134,6 +134,8 @@ genStreamsForPlatform p ss = do
                          ++ [scode | (_, conns) <- Map.toList channel_connections,
                                      (scode, _) <- conns]
                          ++ [scode | (scode, _) <- idle_waiter_connections]
+    config  <- finalizeDevices p
+    finalizeConfig config
     genHs Set.empty scodes'
     env <- getFladuinoEnv
     forM_ (f_cvars env) $ \(gv, gty, ce) -> do
@@ -147,8 +149,6 @@ genStreamsForPlatform p ss = do
     fdecls' <- optimizeF basename (Set.toList live) (f_fdecls env ++ fdecls)
     ToC.transDecls fdecls'
     genC Set.empty scodes'
-    config <- finalizeDevices p
-    finalizeConfig config
     finalizeTimers p
     finalizeEvents p
     finalizeIdleWaiters

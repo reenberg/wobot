@@ -358,6 +358,14 @@ and statically error-checked, and the resulting programs must have
 enough \textit{performance} to run on the highly resource--constrained
 devices that form our domain.
 
+\section{Reader expectations}
+We expect that readers of this report has a small background knowledge
+of electronics.
+
+Knows the terms: Quasiquotation, phantom types, 
+Knows the difference between metalanguages versus object-languages.
+
+\fixme{formulering}
 
 \section{Structure outline}
 In the following chapter (\Fref[plain]{chap:Flask}) we will go
@@ -1199,7 +1207,8 @@ transparently support the devices he has need of.  For demonstration,
 we have written a minimal framework for programming the Pololu 3pi
 robot and \textit{some} of the peripherals connected to it
 (electromotors, reflectance sensors, etc.). This framework is
-discussed in \Fref{chap:example code} and evaluated in \Fref{chap:evaluation}
+discussed in \Fref[plain]{chap:example code} and evaluated in
+\Fref[plain]{chap:evaluation}
 
 Furthermore, Arduino is a broad term encompassing a range of
 more-or-less compatible platforms, though each of them differ slightly
@@ -1221,7 +1230,7 @@ Arduino BT, and Pololu 3pi.
 % \fixme{find a good example to add here}
 
 \subsection{Platforms}
-\label{capabilities}
+\label{sec:platforms}
 A platform is defined by a list of \textit{logical pins}, and
 free-form \textit{capabilities}, the latter being a set of strings
 describing the identity or unusual qualities of the platform.  For
@@ -1343,7 +1352,7 @@ reserve exclusive access to the hardware resource that they refer to:
   analog input pin.  The usage also specifies a list of capabilities
   that must be provided by the indicated pin.
 \item[Capability requirement usage] is a dependency on the presence of
-  a given \textit{platform capability} (see \ref{capabilities}).  In
+  a given \textit{platform capability} (see \ref{sec:platforms}).  In
   contrast to the pin usages, this dependency is not exclusive.
 \end{description}
 
@@ -1985,22 +1994,26 @@ specified interrupt handlers for each event, to signal that specific
 event if the predicate is true, with the result of running the
 value-function.
 
-\chapter{Example programs}
-\label{chap:example code}
+
+
 
 \textit{Beskrivelse af vores fedeste eksempelprogrammer: 3pi,
   binærtæller etc. og hvorfor det er smart.}
 
-\section{Building on the abstractions}
+\chapter{Building on the abstractions}
+\label{chap:example code}
 
-In the following sections different Haskell code is shown as examples of how
-different Fladuino interfaces, which utilises various parts of framework such as
-events, are constructed. For brevity, module imports has been omitted in all the
-examples.
+In this chapter we use the abstractions, defined in the previous
+chapter, to implement interfaces for a pushbutton, a potentiometer and
+bindings for some of the hardware-devices on the before mentioned
+Pololu 3pi robot, which we also introduce as a \textit{Platform}
+(\fref[plain]{sec:platforms}). This shows how the \textit{Device} and
+\textit{Event} abstractions are used, and can be seen as a form of
+documentation of our work. For brevity, module imports has been
+omitted in all the examples.
 
-\subsection{Defining a pushbutton}
+\section{Defining a pushbutton}
 \label{sec:pushbuttondef}
-
 The following is a definition of the Fladuino interface for a simple digital
 pushbutton. First the type constructor \texttt{PushButton} is defined with the
 data constructor \texttt{PushButton Integer} where the \texttt{Integer} type
@@ -2087,7 +2100,8 @@ This program will toggle the state of a diode connected to digital pin
 13 (a default device on almost all Arduino boards) whenever the
 pushbutton attached to digital pin 3 is pressed.
 
-\subsection{Defining a potentiometer}
+\section{A potentiometer device}
+\label{sec:potentiometer device}
 
 A potentiometer interface can be defined in Fladuino quite easily as it doesn't
 make any sense to define any events upon this as its value needs to be pulled
@@ -2113,14 +2127,14 @@ This allows programs such as
 idle >>> (valueOf $ Potentiometer 0) >>> smap [$exp|(/4)|] >>> (setValue $ AnalogOutputPin 10 0)
 \end{verbatim}
 
-The reason why the pulled value is devided by 4 is that the Atmega
+The reason why the pulled value is divided by 4 is that the ATmega
 chip by default returns values in the range 0 to 1023 when doing
 analog reads but can only write values in the range 0 to 255 unless
-explicitley changed. The scale 0 to 1024 when reading analog values is
+explicitley changed. The scale 0 to 1023 when reading analog values is
 proportional to the relationship between GND and AREF, which is
 nomally 0v and 5v respectively, though AREF can be explicitly changed.
 
-\subsection{Defining a new platform}
+\section{Supporting  new platforms}
 
 When adding support for a new platform, e.g. the Pololu 3pi, one has the option
 to either define it from scratch by extending the \texttt{emptyPlatform} ore by
@@ -2192,40 +2206,44 @@ the \texttt{pololu3pi} platform can be defined by extending the
 \texttt{arduinoDuemilanove} and adding the extra capabilities and base setup
 
 \begin{verbatim}
-pololu3pi = arduinoDuemilanove { p_capabilities = ["3pi", "3pi battery reader", 
-                                                   "3pi reflectance sensor array",
+pololu3pi = arduinoDuemilanove { p_capabilities = ["3pi", 
+                                                   "3pi battery reader", 
+                                                   "3pi reflectance sensors",
                                                    "3pi motors"]
                                , p_base_setup = addCInclude "3pi/3pi.h"
                                }
 \end{verbatim}
 
 
+\section{Pololu 3pi bindings}
+In this section we will explain our framework for programming the
+Pololu 3pi through Fladuino. We have added definitions to read
+sensors, battery level and controlling the electromotors.
 
+The Pololu 3pi comes with a C++ framework, with
+C-wrappers\footnote{???found where???}\fixme{fix footnote}. Thus, as with the
+Arduino, most of the low-level work of reading and calibrating sensors
+or controlling motors is already done. We only need high-level
+wrappers for these functions.  For the simplest example, reading the
+battery level is done just as reading the potentiometer value in
+\fref{sec:potentiometer device}, instead of calling the
+\verb|analogRead|-function we just call the Pololu 3pi function
+\verb|read_battery_millivolts|. 
 
-\subsection{Defining a battery reader for 3pi}
+\subsection{Reflectance sensors}
+The five reflectance sensors on the 3pi are infrared sensors, that
+allows the robot to read the ``darkness'' of the floor, by emitting
+infrared light downwards and measuring how much was reflected. They
+are primarily used for line following programs, where the goal is for
+the robot to follow a black line on white background.
 
-The Pololu 3pi robot has a few extra features that the Arduino boards
-doesn't. One of these features is the possibility of reading how many millivolts
-is left on the batteries that power the device. This feature can be used to
-indicate if the batteries needs replacement, e.g. by signalling with the buzzer
-or writing text to the display.
-
-The \texttt{Device} instance definition \texttt{BatteryReader} requires that the
-platform supply the functionality \textit{3pi battery reader} which is only
-defined for the Pololu 3pi platform.
-
-\begin{verbatim}
-data BatteryReader = BatteryReader
-                        deriving (Eq, Show)
-
-instance Device BatteryReader where
-    usages _ = [CapabilityRequired "3pi battery reader"]
-    uniqueId _ = "3pi_battery_reader" -- there only need to be one
-
-instance AnalogInputDevice BatteryReader where
-    genReadCode _ resultvar = [[$cstm|$id:resultvar = read_battery_millivolts();|]]
-\end{verbatim}
-
+The C-interface to the 3pi provides several functions for reading the
+values of the sensors. We only provide access to one of these
+functions, as we don't need precise measurements (we are only doing
+this for illustration purposes) and the simplest interface enough for
+us. The C-function \verb|read_line| gives us a value between $0$ and
+$4000$ indicating the position on the line followed. This is described
+in detail in the Pololu 3pi User's Guide\fixme{reference}.
 
 
 \chapter{Evaluation}
@@ -2435,6 +2453,11 @@ void changeTimer(unsigned int delta) {
   for (unsigned int d = startDiode; d < startDiode+stateBits; ++d) {
     digitalWrite(d, timer & (1 << (d-startDiode)) ? HIGH : LOW);
   }
+  if (timer > 0) {
+    analogWrite(alarmPin, 0);
+  } else {
+    analogWrite(alarmPin, 128);
+  }
 }
 
 void increaseButton() {
@@ -2443,6 +2466,10 @@ void increaseButton() {
 
 void decreaseButton() {
   changeTimer(-secondsPerUnit);
+}
+
+void timerHit() {
+  changeTimer(-1);
 }
 
 void setup()
@@ -2454,24 +2481,37 @@ void setup()
   analogWrite(alarmPin, 0);
   PCattachInterrupt(incButtonPin, increaseButton, CHANGE);
   PCattachInterrupt(decButtonPin, decreaseButton, CHANGE);
+  SetupTimer2(1000.0, timer_hit);
 }
 
 void loop()
 {
-  changeTimer(-1);
-  if (timer > 0) {
-    analogWrite(alarmPin, 0);
-  } else {
-    analogWrite(alarmPin, 128);
-  }
-  delay(1000);
 }
 \end{verbatim}
 
-Yet its simplicity comes at a cost.  The interrupt handlers for the
-buttons carry out their logic themselves, potentially causing race
-conditions if they are invoked during the processing of the main loop.
-Said loop is problematic as well, as the timing is embedded within it.
+Yet its simplicity comes at a cost: there is no static checking that
+the pin references make sense and hardware interrupts are explicitly
+commanded for the purpose of the program.  Should there be need to
+extend the program, perhaps to make it part of a larger control system
+with many features (consider just how many different electronic
+devices have some sort of timer-based functionality built in), the
+simplicity will degrade.  It will no longer be safe to have
+long-running vector interrupt handlers (recall that further interrupts
+are disabled while a handler runs), and the maintenance of a structure
+like the Fladuino event queue will prove necessary.  We can thus
+conclude that the C program is simpler for this particular restricted
+domain, but that we may run into trouble when we attempt to combine
+multiple programs, where Fladuino would allow us to simply merge the
+dataflow graphs and automatically complain if they conflict in their
+usage of devices.
+
+Yet here is no doubt that the modification of state is one of the more
+clumsy aspects of Fladuino.  This deficiency has been inherited from
+Flask, where complex state may not be necessary for the programming of
+sensor networks.  In fact, the problem is deeper yet: Fladuino does
+not support fully dynamic state at all!  This deficiency (and
+suggested solutions) will be discussed further in
+\Fref{chap:futurework}.
 
 
 \subsection{Pololu 3pi: Line following robot}
