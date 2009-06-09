@@ -2292,7 +2292,7 @@ Our framework provides a simple wrapper of this function which we call
 This interface isn't a very natural way of expressing movement, so we
 also provide another interface,
 \verb|set_motors :: Motors -> S (Float, Float) -> S ()|. This function
-input stream is two values, a rotational velocity and a transitional
+input stream is two values, a rotational velocity and a translational
 velocity. Both values are \textit{Doubles} between $-1.0$ and
 $1.0$. This is simply implemented as a Fladuino function utilising the
 \verb|set_motors_native| function. The implementation is shown in
@@ -2587,37 +2587,101 @@ suggested solutions) will be discussed further in
 
 
 \subsection{Pololu 3pi: Line following robot}
-To examplify our .. we've implemented a few bindings for 
+In this section we first show Fladuino-code for a line following
+robot. The body of the implementation is shown in the following
+figure (\ref{fig:linefollow}).
 
-
-
-
-
-\begin{verbatim}
-sensors = ReflectanceSensorArray 5
-linereader = LineReader sensors
-speed = 100
-\end{verbatim}
-
-
+\begin{nonfloatingfigure}
+  \centering
 
 \begin{verbatim}
 defaultMain $ do
-  addDevice sensors
   genStream $ idle 
-              >>> valueOf linereader 
+              >>> valueOf ReflectanceSensors
               >>> smap velocity 
-              >>> set_motors_native Motors
+              >>> set_motors Motors
 \end{verbatim}
+  
+  \caption{Line-follower}
+  \label{fig:linefollow}
+\end{nonfloatingfigure}
 
+It expresses a simple line-following strategy. Whenever the CPU is
+ready (\texttt{idle}), read the value of the reflectance sensors
+(\texttt{valueOf ReflectanceSensors}), uses these values to calculate
+the speed of the two motors (\texttt{smap velocity}, the
+\texttt{velocity} function is explained below), and update the
+velocities of the motors with these values (\verb|set_motors Motors|).
 
+The \verb|velocity| function converts the result of the sensor reading
+to rotational and translational velocities. The sensor reading is a
+value between $0$ and $4000$ indicating the position of the line. When
+the line is to the right of the robot, the value is below $1000$ and
+we turn left. If the line is centered on the line, the value is
+somewhere between $1000$ and $3000$ and we continue straight a
+head. Values above $3000$ indicates that the line is to the left of
+the robot and we turn right. The implementation of this is shown in
+\fref{fig:velocity-function}
+
+\begin{figure}
 \begin{verbatim}
 velocity :: N (Integer -> (Integer, Integer))
 velocity = liftN [$decls|f linepos = 
                     if linepos < 1000 then (0, $int:speed)
                     else if linepos > 3000 then ($int:speed, $int:speed)
                     else ($int:speed, 0)|]
+\end{verbatim}  
+  \caption{\texttt{velocity}-function}
+  \label{fig:velocity-function}
+\end{figure}
+
+This line-following algorithm was inspired by an algorithm in the
+Pololu 3pi user manual. A simplified version (without status messages
+written to the LCD display etc.) is shown in \fref{fig:linefollow-in-c}
+
+\begin{figure}
+  \centering
+\begin{verbatim}
+#include <pololu/3pi.h>
+
+void calibrate_3pi_sensors () {
+  int counter;
+  while(!button_is_pressed(BUTTON_B));
+  for(counter=0; counter<80; counter++) {
+      if(counter < 20 || counter >= 60)
+        set_motors(40,-40);
+      else
+        set_motors(-40,40);
+
+      calibrate_line_sensors(IR_EMITTERS_ON);
+      delay_ms(20);
+  }
+  set_motors(0,0);
+  while(!button_is_pressed(BUTTON_B));
+}
+
+int main() {
+  unsigned int sensors[5];
+
+  pololu_3pi_init(2000);
+  calibrate_3pi_sensors();
+
+  while(1) {
+      unsigned int position = read_line(sensors,IR_EMITTERS_ON);
+
+      if(position < 1000)
+          set_motors(0,100);
+      else if(position < 3000) 
+          set_motors(100,100);
+      else 
+          set_motors(100,0);
+  }
+}
 \end{verbatim}
+  \caption{Line following in C}
+  \label{fig:linefollow-in-c}
+\end{figure}
+
 
 
 
