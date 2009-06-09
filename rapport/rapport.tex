@@ -2359,12 +2359,33 @@ Arduino-based control systems:
   many applications in the (admittedly broad) domain of arbitrary
   control programs may benefit from the ability to dynamically rewire
   dataflow.
+\item There is no distinction between private and public interface.
+  All Haskell modules in Fladuino export their entire contents (as
+  they do in Flask itself), and it is possible to violate some of our
+  guarantees through improper use of internal functions.  As a
+  specific example, type-safety can be violated by explicitly calling
+  the internal function \texttt{connectEvent} (which registers a node
+  as a listener for a specific event), though the C compiler will most
+  likely catch the type error in the generated program.
 \end{itemize}
 
 Fladuino \textit{does}, however, fully implement its target feature
 set in a manner that is practically useful.  If a program can be
 expressed within the abstractions that we provide, then using Fladuino
 to implement it should not be a problem.
+
+\section{The use of Flask as a foundation}
+
+Flask turned out to be an excellent vehicle for our experimentation.
+One of the most technically hairy, yet also relatively irrelevant,
+aspects of Fladuino is the compilation of Red to C.  Flask
+encapsulates this code transformer well, and expresses its actual
+logic of constructing and generating code from dataflow graphs as a
+few thousand lines of Haskell.
+
+Additionally, we could reuse most of the stream operators with little
+work, the conversion of their implementation from NesC to C being
+trivial in most cases.
 
 \section{Experimental comparison}
 
