@@ -2652,11 +2652,10 @@ the robot and we turn right. The implementation of this is shown in
 
 \begin{figure}
 \begin{verbatim}
-velocity :: N (Integer -> (Integer, Integer))
-velocity = liftN [$decls|f linepos = 
-                    if linepos < 1000 then (0, $int:speed)
-                    else if linepos > 3000 then ($int:speed, $int:speed)
-                    else ($int:speed, 0)|]
+velocity :: N (Integer -> (Float, Float))
+velocity = liftN [$decls|
+                   f linepos = ($flo:speed, 
+                                (intToFloat (2000 - linepos)) / 2000.0)|]
 \end{verbatim}  
   \caption{\texttt{velocity}-function}
   \label{fig:velocity-function}
@@ -3500,10 +3499,10 @@ f (2, _) = 3
 
 \item In Haskell, 42 can both be interpreted as an $Integer$, a
   $Double$, or any other member of the $Num$-type class. In Red this
-  isn't the case and thus \texttt{negate} and \texttt{(-)} --- which
-  are defined by \verb|negate x = 0 - x| --- only works for
+  isn't the case and thus \texttt{negate} and \texttt{(-)}, which
+  are defined by \verb|negate x = 0 - x|, only works for
   integers.(Related to the lack of type-classes). Instead, you can
-  define a negation function for \textit{Doubles}, by: .
+  define a negation function for \textit{Doubles}, by: \verb|neg x = 0.0 - x|.
 \end{itemize}
 
 \chapter{Code snippets}

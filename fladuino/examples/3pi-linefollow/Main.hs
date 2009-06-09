@@ -26,12 +26,15 @@ speed = 0.5
 main :: IO ()
 main =
     defaultMain $ do
+      addCImport "intToFloat" [$ty|Integer -> Float|] [$cexp|intToFloat|]
+      addCFundef [$cedecl|float intToFloat(int x) {
+                                  return ((float)x);
+                          }|]
       genStream $ idle 
                   >>> valueOf ReflectanceSensors
-                  >>> smap velocity 
+                  >>> smap velocity
                   >>> set_motors Motors
           where 
             velocity :: N (Integer -> (Float, Float))
-            velocity = liftN [$decls|f linepos = if linepos < 1000 then ($flo:speed, 1.0)
-                                                 else if linepos < 3000 then ($flo:speed, 0.0)
-                                                 else ($flo:speed, 0.0-1.0)|]
+            velocity = liftN [$decls|f linepos = ($flo:speed, (intToFloat (2000 - linepos)) / 2000.0)|]
+
