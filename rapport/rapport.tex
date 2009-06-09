@@ -2428,6 +2428,11 @@ void changeTimer(unsigned int delta) {
   for (unsigned int d = startDiode; d < startDiode+stateBits; ++d) {
     digitalWrite(d, timer & (1 << (d-startDiode)) ? HIGH : LOW);
   }
+  if (timer > 0) {
+    analogWrite(alarmPin, 0);
+  } else {
+    analogWrite(alarmPin, 128);
+  }
 }
 
 void increaseButton() {
@@ -2436,6 +2441,10 @@ void increaseButton() {
 
 void decreaseButton() {
   changeTimer(-secondsPerUnit);
+}
+
+void timerHit() {
+  changeTimer(-1);
 }
 
 void setup()
@@ -2447,24 +2456,37 @@ void setup()
   analogWrite(alarmPin, 0);
   PCattachInterrupt(incButtonPin, increaseButton, CHANGE);
   PCattachInterrupt(decButtonPin, decreaseButton, CHANGE);
+  SetupTimer2(1000.0, timer_hit);
 }
 
 void loop()
 {
-  changeTimer(-1);
-  if (timer > 0) {
-    analogWrite(alarmPin, 0);
-  } else {
-    analogWrite(alarmPin, 128);
-  }
-  delay(1000);
 }
 \end{verbatim}
 
-Yet its simplicity comes at a cost.  The interrupt handlers for the
-buttons carry out their logic themselves, potentially causing race
-conditions if they are invoked during the processing of the main loop.
-Said loop is problematic as well, as the timing is embedded within it.
+Yet its simplicity comes at a cost: there is no static checking that
+the pin references make sense and hardware interrupts are explicitly
+commanded for the purpose of the program.  Should there be need to
+extend the program, perhaps to make it part of a larger control system
+with many features (consider just how many different electronic
+devices have some sort of timer-based functionality built in), the
+simplicity will degrade.  It will no longer be safe to have
+long-running vector interrupt handlers (recall that further interrupts
+are disabled while a handler runs), and the maintenance of a structure
+like the Fladuino event queue will prove necessary.  We can thus
+conclude that the C program is simpler for this particular restricted
+domain, but that we may run into trouble when we attempt to combine
+multiple programs, where Fladuino would allow us to simply merge the
+dataflow graphs and automatically complain if they conflict in their
+usage of devices.
+
+Yet here is no doubt that the modification of state is one of the more
+clumsy aspects of Fladuino.  This deficiency has been inherited from
+Flask, where complex state may not be necessary for the programming of
+sensor networks.  In fact, the problem is deeper yet: Fladuino does
+not support fully dynamic state at all!  This deficiency (and
+suggested solutions) will be discussed further in
+\Fref{chap:futurework}.
 
 \chapter{The Fladuino Future}
 \label{chap:futurework}
