@@ -114,14 +114,11 @@ supervised by Ken Friis Larsen, assistant professor at DIKU.
 \tableofcontents*
 
 
-
-\fixme{change $\backslash$ url to use the hyperref package so real links are
-  used.}
 \fixme{check all quoted text for use of the same quotes!!!!}
 \fixme{Check all cites. Should there be a space between the word and cite or
   not.}
-\fixme{Check all refs. Should be converted to vref to utilize the
-  varioref package (Where appropriate!!)}
+\fixme{Check all refs. Should be converted to fref to utilise the
+  fancyref package (Where appropriate!!)}
 
 \listoffixmes 
 
@@ -183,40 +180,37 @@ supervised by Ken Friis Larsen, assistant professor at DIKU.
 
 \section{Problem statement}
 In this report we present our framework for reactive programming of
-embedded devices, \textit{Fladuino}. Fladuino is an adaption of the
+embedded devices, Fladuino. Fladuino is an adaption of the
 sensor network framework \textit{Flask} for the domain of control
 systems.
 
 Flask is a domain-specific language embedded in Haskell for writing
 sensor network code, with Haskell functioning as a meta-language. A
 Flask program takes the form of an acyclic dataflow graph, which
-represents how data streams its sensors are processed and sent to
+represents how data streams from its sensors are processed and sent to
 other nodes in the network. When a Flask program is ``run'', it
 generates a program in another more low-level sensor network
 language. Our framework, Fladuino, follows exactly the same concepts
 as Flask, although it generates C-code written specifically for our
-platform: Arduino, which we will discuss in the next section,
-\ref{sec:hardware platform}.
+platform: Arduino, which we will discuss in \fref{sec:hardware platform}.
 
 In the following chapters we want to argue that taking our outset from
 Flask has been successful. Both in the sense that Flask was easily
-adaptable to reactive programming domain, and in the sense that our
+adaptable to another reactive programming domain, and in the sense that our
 result, Fladuino, is sufficient for a wide range of control systems.
 
-Our domain, control systems, is quite wide. It is
-often\fixme{citations needed} defined as \textit{programmable systems
-  that senses and regulates some task by the use of sensors and
-  actuators}, which includes almost any computer-system. Selecting the
-Arduino-platform restrains our scope to the tasks it can handle. The
-Arduino is generic and handles a broad range of tasks, when connected
-with the right peripherals. This extendability makes us argue that
-concentrating on the Arduino isn't a particularly strict
-limitation. This has the obvious impact, that our framework should be
-general enough to support almost any Arduino-connectable external
-device. We do this by providing a way of writing drivers or small
-frameworks for arbitrary devices.  Furthermore, due to the blandness
-of Arduino's technology itself, it would most likely not prove
-difficult to port our work to another architecture.
+Our domain, control systems, is quite wide and we define it as
+\textit{programmable systems that senses and regulates some task by the use of
+  sensors and actuators}, which includes almost any computer system.  Selecting
+the Arduino platform restrains our scope to the tasks it can handle. The Arduino
+is generic and handles a broad range of tasks, when connected with the right
+peripherals. This extendability makes us argue that concentrating on the Arduino
+isn't a particularly strict limitation. This has the obvious impact, that our
+framework should be general enough to support almost any connectable
+external Arduino device. We do this by providing a way of writing drivers or small
+frameworks for arbitrary devices.  Furthermore, due to the blandness of
+Arduino's technology itself, it would most likely not prove difficult to port
+our work to another architecture.
 
 In \fref{sec:pushbuttondef}, we show by example how this framework is
 used. \Fref{fig:fladuino-simple} shows a Fladuino program that toggles
@@ -226,9 +220,8 @@ whether a diode is lit every time a button is pushed.
   \centering
 
 \begin{verbatim}
-  onEvent (PushButtonPressEvent $ PushButton 3) 
->>> 
-  (toggle $ diode 13 True)
+   onEvent (PushButtonPressEvent $ PushButton 3)  
+   >>> (toggle $ diode 13 True)
 \end{verbatim}  
 
   \caption{Simple Fladuino program}
@@ -270,9 +263,9 @@ Flask and Fladuino are thus reactive programming languages.
 
 \section{Hardware platform}
 \label{sec:hardware platform}
-The choice of hardware-platform has an influence on how to design such
+The choice of hardware platform has an influence on how to design such
 a language. We've chosen to make our language and framework target the
-Arduino-platform \cite{arduino}.
+Arduino platform \cite{arduino}.
 
 The term ``Arduino'' is somewhat ambiguous.  It is both a registered
 trademark of the Arduino team that can be used by licensed
@@ -303,6 +296,10 @@ Arduino BT\footnote{\url{http://www.arduino.cc/en/Guide/ArduinoBT}},
 Arduino
 Mega\footnote{\url{http://arduino.cc/en/Main/ArduinoBoardMega}}, and
 Pololu 3pi\footnote{\url{http://www.pololu.com/catalog/product/975}}.
+The Pololu 3pi is an Arduino-compatible robot which, as they states in
+the user manual, is ``designed to excel in line-following and
+line-maze-solving competitions''.
+
 
 \section{Motivation}
 One of the most noticeable consequences of the dramatic reductions in
@@ -372,13 +369,14 @@ needed when programming control systems that isn't already in Flask
 and how we have embodied this in Fladuino (i.e. our core design
 decisions).
 
-In \Fref{chap:implementation} we will talk about the
-technically modification we have made to transform Flask to Fladuino.
+In \Fref{chap:implementation} we will talk about the technically
+modification we have made to transform Flask to Fladuino.
 
-In \Fref{chap:evaluation} we will present an evaluation of
-the complete Fladuino system, judging its benefits over traditional
-methods of programming control programs, as well as covering
-any identified shortcomings.
+In \Fref{chap:evaluation} we will present an evaluation of the
+complete Fladuino system, judging its benefits over traditional
+methods of programming control programs, as well as covering any
+identified shortcomings. We present a minimal driver for the Pololu
+3pi robot and a line-following program written in Fladuino.
 
 \chapter{Flask}
 \label{chap:Flask}
@@ -440,7 +438,7 @@ When compiling the Haskell program description of the dataflow graph,
 you end up with an executable that generates and outputs code in a
 sensor network language called NesC\footnote{NesC is an extension to
   C, with some additional constructs suitable for low-level sensor
-  network programming for TinyOS.}.
+  network programming for TinyOS.} \cite{nesc}.
 
 The generated NesC code can then be translated by an ordinary
 NesC compiler to machine code running on the nodes in the
@@ -527,8 +525,8 @@ than of Haskell.
 
 Figure \ref{fig:redqq} is an example of a quasiquoted function in Red,
 which determines whether a ratio between two values is below a certain
-threshold. The threshold is a generation-time computed value, which is
-inserted at generation-time by the \texttt{flo}-antiquoter.
+threshold. The threshold could be a generation-time computed value, which is
+inserted by the \texttt{flo}-antiquoter (float) at generation-time.
 \begin{nonfloatingfigure}
 \begin{verbatim}
 [$exp|\(hi, lo) -> hi / lo > $flo:threshold|]
@@ -552,17 +550,17 @@ Flask therefore still feels quite the same as when using the Arrows
 library, but you won't get the Arrow syntax (introduced in
 \cite{PatersonRA:notation}).
 
-In Flask a stream of type $\alpha$ values has the type \texttt{S
-  $\alpha$}. The arguably simplest way to generate such a stream is
+In Flask a stream of type $a$ has the type \texttt{S
+  $a$}. The arguably simplest way to generate such a stream is
 the Flask-function \texttt{clock :: Int -> S ()}, which given a time
 interval in milliseconds returns a stream of unit signals, that is
 sent with the given frequency. E.g. \texttt{clock 1000} is signalling
 every second. This isn't useful by itself, but is useful for
 activating some other task, like reading a sensor at some frequency.
-Node-level code of type $a$ has the type $N a$ in Haskell.  For
+Node-level code of type $a$ has the type \texttt{N $a$} in Haskell.  For
 example, a node-level expression evaluating to an integer is referred
-to as $N Integer$, and a stream of such integers would have the type
-$S Integer$.
+to as \texttt{N Integer}, and a stream of such integers would have the type
+\texttt{S Integer}.
 
 We also need to process these signals, and as mentioned before, Flask
 provides a set of general stream operators for this task.
@@ -572,17 +570,17 @@ provides a set of general stream operators for this task.
 Before we go on to explain the stream operators, we need to discuss
 two Haskell type classes: \textit{Reify} and \textit{LiftN}.
 Instances of the \textit{Reify} type classes are Haskell types that
-have node-level equivalents. An instance \textit{Reify a} has to
-provide a function \texttt{reify :: a -> Type} that, given a Haskell
+have node-level equivalents. An instance \texttt{Reify $a$} has to
+provide a function \texttt{reify :: $a$ -> Type} that, given a Haskell
 value of type $a$ returns a representation of its node-level type.
 The actual value is never used, only its type, so a common value to
-use is \texttt{undefined :: a}.
+use is \texttt{undefined :: $a$}. \hfill
 
 \textit{LiftN} is a multi-parameter type class\footnote{This requires
   the GHC language extension MultiParameterTypeClasses.}. An instance
-\texttt{LiftN eta Integer} declares that a Haskell value of type $eta$
+\texttt{LiftN $eta$ Integer} declares that a Haskell value of type $eta$
 can be lifted to code of node-level type \textit{Integer} (by the
-\texttt{liftN :: a -> N a} function).  N-Lifting is particularly used to
+function \texttt{liftN :: $a$ -> N $a$}).  N-Lifting is particularly used to
 lift quasiquoted Red function definitions to node-level code that can
 be called by the final node-level program.\\
 
@@ -602,7 +600,7 @@ function (\texttt{S a -> S a}) that for each input value uses the
 predicate to decide whether it should be passed on to its output
 stream or not.
 
-\newpage
+
 \subsection{Streamoperators}
 \label{sec:streamoperators}
 In this section we will describe the stream-operators and signal
@@ -616,11 +614,14 @@ sconst :: forall a b eta. (Reify b, LiftN eta a)
 \end{verbatim}
      Maps all values on the input-stream to a constant (node-level) output value.
 
-\item \verb|(>>>) :: forall a. Reify a => S a -> (S a -> S a)|
-  \hfill \\ Connects a stream with a stream operator.
-  E.g. \texttt{clock 10 $\ggg$ sconst (liftN [\$exp|42|])} is a stream
-  of 42 values, that is passed on every 10th millisecond. This is
-  simply implemented as a Haskell function application.
+\item
+\begin{verbatim}
+(>>>) :: forall a. Reify a => S a -> (S a -> S a)
+\end{verbatim}
+  Connects a stream with a stream operator.  E.g. {\ttfamily clock 10 \verb|>>>|
+    sconst (liftN [\$exp|42|])} is a stream of 42 values, that is passed on
+  every 10th millisecond. This is simply implemented as a Haskell function
+  application.
 
 
 \item 
@@ -652,9 +653,9 @@ smap :: forall eta a b . (Reify a, Reify b, LiftN eta (a -> b))
 
 \item
 \begin{verbatim}
-sintegrate  ::  forall a b c eta . (Reify a, Reify b, Reify c,
-                                 LiftN eta ((a, c) -> (b, c)))
-         =>  N c ->  eta ->  S a ->  S b
+sintegrate :: forall a b c eta . (Reify a, Reify b, Reify c,
+                              LiftN eta ((a, c) -> (b, c)))
+       =>  N c -> eta -> S a -> S b
 \end{verbatim}
   When supplied with an initial (node-level) state value and a
   node-level function that takes the current state and the next value
@@ -693,8 +694,7 @@ in Flask like below (the code is an almost verbatim copy from
 \cite{flask08}). The result is a stream that only produces values when
 an earthquake is detected.
 \begin{verbatim}
-detect :: Double -> Double -> Double -> 
-          S Double -> S (Double, Double)
+detect :: Double -> Double -> Double -> S (Double, Double)
 detect low high threshold = 
      clock 10
    >>>
@@ -706,7 +706,7 @@ detect low high threshold =
 \end{verbatim}
 
 \noindent
-The function \texttt{adc :: String -> S () -> Double ()} is a Flask
+The function \verb#adc :: String -> S () -> Double ()# is a Flask
 built-in operator for reading sensor-values, the String-argument
 specifies which NesC interface to use for querying the sensor.
 
@@ -1170,10 +1170,10 @@ value to the counter node, telling it to send another request to the
 sensor if the counter is nonzero.  The problem in this scheme is the
 wire from the output node to the accumulator node --- this graph edge
 would form a cycle, something that is expressly forbidden.  On figure
-\ref{queue-with-ignore}, we solve this issue by an \textit{event node}
+\fref{fig:queue-with-ignore}, we solve this issue by an \textit{event node}
 that listens to a discrete event broadcast by the output node (the
 Fladuino event system is described in detail in
-\Fref{sec:events_design}).  Using the event system in such a way is
+\fref{sec:events_design}).  Using the event system in such a way is
 technically feasible, but violates the spirit of the design.  The
 connection from output to event node can be considered to be a
 particularly weak kind of posting wire --- informally, they are to
@@ -1183,21 +1183,22 @@ real posting wires, as software interrupts are to hardware interrupts.
   \includegraphics[width=0.9\textwidth]{images/queue-with-ignore}
   \caption{Simulating Queue}
   \centering
-  \label{queue-with-ignore}
+  \label{fig:queue-with-ignore}
 \end{figure}
 
-\section{Representing peripherals}
-Arduino is a flexible system for general embedded development, with no
-specific application in mind.  The Arduino platform can therefore be
-connected to a diverse amount of peripheral devices, all with their
-own specific functionality and programming interface.  It is thus
-natural to support this diversity as a core concept of Fladuino; not
-(solely) as a library of drivers for various devices, but rather as a
-framework and set of tools provided to the programmer so that Fladuino
-can be extended to transparently support the devices he has need of.
-For demonstration, we have \fixme{not really done yet} written a
-framework for programming the Pololu 3pi robot and the peripherals
-connected to it (electromotors, sensors, buttons, etc.).
+\section{Representing peripherals} Arduino is a flexible system for
+general embedded development, with no specific application in mind.
+The Arduino platform can therefore be connected to a diverse amount of
+peripheral devices, all with their own specific functionality and
+programming interface.  It is thus natural to support this diversity
+as a core concept of Fladuino; not (solely) as a library of drivers
+for various devices, but rather as a framework and set of tools
+provided to the programmer so that Fladuino can be extended to
+transparently support the devices he has need of.  For demonstration,
+we have written a minimal framework for programming the Pololu 3pi
+robot and \textit{some} of the peripherals connected to it
+(electromotors, reflectance sensors, etc.). This framework is
+discussed in \Fref{chap:example code} and evaluated in \Fref{chap:evaluation}
 
 Furthermore, Arduino is a broad term encompassing a range of
 more-or-less compatible platforms, though each of them differ slightly
@@ -1983,6 +1984,7 @@ event if the predicate is true, with the result of running the
 value-function.
 
 \chapter{Example programs}
+\label{chap:example code}
 
 \textit{Beskrivelse af vores fedeste eksempelprogrammer: 3pi,
   binærtæller etc. og hvorfor det er smart.}
@@ -2116,32 +2118,6 @@ explicitley changed. The scale 0 to 1024 when reading analog values is
 proportional to the relationship between GND and AREF, which is
 nomally 0v and 5v respectively, though AREF can be explicitly changed.
 
-\subsection{Defining a battery reader for 3pi}
-
-The Pololu 3pi robot has a few extra features that the Arduino boards
-doesn't. One of these features is the possibility of reading how many millivolts
-is left on the batteries that power the device. This feature can be used to
-indicate if the batteries needs replacement, e.g. by signalling with the buzzer
-or writing text to the display.
-
-The \texttt{Device} instance definition \texttt{BatteryReader} requires that the
-platform supply the functionality \textit{3pi battery reader} which is only
-defined for the Pololu 3pi platform.
-
-\begin{verbatim}
-data BatteryReader = BatteryReader
-                        deriving (Eq, Show)
-
-instance Device BatteryReader where
-    usages _ = [CapabilityRequired "3pi battery reader"]
-    uniqueId _ = "3pi_battery_reader" -- there only need to be one
-
-instance AnalogInputDevice BatteryReader where
-    genReadCode _ resultvar = [[$cstm|$id:resultvar = read_battery_millivolts();|]]
-\end{verbatim}
-
-\fixme{not done}
-
 \subsection{Defining a new platform}
 
 When adding support for a new platform, e.g. the Pololu 3pi, one has the option
@@ -2197,8 +2173,8 @@ arduinoDuemilanove = emptyPlatform { p_pins = [ PinDecl (DPin n) $ pc n | n <- [
 \end{verbatim}
 
 Since the \texttt{arduinoDiecimila} platform is fully compatible and has
-exactley the same pin configuration as the \texttt{arduinoDuemilanove} platform, it can
-be defined by just extending it
+exactley the same pin configuration as the \texttt{arduinoDuemilanove} platform,
+it can be defined by just extending it
 
 \begin{verbatim}
 arduinoDiecimila = arduinoDuemilanove { p_capabilities = ["Diecimila"] }
@@ -2214,11 +2190,40 @@ the \texttt{pololu3pi} platform can be defined by extending the
 \texttt{arduinoDuemilanove} and adding the extra capabilities and base setup
 
 \begin{verbatim}
-pololu3pi = arduinoDuemilanove { p_capabilities = ["3pi", "3pi battery reader", "3pi reflectance sensor array",
+pololu3pi = arduinoDuemilanove { p_capabilities = ["3pi", "3pi battery reader", 
+                                                   "3pi reflectance sensor array",
                                                    "3pi motors"]
                                , p_base_setup = addCInclude "3pi/3pi.h"
                                }
 \end{verbatim}
+
+
+
+
+\subsection{Defining a battery reader for 3pi}
+
+The Pololu 3pi robot has a few extra features that the Arduino boards
+doesn't. One of these features is the possibility of reading how many millivolts
+is left on the batteries that power the device. This feature can be used to
+indicate if the batteries needs replacement, e.g. by signalling with the buzzer
+or writing text to the display.
+
+The \texttt{Device} instance definition \texttt{BatteryReader} requires that the
+platform supply the functionality \textit{3pi battery reader} which is only
+defined for the Pololu 3pi platform.
+
+\begin{verbatim}
+data BatteryReader = BatteryReader
+                        deriving (Eq, Show)
+
+instance Device BatteryReader where
+    usages _ = [CapabilityRequired "3pi battery reader"]
+    uniqueId _ = "3pi_battery_reader" -- there only need to be one
+
+instance AnalogInputDevice BatteryReader where
+    genReadCode _ resultvar = [[$cstm|$id:resultvar = read_battery_millivolts();|]]
+\end{verbatim}
+
 
 
 \chapter{Evaluation}
@@ -2487,6 +2492,42 @@ sensor networks.  In fact, the problem is deeper yet: Fladuino does
 not support fully dynamic state at all!  This deficiency (and
 suggested solutions) will be discussed further in
 \Fref{chap:futurework}.
+
+
+\subsection{Pololu 3pi: Line following robot}
+To examplify our .. we've implemented a few bindings for 
+
+
+
+
+
+\begin{verbatim}
+sensors = ReflectanceSensorArray 5
+linereader = LineReader sensors
+speed = 100
+\end{verbatim}
+
+
+
+\begin{verbatim}
+defaultMain $ do
+  addDevice sensors
+  genStream $ idle 
+              >>> valueOf linereader 
+              >>> smap velocity 
+              >>> set_motors_native Motors
+\end{verbatim}
+
+
+\begin{verbatim}
+velocity :: N (Integer -> (Integer, Integer))
+velocity = liftN [$decls|f linepos = 
+                    if linepos < 1000 then (0, $int:speed)
+                    else if linepos > 3000 then ($int:speed, $int:speed)
+                    else ($int:speed, 0)|]
+\end{verbatim}
+
+
 
 \chapter{The Fladuino Future}
 \label{chap:futurework}
