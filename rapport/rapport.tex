@@ -114,14 +114,11 @@ supervised by Ken Friis Larsen, assistant professor at DIKU.
 \tableofcontents*
 
 
-
-\fixme{change $\backslash$ url to use the hyperref package so real links are
-  used.}
 \fixme{check all quoted text for use of the same quotes!!!!}
 \fixme{Check all cites. Should there be a space between the word and cite or
   not.}
-\fixme{Check all refs. Should be converted to vref to utilize the
-  varioref package (Where appropriate!!)}
+\fixme{Check all refs. Should be converted to fref to utilise the
+  fancyref package (Where appropriate!!)}
 
 \listoffixmes 
 
@@ -183,7 +180,7 @@ supervised by Ken Friis Larsen, assistant professor at DIKU.
 
 \section{Problem statement}
 In this report we present our framework for reactive programming of
-embedded devices, \textit{Fladuino}. Fladuino is an adaption of the
+embedded devices, Fladuino. Fladuino is an adaption of the
 sensor network framework \textit{Flask} for the domain of control
 systems.
 
@@ -195,28 +192,25 @@ other nodes in the network. When a Flask program is ``run'', it
 generates a program in another more low-level sensor network
 language. Our framework, Fladuino, follows exactly the same concepts
 as Flask, although it generates C-code written specifically for our
-platform: Arduino, which we will discuss in the next section,
-\ref{sec:hardware platform}.
+platform: Arduino, which we will discuss in \fref{sec:hardware platform}.
 
 In the following chapters we want to argue that taking our outset from
 Flask has been successful. Both in the sense that Flask was easily
-adaptable to reactive programming domain, and in the sense that our
+adaptable to another reactive programming domain, and in the sense that our
 result, Fladuino, is sufficient for a wide range of control systems.
 
-Our domain, control systems, is quite wide. It is
-often\fixme{citations needed} defined as \textit{programmable systems
-  that senses and regulates some task by the use of sensors and
-  actuators}, which includes almost any computer-system. Selecting the
-Arduino-platform restrains our scope to the tasks it can handle. The
-Arduino is generic and handles a broad range of tasks, when connected
-with the right peripherals. This extendability makes us argue that
-concentrating on the Arduino isn't a particularly strict
-limitation. This has the obvious impact, that our framework should be
-general enough to support almost any Arduino-connectable external
-device. We do this by providing a way of writing drivers or small
-frameworks for arbitrary devices.  Furthermore, due to the blandness
-of Arduino's technology itself, it would most likely not prove
-difficult to port our work to another architecture.
+Our domain, control systems, is quite wide and we define it as
+\textit{programmable systems that senses and regulates some task by the use of
+  sensors and actuators}, which includes almost any computer system.  Selecting
+the Arduino platform restrains our scope to the tasks it can handle. The Arduino
+is generic and handles a broad range of tasks, when connected with the right
+peripherals. This extendability makes us argue that concentrating on the Arduino
+isn't a particularly strict limitation. This has the obvious impact, that our
+framework should be general enough to support almost any connectable
+external Arduino device. We do this by providing a way of writing drivers or small
+frameworks for arbitrary devices.  Furthermore, due to the blandness of
+Arduino's technology itself, it would most likely not prove difficult to port
+our work to another architecture.
 
 In \fref{sec:pushbuttondef}, we show by example how this framework is
 used. \Fref{fig:fladuino-simple} shows a Fladuino program that toggles
@@ -226,9 +220,8 @@ whether a diode is lit every time a button is pushed.
   \centering
 
 \begin{verbatim}
-  onEvent (PushButtonPressEvent $ PushButton 3) 
->>> 
-  (toggle $ diode 13 True)
+   onEvent (PushButtonPressEvent $ PushButton 3)  
+   >>> (toggle $ diode 13 True)
 \end{verbatim}  
 
   \caption{Simple Fladuino program}
@@ -270,9 +263,9 @@ Flask and Fladuino are thus reactive programming languages.
 
 \section{Hardware platform}
 \label{sec:hardware platform}
-The choice of hardware-platform has an influence on how to design such
+The choice of hardware platform has an influence on how to design such
 a language. We've chosen to make our language and framework target the
-Arduino-platform \cite{arduino}.
+Arduino platform \cite{arduino}.
 
 The term ``Arduino'' is somewhat ambiguous.  It is both a registered
 trademark of the Arduino team that can be used by licensed
