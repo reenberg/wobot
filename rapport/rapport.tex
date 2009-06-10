@@ -197,10 +197,11 @@ language. Our framework, Fladuino, follows exactly the same concepts
 as Flask, although it generates C-code written specifically for our
 platform: Arduino, which we will discuss in \fref{sec:hardware platform}.
 
-In the following chapters we want to argue that taking our outset from
+In the following chapters we shall argue that taking our outset from
 Flask has been successful. Both in the sense that Flask was easily
-adaptable to another reactive programming domain, and in the sense that our
-result, Fladuino, is sufficient for a wide range of control systems.
+adaptable to another reactive programming domain, and in the sense
+that our result, Fladuino, is sufficient for a wide range of control
+systems.
 
 Our domain, control systems, is quite wide and we define it as
 \textit{programmable systems that senses and regulates some task by the use of
@@ -232,12 +233,13 @@ whether a diode is lit every time a button is pushed.
 \end{figure}
 
 \subsection{Reactivity}
-Most control systems are reactive, especially robots fits the
-definition of reactive systems well. We've found the best description
-of what distinguishes a reactive system in Zhanyong Wan's PhD thesis
-``Functional Reactive Programming for Real-Time reactive systems''
-\cite{Chambers1992}.  As he explains, we can partition computer systems
-into:
+
+Most control systems can be said to be \textit{reactive}, especially
+robots fit the definition of reactive systems well.  We have found the
+best description of what distinguishes a reactive system in Zhanyong
+Wan's PhD thesis ``Functional Reactive Programming for Real-Time
+reactive systems'' \cite{Chambers1992}.  As he explains, we can
+partition computer systems into:
 \begin{itemize}
 \item Transitional systems, that takes some data as input, does some
   computation on it and delivers some resulting output (an example of this
@@ -372,9 +374,9 @@ concepts of Quasiquotation \cite{quasiquote07}, phantom types, and to
 know the difference between meta-languages versus object-languages.
 
 \section{Structure outline}
-In the following chapter (\Fref[plain]{chap:Flask}) we will go
-through the existing Flask system. Its design and how you use it to
-write sensor-network programs.
+In the following chapter (\Fref[plain]{chap:Flask}) we shall describe
+Flask itself, its design, and how you use it to write sensor-network
+programs.
 
 In \Fref{chap:design} we will look at what functionality is
 needed when programming control systems that isn't already in Flask
@@ -404,8 +406,8 @@ graph.
 On \fref{fig:ewma-example} we show an example of a dataflow graph
 taken from the paper ``Flask: A Language for Data-driven Sensor
 Network Programs''. The graph represents a program for detecting earth
-quakes observing the ratio between two different exponentially
-weighted moving averages (EWMA) of the seismometer values. When the
+quakes observing the ratio between two different Exponentially
+Weighted Moving Averages (EWMA) of the seismometer values. When the
 high-gain EWMA drifts away from the low-gain EWMA --- which happens on
 a sudden rise of the seismometer value --- we record it as an
 earthquake. How high the rise should be is given by a constant
@@ -473,9 +475,9 @@ described in the next section (\ref{sec:red}).
 
 Both languages are integrated into Flask using the GHC quasiquotation
 library \cite{quasiquote07}, written by the Flask-author, Geoffrey
-Mainland. The quasiquotation facility allows you to write the
+Mainland. The quasiquotation facility permits the writing of
 object-languages in their original syntax inside the Flask/Haskell
-environment, as well as allowing you to intersperse generation time
+environment, as well as allowing interspersing generation time
 variables (which results in compile time constants) into
 object-language code.
 
@@ -562,16 +564,16 @@ Flask therefore still feels quite the same as when using the Arrows
 library, but you won't get the Arrow syntax (introduced in
 \cite{PatersonRA:notation}).
 
-In Flask a stream of type $a$ has the type \texttt{S
-  $a$}. The arguably simplest way to generate such a stream is
-the Flask-function \texttt{clock :: Int -> S ()}, which given a time
-interval in milliseconds returns a stream of unit signals, that is
-sent with the given frequency. E.g. \texttt{clock 1000} is signalling
-every second. This isn't useful by itself, but is useful for
-activating some other task, like reading a sensor at some frequency.
-Node-level code of type $a$ has the type \texttt{N $a$} in Haskell.  For
-example, a node-level expression evaluating to an integer is referred
-to as \texttt{N Integer}, and a stream of such integers would have the type
+In Flask a stream of type $a$ has the type \texttt{S $a$}. The
+arguably simplest way to generate such a stream is the Flask-function
+\texttt{clock :: Int -> S ()}, which given a time interval in
+milliseconds returns a stream of unit signals, that is sent with the
+given frequency. E.g. \texttt{clock 1000} is signalling every
+second. This isn't useful by itself, but it is useful for activating
+some other task, like reading a sensor at some frequency.  Node-level
+code of type $a$ has the type \texttt{N $a$} in Haskell.  For example,
+a node-level expression evaluating to an integer is referred to as
+\texttt{N Integer}, and a stream of such integers would have the type
 \texttt{S Integer}.
 
 We also need to process these signals, and as mentioned before, Flask
@@ -590,15 +592,17 @@ use is \texttt{undefined :: $a$}. \hfill
 
 \textit{LiftN} is a multi-parameter type class\footnote{This requires
   the GHC language extension MultiParameterTypeClasses.}. An instance
-\texttt{LiftN $eta$ Integer} declares that a Haskell value of type $eta$
-can be lifted to code of node-level type \textit{Integer} (by the
-function \texttt{liftN :: $a$ -> N $a$}).  N-Lifting is particularly used to
-lift quasiquoted Red function definitions to node-level code that can
-be called by the final node-level program.\\
+\texttt{LiftN $eta$ Integer} declares that a Haskell value of type
+$eta$ can be lifted to code of node-level type \textit{Integer} (by
+the function \texttt{liftN :: $a$ -> N $a$}).  This lifting is notably
+used to lift quasiquoted Red function definitions to
+node-level code that can be called by the final node-level program.\\
 
 \noindent
 Let us consider an actual Flask stream operator, namely
-\texttt{sfilter}. Its type signature is:
+\texttt{sfilter}. An informal description of its purpose is that it
+accepts a stream of values as its input, and passes those values, that
+satisfy some predicate, onwards as output.  Its type signature is:
 
 \begin{verbatim}
 sfilter :: forall a eta . (Reify a, LiftN eta (a -> Bool))
@@ -624,7 +628,7 @@ functions that Flask provides.
 sconst :: forall a b eta. (Reify b, LiftN eta a)
        => eta -> S b -> S a
 \end{verbatim}
-     Maps all values on the input-stream to a constant (node-level) output value.
+  \texttt{sconst} maps all values on the input-stream to a constant (node-level) output value.
 
 \item
 \begin{verbatim}
@@ -669,10 +673,11 @@ sintegrate :: forall a b c eta . (Reify a, Reify b, Reify c,
                               LiftN eta ((a, c) -> (b, c)))
        =>  N c -> eta -> S a -> S b
 \end{verbatim}
-  When supplied with an initial (node-level) state value and a
-  node-level function that takes the current state and the next value
-  on the input stream, returning a new state and the next value to be
-  send through to the output stream.
+  \texttt{sintegrate} is the primary state-retaining stream operator.
+  It function maps a tuple $(x, s)$, where $x$ is a newly arrived
+  value and $s$ is the state, to the tuple $(y, s')$, where $y$ is the
+  output value and $s'$ is the new state.  The $N c$ argument in the
+  type signature is the initial state.
 
 \item
 \begin{verbatim}
@@ -743,7 +748,7 @@ ewma gain = sintegrate zero
 \chapter{Design of the Fladuino system}
 \label{chap:design}
 
-In this chapter we will outline the overall design of Fladuino, as
+In this chapter we shall outline the overall design of Fladuino, as
 well as present some of the technical decisions that have a notable
 impact on how Fladuino is used.  Technical details that have less of
 an impact on the final usage of the system are described in
@@ -768,7 +773,7 @@ A summary of the most important requirements for our system follows:
   platforms that differ significantly from our built-ins (for example,
   using a different microcontroller) will not be possible without
   modifying the Fladuino libraries themselves, however.
-\item We want to statically analyse and validate the program for
+\item Fladuino must statically analyse and validate the program for
   certain classes of type and logic errors.
 \item Fladuino must be able to generate a valid C-program suitable for
   running on the Arduino platform from a description of a dataflow graph. This
@@ -781,15 +786,17 @@ And we set the scope of our project as follows:
 \begin{itemize}
 \item The design of Fladuino must mirror similar core design choices
   in Flask.
-\item It is not required that we attempt to handle all error
-  conditions.  We accept that hardware constraints pose certain hard
-  restrictions (such as memory limits, integer counter overflow and
-  CPU time starvation), and declare that writing a program with
-  Fladuino that exceeds these constraints will result in information
-  loss or undefined behaviour.  We shall, however, endeavour to design
+\item We do not have to attempt to handle all error conditions.  We
+  accept that hardware constraints pose certain hard restrictions
+  (such as memory limits, integer counter overflow and CPU time
+  starvation), and declare that writing a program with Fladuino that
+  exceeds these constraints will result in information loss or
+  undefined behaviour.  We shall, however, endeavour to design
   Fladuino so as to reduce the likelihood of these errors.
-\item We won't add primitives for programming real time systems.
 \end{itemize}
+
+A notable narrowing is that we won't provide primitives for
+programming real time systems.
 
 \section{Design foundations}
 
@@ -809,16 +816,19 @@ compilation of the program as \textit{compile-time}, and execution of
 the program as \textit{generation-time}.  At generation-time, the
 output will be a program source file suitable for further compilation
 with the Arduino tools, but these are not part of the Fladuino system.
-Generation-time may also terminate erroneously if the program
-contains static errors: in this case, an error message with a
-description of the problem will be printed.  Only errors that are
-violations of the Haskell type system can be caught at compile-time,
-and while we have attempted to structure the facilities provided by
-Fladuino such that invalid programs will contain type errors, this
-cannot be done for all error classes.  When the generator program is
-run, it constructs a typed dataflow graph.  However, the types and
-connections in the graph cannot be known in advance (they may be
-determined programmatically, perhaps even by user input), hence we may
+
+\subsubsection{Note on error detection}
+
+Generation-time may also terminate erroneously if the program contains
+static errors: in this case, an error message with a description of
+the problem will be printed.  Only errors that are violations of the
+Haskell type system can be caught at compile-time, and while we have
+attempted to structure the facilities provided by Fladuino such that
+invalid programs will contain type errors, this cannot be done for all
+error classes.  When the generator program is run, it constructs a
+typed dataflow graph.  However, the types and connections in the graph
+cannot be known in advance (they may be determined
+pro\-gram\-mati\-cally, perhaps even by user input), hence we may
 signal type errors at generation time if the wiring of stream
 operators violate type-safety.  We do, of course, supply Haskell
 operators operating on stream representations with assigned static
@@ -1015,16 +1025,17 @@ endrepeat
 For many embedded applications, a typical workflow would be to
 continuously poll an input source (such as a sensor), then adjusting
 some output device based on the reading.  For example, a
-line-following robot may take readings from its light sensors, then
-adjust its servo-motors to ensure that it is following the line
-straightly.  This can be done by simply attaching a node to a clock
-that fires every millisecond, but this approach has a notable
-disadvantage if many other events are being received at the same time.
-The event queue may become filled with a large amount of clock events,
-thus drowning out (and losing) potentially more interesting events.
-In most cases, it is not a problem that the continuous polling of the
-input source is in irregular intervals, but the silent loss of events
-such as button presses is normally undesirable.
+line-following robot (as the previously mentioned Pololu 3pi) may take
+readings from its light sensors, then adjust its servo-motors to
+ensure that it is following the line straightly.  This can be done by
+simply attaching a node to a clock that fires every millisecond, but
+this approach has a notable disadvantage if many other events are
+being received at the same time.  The event queue may become filled
+with a large amount of clock events, thus drowning out (and losing)
+potentially more interesting events.  In most cases, it is not a
+problem that the continuous polling of the input source is in
+irregular intervals, but the silent loss of events such as button
+presses is normally undesirable.
 
 Thus, we provide the notion of \textit{idle waiters}, a list of atomic
 subgraphs that are evaluated in a round-robin fashion whenever the
