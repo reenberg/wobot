@@ -195,7 +195,7 @@ other nodes in the network. When a Flask program is ``run'', it
 generates a program in another more low-level sensor network
 language. Our framework, Fladuino, follows exactly the same concepts
 as Flask, although it generates C-code written specifically for our
-platform: Arduino, which we will discuss in \fref{sec:hardware platform}.
+platform: Arduino, which we will discuss in \fref[plain]{sec:hardware platform}.
 
 In the following chapters we shall argue that taking our outset from
 Flask has been successful. Both in the sense that Flask was easily
@@ -210,14 +210,14 @@ computer system.  Selecting the Arduino platform restrains our scope
 to the tasks it can handle. The Arduino is generic and handles a broad
 range of tasks, when connected with the right peripherals. This
 extendability makes us argue that concentrating on the Arduino isn't a
-particularly strict limitation. This has the obvious impact, that our
+particularly strict limitation. This has the obvious consequence, that our
 framework should be general enough to support almost any connectable
 external Arduino device. We do this by providing a way of writing
 drivers or small frameworks for arbitrary devices.  Furthermore, due
-to the blandness of Arduino's technology itself, it would most likely
+to the general nature of Arduino's technology itself, it would most likely
 not prove difficult to port our work to another architecture.
 
-In \fref{sec:pushbuttondef}, we show by example how this framework is
+In \fref[plain]{sec:pushbuttondef}, we show by example how this framework is
 used. \Fref{fig:fladuino-simple} shows a Fladuino program that toggles
 whether a diode is lit every time a button is pushed.
 
@@ -256,9 +256,9 @@ partition computer systems into:
 
 To respond accurately, such a system needs to recompute certain values
 at each change in the environment. \textit{Reactive programming
-  languages} facilitates this programming scheme. They escapes the
+  languages} facilitates this programming scheme. They frees the
 programmer from the tedious task of manually detecting changes on
-input variables, before he can make the appropriate
+input variables, in order to make the appropriate
 responses. Instead, the programmer specifies how his reactions
 (output-variables) are related to the values he observes
 (input-values) and the language itself discovers which output-values
@@ -302,7 +302,7 @@ Arduino BT\footnote{\url{http://www.arduino.cc/en/Guide/ArduinoBT}},
 Arduino
 Mega\footnote{\url{http://arduino.cc/en/Main/ArduinoBoardMega}}, and
 Pololu 3pi\footnote{\url{http://www.pololu.com/catalog/product/975}}.
-The Pololu 3pi is an Arduino-compatible robot which, as they states in
+The Pololu 3pi is an Arduino-compatible robot which, as is stated in
 the user manual, is ``designed to excel in line-following and
 line-maze-solving competitions''.
 
@@ -367,10 +367,11 @@ enough \textit{performance} to run on the highly resource--constrained
 devices that form our domain.
 
 \section{Reader expectations}
-We expect that readers of this report can read Haskell, and functional
-programming experience, as e.g. acquired from the book ``Real World
-Haskell'' (\cite{realworldhaskell}).  Additionally, we expect the
-reader to have casual familiarity with the concepts of Quasiquotation
+We expect that readers of this report to be able to read and
+understand Haskell, and has functional programming experience, as
+e.g. acquired from the book ``Real World Haskell''
+(\cite{realworldhaskell}).  Additionally, we expect the reader to have
+casual familiarity with the concepts of Quasiquotation
 \cite{quasiquote07}, phantom types, and to know the difference between
 meta-languages versus object-languages.
 
@@ -557,25 +558,25 @@ inserted by the \texttt{flo}-antiquoter (float) at generation-time.
 \newpage
 \section{Streams, node-level values and dataflow-operators}
 Expressing dataflow graphs in Haskell is often done using the Arrows
-library. But this isn't a strategy that fits Flask, as the
+library. But this isn't a strategy applicable to Flask, as the
 \textit{Arrow} type class requires that arbitrary Haskell functions
-can be lifted to a signal function. This isn't possible with Flask,
-because Flask signal-functions are to be executed on the sensor nodes
-and therefore aren't Haskell functions per se, but instead a
-representation of the node-level code that should be generated. Flask
-still defines some of the same operators as in the Arrows library,
-though with different type signatures. Writing dataflow graphs in
-Flask therefore still feels quite the same as when using the Arrows
-library, but you won't get the Arrow syntax (introduced in
-\cite{PatersonRA:notation}).
+can be lifted to a signal function. This lifting is impossible with
+Flask, because the signal-functions of Flask are to be executed on the
+sensor nodes and therefore aren't Haskell functions per se, but
+instead a representation of the node-level code that should be
+generated. Flask still defines some of the same operators as in the
+Arrows library, though with different type signatures. Writing
+dataflow graphs in Flask therefore still feels quite the same as when
+using the Arrows library, but is not able to use the Arrow syntax
+(introduced in \cite{PatersonRA:notation}).
 
 In Flask a stream of type $a$ has the type \texttt{S $a$}. The
 arguably simplest way to generate such a stream is the Flask-function
 \texttt{clock :: Int -> S ()}, which given a time interval in
 milliseconds returns a stream of unit signals, that is sent with the
 given frequency. E.g. \texttt{clock 1000} is signalling every
-second. This isn't useful by itself, but it is useful for activating
-some other task, like reading a sensor at some frequency.  Node-level
+second. This isn't beneficial in itself, but it is useful for activating
+other tasks, like reading a sensor at some frequency.  Node-level
 code of type $a$ has the type \texttt{N $a$} in Haskell.  For example,
 a node-level expression evaluating to an integer is referred to as
 \texttt{N Integer}, and a stream of such integers would have the type
@@ -776,8 +777,8 @@ A summary of the most important requirements for our system follows:
   boards in terms of I/O-pin availability and custom capabilities,
   without having to modify Fladuino itself.  Implementing support for
   platforms that differ significantly from our built-ins (for example,
-  using a different microcontroller) will not be possible without
-  modifying the Fladuino libraries themselves, however.
+  using a different microcontroller) however, will not be possible without
+  modifying the Fladuino libraries.
 \item Fladuino must statically analyse and validate the program for
   certain classes of type and logic errors.
 \item Fladuino must be able to generate a valid C-program suitable for
@@ -800,10 +801,9 @@ And we set the scope of our project as follows:
   Fladuino so as to reduce the likelihood of these errors.
 \item As we see this research project rather that an engineering
   project, we wont devote time to writing documentation for Fladuino.
+\item A notable last narrowing of our scope is that we won't provide
+  primitives for programming real time systems.
 \end{itemize}
-
-A notable narrowing is that we won't provide primitives for
-programming real time systems.
 
 \section{Design foundations}
 
@@ -813,7 +813,7 @@ terms, and the constraints under which the design was formed.
 \subsection{Terminology and basic \textit{modus operandi}}
 
 As in Flask, Fladuino is implemented as a set of Haskell modules that
-provides facilities for expressing the structure and behaviour of a
+provide facilities for expressing the structure and behaviour of a
 \textit{dataflow graph}, connecting \textit{dataflow operators}
 through value-carrying directed graph edges (\textit{wires}).  The
 programmer writes a Haskell program, called the \textit{generator
@@ -924,7 +924,7 @@ parts can be divided into the following:
 
   Finally, since Arduino is a fundamentally extensible platform, we provide
   facilities for implementing drivers (see \fref{sec:user-extens-abstr}) for
-  entirely new devices, such that use of these is also automatically
+  entirely new devices, in a way that use of these is also automatically
   sanity-checked.
 \end{itemize}
 
@@ -949,7 +949,7 @@ implementation details).  The notion of an atomic subgraph serves the
 purpose of dividing the dataflow graph into parts that can be
 evaluated atomically without blocking.  Translating a dataflow graph
 into object code is referred to as \textit{stream generation}.
-Translating an atomic subgraph is relatively straightforward, and the
+Translating an atomic subgraph is relatively straightforward, and is the
 subject of \Fref{sec:dataflowtranslation}, while it is far more
 interesting to contemplate the question of what to do with the
 asynchronous events that are the heart of reactive programming.
@@ -992,28 +992,28 @@ approach is unacceptable for several reasons:
   subgraphs, namely atomicity of computation.
 \end{itemize}
 
-As a result, our basic program evaluation is as follows.  We shall
-maintain an ordered \textit{event queue}, each element containing
-information about an atomic subgraph (actually, an entry node to the
-subgraph) that should be called, as well as the input value that
-caused the input wire to fire.  The generated program consists of a
-loop that continuously checks for the presence of an element in the
-queue, and if so, removes it and computes the subgraph indicated by
-it.  Hardware interrupts are handled by checking all events that may
-be signalled by the given interrupt (the details of this check are
-defined individually by each type of event), and if the check is
-positive, an element is added to the event queue requesting the
-evaluation of all listeners of that event.  It is important that the
-event-check, as well as the computation of the value of the event, is
-done in the interrupt handler itself, as the value may depend on the
-hardware state (such as the voltage on an input pin) as of that
-moment and it cannot be guaranteed that this state has not
-changed by the time the main loop retrieves the element from the event
-queue.  This means that we cannot provide any strict guarantees about
-the resource usage of interrupt handlers, but this is a hardware issue
-that is not solvable in software.  Optimisations can be performed, of
-course, but ultimately there are constraints on how much any computer
-can do.
+As a result of the previously mentioned considerations, our basic
+program evaluation is as follows.  We shall maintain an ordered
+\textit{event queue}, each element containing information about an
+atomic subgraph (actually, an entry node to the subgraph) that should
+be called, as well as the input value that caused the input wire to
+fire.  The generated program consists of a loop that continuously
+checks for the presence of an element in the queue, and if so, removes
+it and computes the subgraph indicated by it.  Hardware interrupts are
+handled by checking all events that may be signalled by the given
+interrupt (the details of this check are defined individually by each
+type of event), and if the check is positive, an element is added to
+the event queue requesting the evaluation of all listeners of that
+event.  It is important that the event-check, as well as the
+computation of the value of the event, is done in the interrupt
+handler itself, as the value may depend on the hardware state (such as
+the voltage on an input pin) as of that moment and it cannot be
+guaranteed that this state has not changed by the time the main loop
+retrieves the element from the event queue.  This means that we cannot
+provide any strict guarantees about the resource usage of interrupt
+handlers, but this is a hardware issue that is not solvable in
+software.  Optimisations can be performed, of course, but ultimately
+there are constraints on how much any computer can do.
 
 \begin{figure}
 \begin{verbatim}
@@ -1149,10 +1149,10 @@ sent to the output node (barring hardware failure or --- unlikely ---
 integer counter overflow).  The chief disadvantage is that there is no
 way to stop the execution of the queue, should it outlast the
 necessity for sensor requests.  A brief flurry of input values might
-translate into requests being sent to the sensor long after desirable.
-Recall that a sensor request may not necessarily translate to a
-harmless, passive reading, but can be everything between reading a
-simple light sensor to transmitting a sonar pulse and detecting the
+translate into requests being sent to the sensor long after it is
+desirable.  Recall that a sensor request may not necessarily translate
+to a harmless, passive reading, but can be everything between reading
+a simple light sensor to transmitting a sonar pulse and detecting the
 environmental echo.  The Ignore strategy only causes consecutive
 requests to be sent to the sensor if the input node keeps receiving
 input.  Thus, a posting wire can be considered an abstraction that is
@@ -1162,8 +1162,8 @@ continuous stream of sensor readings as long as it is activated.
 \subsubsection{Simulating Accumulate-Repeat and Queue with Ignore}
 
 Should the behaviour exhibited by the Accumulate-Repeat and
-Queue-strategies truly be necessary for some application, we will
-show that it is possible to mostly simulate their behaviour via the
+Queue-strategies be required for some application, we will
+show that it is possible to approximate their behaviour via the
 Ignore strategy.  We shall not delve into the gory technical details
 (such as the error handling necessary to avoid fragility), but
 merely show the structure of the solution.
@@ -1235,7 +1235,7 @@ Furthermore, Arduino is a broad term encompassing a range of
 more-or-less compatible platforms, though each of them differ slightly
 in their exact capacity.  Apart from variations in such things as
 memory size, they differ in amount and capability of their I/O pins.
-This latter diversity is what we are most concerned with in Fladuino,
+This latter diversity is what we are most concerned about in Fladuino,
 as we would like to statically check (at generation-time) the hardware
 assumptions expressed in the program.  Thus, we also provide a
 facility for describing the exact capabilities of a specific
@@ -1269,7 +1269,7 @@ unless we are compiling for an Arduino BT.
 A platform is defined by a list of \textit{logical pins} (described in
 full in \Fref{sec:pins}), and free-form \textit{capabilities}, the
 latter being a set of strings describing the identity or unusual
-qualities of the platform.  For example, the platform definition for
+qualities of the platform.  For instance, the platform definition for
 the Pololu 3pi robot contains a ``3pi''-capability that exists merely
 to express the fact that the platform supports the quirks of the 3pi
 robot that cannot be expressed through a list of pins.  Any device
@@ -1363,7 +1363,7 @@ represents.
 
 The notion of a usage deserves further elaboration: apart from being a
 facility for statically finding resource usage conflicts between
-devices, they are also a way to configure the starting state of the
+devices, they serve as a way to configure the starting state of the
 Arduino board.  We define three different kinds of usages, two of which
 reserve exclusive access to the hardware resource that they refer to:
 
@@ -1423,7 +1423,7 @@ All events have a static type and value, which is used to distinguish
 between them at generation-time, and an event may carry a data
 \textit{payload} at runtime.  A critical piece of static information,
 that can be found in most (if not all) events, is the device that the
-event is associated with.  In our exposes programming interface, all
+event is associated with.  In our exposed programming interface, all
 events stem from external sources of input, and a given event is such
 intrinsically linked to some specific device, though it is possible to
 define events that are not connected to Arduino's notion of a logical
@@ -1445,8 +1445,8 @@ rather, some events have payloads of the information-less type
 \textit{unit}): an event indicating the press of a pushbutton has no
 payload, and contains no information apart from the static event value
 itself (which indicates the exact button that was pressed), while an
-event indicating that a piece of sensor hardware has finished taking a
-reading may contain the reading data as the payload.
+event indicating that a piece of sensor hardware has finished
+performing a reading may contain the reading data as payload.
 
 As an example, assume that $p_1$ is a pushbutton device connected to
 digital pin 1, $d_2$ a diode connected to digital pin 2, and $\sigma(e,d)$ a
@@ -1547,15 +1547,15 @@ simple problem: translate a high-level functional reactive program to
 a form suitable for execution on the Arduino platform.  We have chosen
 to stop a step short, and merely generate C code meant for further
 compilation through an Arduino-specific compiler.  We have no need of
-the additional power we would gain through generating our own machine
+the additional power we would gain by generating our own machine
 code, and the additional amount of work required would be significant.
 Flask chooses the same approach, in that it produces NesC-code for
-running on sensor motes, likely for the same reasons.
+running on sensor motes, presumably for the same reasons.
 
 The task of adapting Flask for our purposes was greatly aided by the
 fact that the low-level code generation machinery, the part of the
 system responsible for translating Red to NesC, was already
-parametrised to support generation of C via a C-quasiquotation library
+parameterised to support generation of C via a C-quasiquotation library
 that Geoffrey Mainland graciously made available to us.  Indeed, we
 barely modified any part of Flask below the layer that manages the
 dataflow graph representation.  We had to disable some features that
@@ -1567,7 +1567,7 @@ and idle waiters.
 
 The implementation separates the construction of the dataflow graph
 from the generation of code, which has the resulting property that we
-can parametrise the generation by the target platform.  This also
+can parameterise the generation by the target platform.  This also
 implies that we postpone sanity-checking the graph (such as the
 checking of devices as described in \Fref{sec:devices}) until the last
 step, as we need the target platform information in order to perform
@@ -1616,8 +1616,8 @@ function\footnote{In fact, multiple ``in'' functions are only
   the tuple $(x,y)$ --- in this case, the two functions will need
   different types and semantics, as there it is not required that $x$
   and $y$ have the same type.}.  Depending on the specific semantics
-of $o$, a value $v'\equiv f(v)$ (where $f()$ represents the
-computation done by $o$) may be propagated to the successors of $o$.
+of $o$, a value $v'\equiv f(v)$ --- where $f()$ represents the
+computation done by $o$ --- may be propagated to the successors of $o$.
 In this case, $o\_in_n(v)$ will call $o\_out(v')$, the implementation
 of which will feature the calls $\forall s \in S(o). s\_in(v')$, where
 $S(o)$ is the set of all successors of $o$.
@@ -1646,7 +1646,7 @@ provided: a node-level function $f$ of type \texttt{() -> ()} and the
 \textit{response event}, the event that the sensor will trigger to
 reply to the request.  The function $f$ is, as evident from its type
 signature, highly impure, and is responsible for actually transmitting
-the request to the sensor.  The intent is that a Device whose
+the request to the sensor.  The intent is that a \textit{device} whose
 interface involves posting wires will define its own, simpler-to-use
 facility on top of our primitive posting wire functionality.
 
@@ -1687,7 +1687,7 @@ conversion to finish, which is signalled by the clearing of a special
 register.  We can find a similar operation in the library that reads
 the Pololu 3pi's reflectance sensors.
 
-Operations of this kind are acceptable however.  Barring hardware
+Operations of this kind are acceptable however, since, barring hardware
 failure, we are \textit{guaranteed} that the above loop will terminate
 in a deterministic (and short) period of time.  In general, any
 operation that can be guaranteed to terminate, no matter how long it
@@ -1743,7 +1743,7 @@ The design of our event queue thus has the following constraints:
 \end{itemize}
 
 The third constraint also prevents us from being too clever for our
-own good, and for example storing the event-queue in the EEPROM
+own good, and for instance store the event-queue in the EEPROM
 available on all Arduino variants in order to avoid using the same
 memory as the program stack.  While an interesting idea, EEPROM writes
 require unacceptable multi-millisecond delays.
@@ -1755,24 +1755,24 @@ insert an element into a full event queue, the result will be a silent
 failure.  This is a tradeoff: as mentioned in a previous section, we
 have to accept that it is possible for the Arduino to be swamped with
 more work per time unit (or asked to store more data) than it is
-physically able to do.  All we can do is to design Fladuino such that
-the fatal error conditions are rare, and the most common error
-conditions are survivable.  Stack (or heap) corruption will in most
-cases result in the complete malfunction of the program, and are thus
-the least desirable error case.  In Fladuino, use of the heap is
-limited (and in fact bounded by the static maximum size of the event
-queue), and stack/heap corruption will in practice only occur if the
-program is large enough to consume all available memory with its
-stack.  The most common error case, on the other hand, will be
-attempting to add an element to a full event queue, resulting in a
-silent failure.  There are many cases where this is not desirable, of
-course, but many reactive programs will not experience catastrophic
-failure if they lose even important events, such as button presses.
-Still, we recognise that not all event loss can be brushed aside as
-merely an unimportant UI deficiency, and therefore we provide a
-facility, termed \textit{idle waiters} (see \Fref{sec:idle waiters}),
-meant to reduce the average load on the event queue and reduce the
-risk of filling it up.
+physically capable of.  All we can do is to design Fladuino in such a
+way that the fatal error conditions are rare, and the most common
+error conditions are survivable.  Stack (or heap) corruption will in
+most cases result in the complete malfunction of the program, and are
+thus the least desirable error scenario.  In Fladuino, use of the heap
+is limited (and in fact bounded by the static maximum size of the
+event queue), and stack/heap corruption will in practice only occur if
+the program is large enough to consume all available memory with its
+stack.  The most common error case, on the other hand, will be the
+attempt to add an element to a full event queue, resulting in a silent
+failure.  There are many cases where this is not desirable, of course,
+but many reactive programs will not experience catastrophic failure if
+they lose even important events, such as button presses.  Still, we
+recognise that not all event loss can be brushed aside as merely an
+unimportant UI deficiency, and therefore we provide a facility, termed
+\textit{idle waiters} (see \Fref{sec:idle waiters}), meant to reduce
+the average load on the event queue and to reduce the risk of filling
+it up.
 
 \subsubsection{Queueing events}
 
@@ -2582,26 +2582,31 @@ suggested solutions) will be discussed further in
 \subsection{Pololu 3pi bindings}
 \label{sec:3pi bindings}
 In this section we will explain our framework for programming the
-Pololu 3pi through Fladuino. We have added definitions to read
-sensors, battery level and controlling the electromotors.
+Pololu 3pi through Fladuino, and use this as an example to evaluate on
+the abstractions we provide for writing such bindings. We have added
+functionality for controlling the electromotors, to read the sensors
+and battery level. Later we will use these bindings for implementing a
+line following program.
 
 The Pololu 3pi comes with a C++ framework, with
 C-wrappers\footnote{Found in the ``6.a Downloading and Installing the
-  C/C++ Library'' section of the Pololu website: \url{http://www.pololu.com/docs/0J21/6.a}}. Thus, as with the
-Arduino, most of the low-level work of reading and calibrating sensors
-or controlling motors is already done. We only need high-level
-wrappers for these functions.  For the simplest example, reading the
+  C/C++ Library'' section of the Pololu website:
+  \url{http://www.pololu.com/docs/0J21/6.a}}. Thus, as with the
+Arduino, most of the low-level work is already done, Specifically we
+can earn their profit when reading and calibrating the sensors, and
+controlling the electromotors. We only need high-level wrappers for
+these functions.  To take the simplest example first, reading the
 battery level is done just as reading the potentiometer value in
 \fref{sec:potentiometer device}, instead of calling the
 \verb|analogRead|-function we just call the Pololu 3pi function
-\verb|read_battery_millivolts|. 
+\verb|read_battery_millivolts|.
 
 \subsubsection{Reflectance sensors}
 The five reflectance sensors on the 3pi are infrared sensors, that
 allows the robot to read the ``darkness'' of the floor, by emitting
-infrared light downwards and measuring how much was reflected. They
-are primarily used for line following programs, where the goal is for
-the robot to follow a black line on white background.
+infrared light downwards and measuring the amount of light
+reflected. They are primarily used for line following programs, where
+the goal of the robot is to follow a black line on a white floor.
 
 The C-interface to the 3pi provides several functions for reading the
 values of the sensors. We only provide access to one of these
@@ -2611,16 +2616,17 @@ us. The C-function \verb|read_line| gives us a value between $0$ and
 $4000$ indicating the position on the line followed. This is described
 in detail in the Pololu 3pi User's Guide\cite{3pi_users_guide}.
 
-For the \verb|read_line| function to work, the robot needs some
-calibration for detecting the line. The user guide provides the steps
-needed for this calibration and the C-implementation of this is shown in
-\Fref{fig:sensor calibration}. We have added statements that wait for
-the user to click on the Pololu's B-button, before and after
-calibration.  This is done in the C-code and not as Fladuino dataflow
-graph, as we have no way of entering setup-code as a dataflow
-graph. We will discuss this further in our evaluation of
-Fladuino (see \Fref{chap:evaluation}). This waiting is done so the user has a chance of placing the
-robot correctly on the black line before calibration.
+The \verb|read_line| wont detect the line without some
+calibration. The 3pi user guide provides the steps needed for this
+calibration and the C-implementation of is shown in \Fref{fig:sensor
+  calibration}. The robot needs to be placed on the line before
+running this calibration code, thus we have added statements that wait
+for the user to click on the Pololus B-button, both before and
+after. As shown in the figure, this is done in C-code, even though we
+have our Fladuino event-system for buttons. We are not proud of this
+solution, but Flask and Fladuino doesn't supports adding a dataflow
+graph to the initialisation phase of the program, and we first
+discovered this late, when time the time to implement this was short.
 
 \begin{figure}
   \centering
@@ -2640,14 +2646,15 @@ void calibrate_3pi_sensors () {
   set_motors(0,0);
   while(!button_is_pressed(BUTTON_B));
 }
-\end{verbatim}  
+\end{verbatim}
   \caption{Sensor calibration}
   \label{fig:sensor calibration}
 \end{figure}
 
 The rest of the declaration of the \verb|ReflectanceSensors| device is
-quite like the potentiometer example (see \Fref[plain]{sec:potentiometer
-  device}), and we wont discuss it further.
+quite like the potentiometer example (see
+\Fref[plain]{sec:potentiometer device}), and we wont discuss it
+further.
 
 \subsubsection{Motors}
 Pololu 3pi motors are controlled by the C-function
@@ -2664,7 +2671,8 @@ input stream is two values, a translational velocity and a rotational
 velocity. Both values are \textit{Doubles} between $-1.0$ and
 $1.0$. This is simply implemented as a Fladuino function utilising the
 \verb|set_motors_native| function. The implementation is shown in
-\Fref{fig:set_motors implementation}.
+\Fref{fig:set_motors implementation}. But implementing such a wrapper,
+would arguably be simpler in C, as shown in \Fref{fig:set_motors C implementation}.
 
 \begin{figure}
   \centering
@@ -2681,13 +2689,26 @@ compute (v, omega) = let motorLvel = v * (if omega <= 0.0 then 1.0 else 1.0 - om
                      in (round (motorLvel * 255.0), round (motorRvel * 255.0))
                        |]
 \end{verbatim}  
-  \caption{Implementation af \texttt{set\_motors}}
+  \caption{\texttt{set\_motors} wrapper in Fladuino}
   \label{fig:set_motors implementation}
 \end{figure}
 
+\begin{figure}
+  \centering
+\begin{verbatim}
+void set_motors_rot_trans (float s1, float s2) {
+    float motorLvel = v * (omega <= 0.0 ? 1.0 : 1.0 - omega)
+    float motorRvel = v * (omega >= 0.0 ? 1.0 : 1.0 + omega)
+
+    set_motors(round (motorLvel * 255.0), round (motorRvel * 255.0))
+}
+\end{verbatim}
+  \caption{\texttt{set\_motors} wrapper in C}
+  \label{fig:set_motors C implementation}
+\end{figure}
+
 \subsection{Pololu 3pi: Line following robot}
-In this section we will evaluate Fladuino based on another example: a
-line following program for the Pololu 3pi.
+\fixme{section intro}
 
 The Fladuino implementation is shown in the following figure
 (\ref{fig:linefollow}). It relies on our bindings for the 3pi robot
@@ -2711,8 +2732,6 @@ linefollow = idle
   \label{fig:linefollow}
 \end{nonfloatingfigure}
 
-
-
 The program expresses a simple line-following strategy. Whenever the
 CPU is ready (\texttt{idle}), read the value of the reflectance
 sensors (\texttt{valueOf ReflectanceSensors}), use these values to
@@ -2730,23 +2749,18 @@ the line, we should expect a value of $2000$.  To steer the motor, we
 scale this value to a floating point value between $-1.0$ and $1.0$,
 which is given as the rotational speed to \verb|set_motors|.
 
-As we explained in \Fref{sec:3pi bindings}, calibration code for the
-sensors is automatically inserted into the initialisation of the
-generated Arduino-code when the \verb|ReflectanceSensors|-device is
-used. Also mentioned there, is the fact that we had to do write the
-calibration code in C.  Thus implementing this example revealed an
-improvement point for our system, as we could provide a way for
-entering one or more atomic subgraphs that should be evaluated at
-start-up. 
+The calibration code for the sensors is automatically inserted into
+the initialisation of the generated Arduino-code when the
+\verb|ReflectanceSensors|-device is used. 
 
 The line-following algorithm was inspired by an algorithm in the
 Pololu 3pi user manual. A simplified version (with some debug
-functionality stripped) is shown in \Fref{fig:linefollow-in-c}. The
-used calibration function, described in \Fref{sec:3pi bindings} is
-replicated here. The function \verb|set_motors_rot_trans| is a
-conceptual function of ours, that takes rotational and translational
-velocities like our \verb|set_motors|-function. We have introduced it
-to make the comparison easier.
+functionality stripped) is shown in \Fref{fig:linefollow-in-c}. It
+uses the calibration function from \Fref{fig:sensor calibration} and the
+function \verb|set_motors_rot_trans| from \Fref{fig:set_motors C implementation} is a conceptual function of ours,
+that takes rotational and translational velocities like our
+\verb|set_motors|-function. We have introduced it to make the
+comparison easier.
 
 The C version of the program will probably be considered simpler than
 our program, by many. Especially if you take into account that we have
@@ -2762,22 +2776,6 @@ programmer.
 \begin{figure}
   \centering
 \begin{verbatim}
-void calibrate_3pi_sensors () {
-  int counter;
-  while(!button_is_pressed(BUTTON_B));
-  for(counter=0; counter<80; counter++) {
-      if(counter < 20 || counter >= 60)
-        set_motors(40,-40);
-      else
-        set_motors(-40,40);
-
-      calibrate_line_sensors(IR_EMITTERS_ON);
-      delay_ms(20);
-  }
-  set_motors(0,0);
-  while(!button_is_pressed(BUTTON_B));
-}
-
 float speed = 0.5;
 
 int main() {
