@@ -1880,13 +1880,16 @@ new event types. This section explains how our design analysis lead to
 the current implementation.
 
 \subsection{Defining new devices}
+\label{sec:defining-new-devices}
+
 In \fref{sec:devices} we define a device-driver as:
 \begin{itemize}
 \item a list of hardware-dependencies, e.g. which hardware pins or
   timers it confiscates,
 \item a setup-function for doing initialising tasks on start-up
   (e.g. including C-header files), and
-\item a set of functions for interacting with the device.
+\item a set of functions for interacting with the device (see
+  \Fref{sec:analoginputdevice}).
 \end{itemize}
 
 As explained, most device-drivers are parameterised by some additional
@@ -2070,17 +2073,7 @@ event if the predicate is true, with the result of running the
 value-function.
 
 
-\chapter{Building on the abstractions}
-\label{chap:example code}
-
-In this chapter we use the abstractions, defined in the previous
-chapter, to implement interfaces for a pushbutton, a potentiometer and
-bindings for some of the hardware-devices on the before mentioned
-Pololu 3pi robot, which we also introduce as a \textit{Platform}
-(\fref[plain]{sec:platforms}). This shows how the \textit{Device} and
-\textit{Event} abstractions are used, and can be seen as a form of
-documentation of our work. For brevity, module imports has been
-omitted in all the examples.
+\chapter{building on the abstractions}
 
 \section{Defining a pushbutton}
 \label{sec:pushbuttondef}
@@ -2168,42 +2161,6 @@ This program will toggle the state of a diode connected to digital pin
 13 (a default device on almost all Arduino boards) whenever the
 pushbutton attached to digital pin 3 is pressed.
 
-\section{Defining a potentiometer}
-\label{sec:potentiometer device}
-
-A potentiometer interface can be defined in Fladuino quite easily as it doesn't
-make any sense to define any events upon this as its value needs to be pulled
-once in a while to know if it has changed and/or to act upon that.
-
-The \texttt{Device} instance declaration of \texttt{Potentiometer} defines that
-it uses an Analog pin but with no functionality requirements.
-
-\begin{verbatim}
-data Potentiometer = Potentiometer Integer
-                     deriving (Eq, Show)
-
-instance Device Potentiometer where
-    usages (Potentiometer pin) = [APinUsage pin []]
-
-instance AnalogInputDevice Potentiometer where
-    genReadCode (Potentiometer pin) resultvar = 
-        [[$cstm|$id:resultvar = analogRead($int:pin);|]]
-\end{verbatim}
-
-This allows programs such as
-
-\begin{verbatim}
-idle >>> (valueOf $ Potentiometer 0) 
-     >>> smap [$exp|(/4)|] 
-     >>> (setValue $ AnalogOutputPin 10 0)
-\end{verbatim}
-
-The reason why the pulled value is divided by 4 is that the ATmega
-chip by default returns values in the range 0 to 1023 when doing
-analog reads but can only write values in the range 0 to 255 unless
-explicitley changed. The scale 0 to 1023 when reading analog values is
-proportional to the relationship between GND and AREF, which is
-nomally 0v and 5v respectively, though AREF can be explicitly changed.
 
 \section{Defining new platforms}
 
@@ -2236,6 +2193,9 @@ it can be defined by just extending it
 arduinoDiecimila = arduinoDuemilanove { p_capabilities = ["Diecimila"] }
 \end{verbatim}
 
+\subsection{The Pololu 3pi platform}
+\label{sec:pololu-3pi-platform}
+
 The \texttt{pololu3pi} platform uses the same Atmega processor as the Arduino
 platform and is thus pin compatible with the \texttt{arduinoDuemilanove}
 platform and others. This means that it has the same possibilities of e.g.
@@ -2254,8 +2214,6 @@ pololu3pi = arduinoDuemilanove
    , p_base_setup = addCInclude "3pi/3pi.h"
    }
 \end{verbatim}
-
-
 
 \chapter{Evaluation}
 \label{chap:evaluation}
@@ -2579,6 +2537,94 @@ sensor networks.  In fact, the problem is deeper yet: Fladuino does
 not support fully dynamic state at all!  This deficiency (and
 suggested solutions) will be discussed further in
 \Fref{chap:futurework}.
+
+
+\section{Building on the abstractions}
+\label{chap:example code}
+
+Here we will evaluate on the abstractions, defined in \fref{sec:user-extens-abstr},
+to implement interfaces for a pushbutton, a potentiometer and bindings for some
+of the hardware-devices on the before mentioned Pololu 3pi robot, which we also
+introduce as a \textit{Platform} (\fref[plain]{sec:platforms}). This shows how
+the \textit{Device} and \textit{Event} abstractions are used, and can be seen as
+a form of documentation of our work. For brevity, module imports has been
+omitted in all the examples.
+
+\subsection{Defining AnalogInputDevice abstraction}
+\label{sec:analoginputdevice}
+
+The \texttt{AnalogInputDevice} is a good example of a device abstraction that
+makes it easier to write common functions for interacting with analog input
+devices as mentioned in \Fref{sec:defining-new-devices}. An
+\texttt{AnalogInputDevice} must supply a \texttt{genRedCode} function that takes
+the device-value itself as parameter, as the device type class also do, and then
+a string defining the variable name that the analog value is saved in. An
+example of how this is done for the potentiometer device is given in
+\fref{sec:potentiometer device}.
+
+The \texttt{AnalogInputDevice} class is shown in \Fref{fig:analoginputdevice}.
+
+\begin{figure}
+  \centering
+
+  \begin{verbatim}
+class (Device a) => AnalogInputDevice a where
+    genReadCode :: a -> String -> [Stm]
+  \end{verbatim}
+
+  \caption{Type class definition for AnalogInputDevices.}
+  \label{fig:analoginputdevice}
+\end{figure}
+
+\subsubsection{valueOf operator}
+
+Having the \texttt{AnalogInputDevice} abstraction makes it easy to define
+uniform operators for all devices that has some analog output properties to be
+read. From this the \texttt{valueOf} operator is the most obvious as it reads a
+value from the given analog device. 
+
+The \texttt{valueOf} function is shown in \Fref{sec:valueOf}.
+
+
+\subsubsection{Defining a potentiometer}
+\label{sec:potentiometer device}
+
+A potentiometer interface can be defined in Fladuino quite easily as it doesn't
+make any sense to define any events upon this as its value needs to be pulled
+once in a while to know if it has changed and/or to act upon that.
+
+The \texttt{Device} instance declaration of \texttt{Potentiometer} defines that
+it uses an analog pin but with no functionality requirements.
+
+\begin{verbatim}
+data Potentiometer = Potentiometer Integer
+                     deriving (Eq, Show)
+
+instance Device Potentiometer where
+    usages (Potentiometer pin) = [APinUsage pin []]
+
+instance AnalogInputDevice Potentiometer where
+    genReadCode (Potentiometer pin) resultvar = 
+        [[$cstm|$id:resultvar = analogRead($int:pin);|]]
+\end{verbatim}
+
+And the \texttt{AnalogInputDevice} instance declaration gives the posibility of
+writing the following example program using the \texttt{valueOf} operator which
+reads the analog value of the potentiometer.
+
+\begin{verbatim}
+idle >>> (valueOf $ Potentiometer 0) 
+     >>> smap [$exp|(/4)|] 
+     >>> (setValue $ AnalogOutputPin 10 0)
+\end{verbatim}
+
+The reason why the pulled value is divided by 4 is that the ATmega
+chip by default returns values in the range 0 to 1023 when doing
+analog reads but can only write values in the range 0 to 255 unless
+explicitley changed. The scale 0 to 1023 when reading analog values is
+proportional to the relationship between GND and AREF, which is
+nomally 0v and 5v respectively, though AREF can be explicitly changed.
+
 
 \subsection{Pololu 3pi bindings}
 \label{sec:3pi bindings}
@@ -3711,6 +3757,54 @@ str = 'BFFF001153455420434f4e54524f4c204d5558203000'.decode("hex")
 f = open('/dev/ttyUSB0', 'w')
 f.write(str)
 f.close()
+\end{verbatim}
+
+\section{valueOf function}
+\label{sec:valueOf}
+
+\begin{verbatim}
+valueOf :: forall a d. (Reify a, AnalogInputDevice d) => d -> S a -> S Integer
+valueOf d a = S $ do
+    sa   <- unS a
+    addStream "valueOf"
+              tau_b
+              (DeviceRead sa $ uniqueId d)
+              genHs
+              genC $ \this -> do
+    addDevice d
+    connect sa this tau (varIn this "")
+  where
+    tau :: H.Type
+    tau = reify (undefined :: a)
+    tau_b :: H.Type
+    tau_b = reify (undefined :: Integer)
+
+    genHs :: SCode m -> FladuinoM ()
+    genHs this =
+        addCImport c_v_in [$ty|$ty:tau -> ()|] [$cexp|$id:c_v_in|]
+        where
+          v_in    = varIn this ""
+          c_v_in = show v_in
+
+    genC :: SCode m -> FladuinoM ()
+    genC this = do
+        tauf <- toF tau
+        tauf_out <- toF tau_b
+        (params, ce_params) <- ToC.flattenParams tauf
+        ce_out <-  hcall v_out $ ToC.CLowered tauf_out [$cexp|v|]
+        let stms = genReadCode d "v"
+        addCFundef $ [$cedecl|
+void $id:c_v_in($params:params)
+{
+  unsigned int v;
+  $stms:stms;
+  $exp:ce_out;
+}
+|]
+        where
+          v_in   = varIn this ""
+          c_v_in = show v_in
+          v_out = s_vout this
 \end{verbatim}
 
 \end{document}
