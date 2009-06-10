@@ -2241,7 +2241,8 @@ Pololu 3pi through Fladuino. We have added definitions to read
 sensors, battery level and controlling the electromotors.
 
 The Pololu 3pi comes with a C++ framework, with
-C-wrappers\footnote{???found where???}\fixme{fix footnote}. Thus, as with the
+C-wrappers\footnote{Found in the ``6.a Downloading and Installing the
+  C/C++ Library'' section of the Pololu website: \url{http://www.pololu.com/docs/0J21/6.a}}. Thus, as with the
 Arduino, most of the low-level work of reading and calibrating sensors
 or controlling motors is already done. We only need high-level
 wrappers for these functions.  For the simplest example, reading the
@@ -2263,7 +2264,7 @@ functions, as we don't need precise measurements (we are only doing
 this for illustration purposes) and the simplest interface enough for
 us. The C-function \verb|read_line| gives us a value between $0$ and
 $4000$ indicating the position on the line followed. This is described
-in detail in the Pololu 3pi User's Guide\fixme{reference}.
+in detail in the Pololu 3pi User's Guide\cite{3pi_users_guide}.
 
 For the \verb|read_line| function to work, the robot needs some
 calibration for detecting the line. The user guide provides the steps
