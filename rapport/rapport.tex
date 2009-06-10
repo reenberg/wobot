@@ -1919,10 +1919,10 @@ class (Eq a, Show a) => Device a where
   \label{fig:device typeclass}
 \end{figure}
 
-Remark that all three values requires the device itself as a
+Remark that all three values requires the device-value itself as a
 parameter. The values are general for the class of devices, and thus
-needs the specific device as input (more than one device of the same
-device can be connected to the Arduino simultaneously).
+needs the specific device-value as input (more than one device of the
+same type can be connected to the Arduino simultaneously).
 
 \texttt{uniqueId} isn't discussed in the design-chapter. This is our
 way of comparing devices. It is impossible to make use of the
@@ -2939,9 +2939,40 @@ user needs to be aware not to add computational heavy functions here. But
 e.g. something that writes a new value to the Pololu 3pi robot's buzzer.
 $\ldots$
 
-\chapter{The past}
+\chapter{Related Work}
+In this section we will look at other frameworks for reactive
+programming and embedded programming from a functional framework.
+
+\section{The Haskell EDSL Atom}
+The Haskell EDSL \textit{Atom}\footnote{Available at
+  \url{http://hackage.haskell.org/cgi-bin/hackage-scripts/package/atom}}
+has been suggested for programming the
+Arduino-platform\footnote{\url{http://blog.sw17ch.com/wordpress/?p=84}
+  and \url{http://blog.sw17ch.com/wordpress/?p=111}}.  It targets
+programming of hard real-time embedded systems, an is conceptually far
+from the Fladuino system. The author shows the following example in
+the slides from his presentation of the system\footnote{From the CUFP
+  2008 Conference, Commercial Uses of Functional Programming. The
+  slides was found here: http://cufp.galois.com/2008/schedule.html}.
+
+\begin{verbatim}
+system "withdraw" $ do
+  when withdrawRequest
+  when $ value balance >=. amount
+  balance <== value balance - amount
+\end{verbatim}
+
+This example shows the very imperative nature of programs written in
+Atom, so this isn't where Atom makes its difference over the low-level
+C-code that it produces. Instead it provides hard real-time guarantees
+by only allowing constant memory use, as done in Flask and Fladuino.
+
+\section{Frob and Yampa}
+
 Discussion about related robot programming tools (Frob, Yampa, Atom,
 Lustre, etc.).
+
+
 
 \section{Partiel evaluation / specialisation} 
 \fixme{reference to arne glenstrup}
