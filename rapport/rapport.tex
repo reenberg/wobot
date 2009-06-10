@@ -1208,18 +1208,19 @@ real posting wires, as software interrupts are to hardware interrupts.
   \label{fig:queue-with-ignore}
 \end{figure}
 
-\section{Representing peripherals} Arduino is a flexible system for
-general embedded development, with no specific application in mind.
-The Arduino platform can therefore be connected to a diverse amount of
-peripheral devices, all with their own specific functionality and
-programming interface.  It is thus natural to support this diversity
-as a core concept of Fladuino; not (solely) as a library of drivers
-for various devices, but rather as a framework and set of tools
-provided to the programmer so that Fladuino can be extended to
-transparently support the devices he has need of.  For demonstration,
-we have written a minimal framework for programming the Pololu 3pi
-robot and \textit{some} of the peripherals connected to it
-(electromotors, reflectance sensors, etc.). This framework is
+\section{Representing peripherals} 
+
+Arduino is a flexible system for general embedded development, with no
+specific application in mind.  The Arduino platform can therefore be
+connected to a diverse amount of peripheral devices, all with their
+own specific functionality and programming interface.  It is thus
+natural to support this diversity as a core concept of Fladuino; not
+(solely) as a library of drivers for various devices, but rather as a
+framework and set of tools provided to the programmer so that Fladuino
+can be extended to transparently support the devices he has need of.
+For demonstration, we have written a minimal framework for programming
+the Pololu 3pi robot and \textit{some} of the peripherals connected to
+it (electromotors, reflectance sensors, etc.). This framework is
 discussed in \Fref[plain]{chap:example code} and evaluated in
 \Fref[plain]{chap:evaluation}
 
@@ -1228,9 +1229,9 @@ more-or-less compatible platforms, though each of them differ slightly
 in their exact capacity.  Apart from variations in such things as
 memory size, they differ in amount and capability of their I/O pins.
 This latter diversity is what we are most concerned with in Fladuino,
-as we would like to statically check (at generation-time) the
-hardware assumptions expressed in the program.  Thus, we also provide
-a facility for describing the exact capabilities of a specific
+as we would like to statically check (at generation-time) the hardware
+assumptions expressed in the program.  Thus, we also provide a
+facility for describing the exact capabilities of a specific
 Arduino-based platform, and provide default descriptions of common
 Arduino-compatible such as the Arduino Duemilanove, Arduino Mega,
 Arduino BT, and Pololu 3pi.
@@ -1244,17 +1245,30 @@ Arduino BT, and Pololu 3pi.
 
 \subsection{Platforms}
 \label{sec:platforms}
-A platform is defined by a list of \textit{logical pins}, and
-free-form \textit{capabilities}, the latter being a set of strings
-describing the identity or unusual qualities of the platform.  For
-example, the platform definition for the Pololu 3pi robot contains a
-``3pi''-capability that exists merely to express the fact that the
-platform supports the quirks of the 3pi robot that cannot be expressed
-through a list of pins.  Any device intended to make use of these
-quirks would explicitly require the presence of this capability.
-\fixme{dette afsnit er lidt for implementations agtigt. Bør være mere hvorfor
-  agtigt. Anyhow ellers skal der forklare mere her og slet ikke nede i
-  implementations afsnittet.}
+
+Arduino is a heterogeneous ecology.  Apart from the various models
+that differ in availability of I/O pins, processor speed and available
+program memory, there are also highly specialised variants such as the
+Arduino BT with a built-in bluetooth module, and the Pololu 3pi, a
+mostly Arduino-compatible robot designed for line-following.  The
+primary difference between these variants is their availability of
+I/O-pins, a difference that we must be reflected in Fladuino if we are
+to sanity-check device use.  Additionally, some platforms (such as the
+previously mentioned Arduino BT) have additional intrinsic qualities,
+like the built-in Bluetooth module, that must be expressed somehow,
+such that attempts to use said Bluetooth device will be erroneous
+unless we are compiling for an Arduino BT.
+
+A platform is defined by a list of \textit{logical pins} (described in
+full in \Fref{sec:pins}), and free-form \textit{capabilities}, the
+latter being a set of strings describing the identity or unusual
+qualities of the platform.  For example, the platform definition for
+the Pololu 3pi robot contains a ``3pi''-capability that exists merely
+to express the fact that the platform supports the quirks of the 3pi
+robot that cannot be expressed through a list of pins.  Any device
+intended to make use of these quirks would explicitly require the
+presence of this capability.
+
 \subsubsection{The Fladuino pin model}
 \label{sec:pins}
 There is no concrete distinction between analog and digital pins in
@@ -2344,6 +2358,16 @@ compute (v, omega) = let motorLvel = v * (if omega <= 0.0 then 1.0 else 1.0 - om
 \item How does the example-programs compare to similar programs
   written directly in C? More or less code? More or less debugging?
 \end{itemize}
+
+We set out to implement a language for the programming of control
+systems running on Arduino-compatible platforms.  An evaluation of our
+results thus consists of considering the \textit{practical}
+obstructions to this use.  Additionally, we will elaborate whether
+basing our work on Flask turned out to be a good idea.  Finally, an
+implicit subgoal was that Fladuino should be a \textit{better} way to
+program Arduino than plain C/C++, and we shall evaluate our completion
+of this goal by an experimental comparison of similar programs written
+in Fladuino and C respectively.
 
 \section{Known obstructions to practical use}
 
