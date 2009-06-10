@@ -1413,8 +1413,8 @@ problematic (apart for the need to distinguish same-type events by
 something else than an associated device), but for reasons of time,
 Fladuino does not expose a programming interface for triggering them.
 We believe that manually triggered events open some interesting new
-possibilities (not the least of which is Turing--completeness for
-dataflow programs), and we could not afford them the attention they
+possibilities (one being Turing--completeness for
+dataflow programs) but we could not afford them the attention they
 deserve without straying too far in scope from the topic of our
 project.
 
@@ -1428,14 +1428,14 @@ event indicating that a piece of sensor hardware has finished taking a
 reading may contain the reading data as the payload.
 
 As an example, assume that $p_1$ is a pushbutton device connected to
-digital pin 1, $d_2$ a diode connected to pin 2, and $\sigma(e,d)$ a
+digital pin 1, $d_2$ a diode connected to digital pin 2, and $\sigma(e,d)$ a
 dataflow graph node that fires whenever the given device $d$ triggers
 event $e$.  We can then construct a dataflow graph such as
 $\sigma(pushdown,p_1) \rightarrow toggle(d_2)$, connecting the input
 of pressing a button to the action of toggling the state of a diode.
 
 In the definition of an event, a list of Arduino pins (see \Fref{sec:pins})
-indicates which pin-change interrupts might trigger the event.
+indicates which logical-change interrupts might trigger the event.
 Additionally, two object-language functions are defined: a
 \textit{predicate}, for checking whether a given pin-change interrupt
 should actually cause the event to trigger, and a
@@ -1471,6 +1471,7 @@ have not been able to identify a practical need), as long as the
 payloads are of the same type.
 
 \section{The runtime system}
+\label{sec:runtime-system}
 
 Fladuino is not only a code-generator, it also contains a runtime
 system that implements much of the complex behaviour that the
@@ -1493,10 +1494,10 @@ is provided by the Arduino libraries themselves:
   microcontrollers own hardware interrupts.  The Arduino libraries own
   interrupt support is too restricted for our purposes, as it only
   supports a restricted number of I/O pins.  The microcontroller
-  itself supports \textit{pin change interrupts} on a much larger
+  itself supports \textit{logical change interrupts} on a much larger
   selection of I/O-pins, but the programming interface is much more
   complicated.  Hence, our runtime system defines a convenient wrapper
-  library.
+  library (see \Fref{sec:external-interrupts}).
 \end{itemize}
 
 We do not support dynamic reconfiguration of timer fidelity -- at
@@ -1648,8 +1649,8 @@ Blocking operations are disallowed in stream operators, as such
 operations clog the entire execution of the program, since there is no
 way to continue down another path in the meantime.  Additionally,
 there is no guarantee that an arbitrary blocking operation will ever
-terminate.  This was the basis for adding posting wires (section
-\ref{sec:posting wires}). However, there is a potential issue when it
+terminate.  This was the basis for adding posting wires (see
+\Fref{sec:posting wires}). However, there is a potential issue when it
 comes to pulling analog data from hardware sensors, as these functions
 requires some busy-waiting for the analog $\rightarrow$
 digital-conversion to finish.  In the \texttt{analogRead} function of
@@ -1698,7 +1699,7 @@ great size, especially if the program has an input source that
 constantly triggers new events every few milliseconds.  Since the
 stack and heap share the same memory space, we would run the risk of a
 collision, causing data corruption possibly severe enough to
-completely crash the program (e.g. if the procedure return address on
+completely crash the program (e.g., if the procedure return address on
 the topmost stack frame was modified).  While we could modify the
 event queue to perform a check for imminent collision whenever an
 element was about to be added (and if so, ignore the event), we cannot
@@ -1748,7 +1749,7 @@ course, but many reactive programs will not experience catastrophic
 failure if they lose even important events, such as button presses.
 Still, we recognise that not all event loss can be brushed aside as
 merely an unimportant UI deficiency, and therefore we provide a
-facility, termed \textit{idle waiters} (\Fref{sec:idle waiters}),
+facility, termed \textit{idle waiters} (see \Fref{sec:idle waiters}),
 meant to reduce the average load on the event queue and reduce the
 risk of filling it up.
 
@@ -1798,7 +1799,7 @@ not implemented in Fladuino, however.
 
 \subsection{Implementation of the clock operator}
 To handle different \texttt{clock} operators in a Fladuino program, their
-greatest common divisor is calculated and used to calculate the timeout vale of
+greatest common divisor is calculated (as argued in \fref{sec:runtime-system}) and used to calculate the timeout vale of
 a hardware timer (see \fref{sec:timer-interrupts}). Each time an overflow
 interrupt from the timer occurs a IHF (Interrupt Handler Function) is called
 which takes care of queueing events in the event queue. This is done by having a
