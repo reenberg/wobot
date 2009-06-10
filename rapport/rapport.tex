@@ -1882,13 +1882,16 @@ new event types. This section explains how our design analysis lead to
 the current implementation.
 
 \subsection{Defining new devices}
+\label{sec:defining-new-devices}
+
 In \fref{sec:devices} we define a device-driver as:
 \begin{itemize}
 \item a list of hardware-dependencies, e.g. which hardware pins or
   timers it confiscates,
 \item a setup-function for doing initialising tasks on start-up
   (e.g. including C-header files), and
-\item a set of functions for interacting with the device.
+\item a set of functions for interacting with the device (see
+  \Fref{sec:analoginputdevice}).
 \end{itemize}
 
 As explained, most device-drivers are parameterised by some additional
@@ -2072,140 +2075,9 @@ event if the predicate is true, with the result of running the
 value-function.
 
 
-\chapter{Building on the abstractions}
-\label{chap:example code}
+\chapter{building on the abstractions}
 
-In this chapter we use the abstractions, defined in the previous
-chapter, to implement interfaces for a pushbutton, a potentiometer and
-bindings for some of the hardware-devices on the before mentioned
-Pololu 3pi robot, which we also introduce as a \textit{Platform}
-(\fref[plain]{sec:platforms}). This shows how the \textit{Device} and
-\textit{Event} abstractions are used, and can be seen as a form of
-documentation of our work. For brevity, module imports has been
-omitted in all the examples.
 
-\section{Defining a pushbutton}
-\label{sec:pushbuttondef}
-The following is a definition of the Fladuino interface for a simple digital
-pushbutton. First the type constructor \texttt{PushButton} is defined with the
-data constructor \texttt{PushButton Integer} where the \texttt{Integer} type
-defined which pin the physical device is connected to.
-
-\begin{verbatim}
-data PushButton = PushButton Integer
-                    deriving (Eq, Show)
-\end{verbatim}
-
-\noindent
-Then a \texttt{Device} instance declaration on \texttt{PushButton} is done which
-registers the specified digital pin as being \texttt{DigitalInput} and requiring
-interrupt functionality. This assures that the specific pin has interrupt
-functionality and that no other devices using this pin requires
-\texttt{DigitalOutput} otherwise an error will occur.
-
-\begin{verbatim}
-instance Device PushButton where
-    usages (PushButton pin) = [DPinUsage pin ["interrupt"] DigitalInput]
-\end{verbatim}
-
-Since logical change interrupts occurs twice on a pushbutton (when
-pushed and then when released) it seems appropriate to define a
-\texttt{PushButtonPressEvent} and a \texttt{PushButtonReleaseEvent},
-and thus the two type constructors is defined
-
-\begin{verbatim}
-data PushButtonPressEvent = PushButtonPressEvent PushButton
-                              deriving (Eq, Show)
-data PushButtonReleaseEvent = PushButtonReleaseEvent PushButton
-                                deriving (Eq, Show)
-\end{verbatim}
-
-\noindent
-Next a \texttt{Event} instance declaration on the two \texttt{PushButton} events
-is needed. The \texttt{Event} type class needs definitions for the operations
-\texttt{setupEvent} and \texttt{interruptPins} which are both self
-explanatory. To distinguish these two events from each other, the value on the
-pin associated with the physical pushbutton is read and if the value is
-\texttt{HIGH} it is treated as a press event and if it is \texttt{LOW} it is
-treated as release event.
-
-\begin{verbatim}
-instance Event PushButtonPressEvent () where
-    setupEvent e@(PushButtonPressEvent (d@(PushButton pin))) = 
-     do addDevice d
-        pv <- statevar d "press_predicate" 
-        let v = H.Var (mkName pv)
-        addCImport pv [$ty|() -> Bool|] [$cexp|$id:pv|]
-        addCFundef [$cedecl|int $id:pv () {
-                              return (digitalRead($int:pin) == HIGH);
-                            }|]
-        return $ mkEvent e Nothing (Just v)
-    interruptPins (PushButtonPressEvent (PushButton pin)) = [DPin pin]
-
-instance Event PushButtonReleaseEvent () where
-    setupEvent e@(PushButtonReleaseEvent (d@(PushButton pin))) = 
-     do addDevice d 
-        pv <- statevar d "rel_predicate" 
-        let v = H.Var (mkName pv)
-        addCImport pv [$ty|() -> Bool|] [$cexp|$id:pv|]
-        addCFundef [$cedecl|int $id:pv () {
-                              return (digitalRead($int:pin) == LOW);
-                            }|]
-        return $ mkEvent e Nothing (Just v)
-    interruptPins (PushButtonReleaseEvent (PushButton pin)) = [DPin pin]
-\end{verbatim}
-
-With this definition, we can define programs such as
-
-\begin{nonfloatingfigure}
-\begin{verbatim}
-onEvent (PushButtonPressEvent $ PushButton 3) >>> (toggle $ diode 13 True)
-\end{verbatim}
-\caption{Subscribing to the declared event, to toggle a light emitting
-diode.}
-\label{fig:onEvent usage}
-\end{nonfloatingfigure}
-
-This program will toggle the state of a diode connected to digital pin
-13 (a default device on almost all Arduino boards) whenever the
-pushbutton attached to digital pin 3 is pressed.
-
-\section{Defining a potentiometer}
-\label{sec:potentiometer device}
-
-A potentiometer interface can be defined in Fladuino quite easily as it doesn't
-make any sense to define any events upon this as its value needs to be pulled
-once in a while to know if it has changed and/or to act upon that.
-
-The \texttt{Device} instance declaration of \texttt{Potentiometer} defines that
-it uses an Analog pin but with no functionality requirements.
-
-\begin{verbatim}
-data Potentiometer = Potentiometer Integer
-                     deriving (Eq, Show)
-
-instance Device Potentiometer where
-    usages (Potentiometer pin) = [APinUsage pin []]
-
-instance AnalogInputDevice Potentiometer where
-    genReadCode (Potentiometer pin) resultvar = 
-        [[$cstm|$id:resultvar = analogRead($int:pin);|]]
-\end{verbatim}
-
-This allows programs such as
-
-\begin{verbatim}
-idle >>> (valueOf $ Potentiometer 0) 
-     >>> smap [$exp|(/4)|] 
-     >>> (setValue $ AnalogOutputPin 10 0)
-\end{verbatim}
-
-The reason why the pulled value is divided by 4 is that the ATmega
-chip by default returns values in the range 0 to 1023 when doing
-analog reads but can only write values in the range 0 to 255 unless
-explicitley changed. The scale 0 to 1023 when reading analog values is
-proportional to the relationship between GND and AREF, which is
-nomally 0v and 5v respectively, though AREF can be explicitly changed.
 
 \section{Defining new platforms}
 
@@ -2238,6 +2110,9 @@ it can be defined by just extending it
 arduinoDiecimila = arduinoDuemilanove { p_capabilities = ["Diecimila"] }
 \end{verbatim}
 
+\subsection{The Pololu 3pi platform}
+\label{sec:pololu-3pi-platform}
+
 The \texttt{pololu3pi} platform uses the same Atmega processor as the Arduino
 platform and is thus pin compatible with the \texttt{arduinoDuemilanove}
 platform and others. This means that it has the same possibilities of e.g.
@@ -2256,8 +2131,6 @@ pololu3pi = arduinoDuemilanove
    , p_base_setup = addCInclude "3pi/3pi.h"
    }
 \end{verbatim}
-
-
 
 \chapter{Evaluation}
 \label{chap:evaluation}
@@ -2294,7 +2167,7 @@ Arduino-based control systems:
   Documenting Fladuino is, however, possible without touching the code
   itself.
 \item[Insufficient handling of runtime errors:] There is no robust
-  system in case for any reasonable kind of run-time error handling
+  system in place for any reasonable kind of run-time error handling
   for the generated programs.  While exhausting memory, or swamping
   the processor with more work than it is able to handle, are
   situations that it is hard to solve gracefully, \textit{some}
@@ -2422,17 +2295,16 @@ main =
     genStreams $ map unS alarm
 \end{verbatim}
 
-In \texttt{streamsForAlarm} we shall have need of the ability to query
-whether a given bit is set in the binary representation of some
-integer.  The Red prelude does not define a function for this, so we
-define a function, in C, to do it for us.  Note that the Red-type of
-the function has to be provided explicitly: we do not check that this
-type is congruent with the actual C code (and it might not always be
-possible, such as if the function is not defined via
-\texttt{addCFundef}, but linked in by the C compiler).  Providing an
-incorrect type is one way to construct a Fladuino program that does
-not signal an error at compile- or generation-time, but will result in
-an invalid C program.
+In \texttt{streamsForAlarm} we will need the ability to query whether
+a given bit is set in the binary representation of some integer.  The
+Red prelude does not define a function for this, so we define a
+function, in C, to do it for us.  Note that the Red-type of the
+function has to be provided explicitly: we do not check that this type
+is congruent with the actual C code (and it might not always be
+possible, such as if the function is linked in by the C compiler and
+never visible to Fladuino).  Providing an incorrect type is one way to
+construct a Fladuino program that does not signal an error at compile-
+or generation-time, but will result in an invalid C program.
 
 To maintain (and modify) the internal state of the alarm clock, we
 define a function \texttt{modNum}:
@@ -2454,7 +2326,7 @@ modNum = sintegrate zero int
 
 The function \texttt{sintegrate} is fully described in
 \Fref{sec:streamoperators}, but in short it provides a facility for
-maintaining state and mutating the state based on new new input.  The
+maintaining state and mutating the state based on new input.  The
 state is a simple integer that we modify by any value arriving as
 input to \texttt{modNum}, though bounded by the interval zero to the
 largest integer expressable with $n$ bits (\texttt{modNum} is actually
@@ -2559,21 +2431,21 @@ void loop() {
 }
 \end{verbatim}
 
-Yet its simplicity comes at a cost: there is no static checking that
+Yet the simplicity comes at a cost: there is no static checking that
 the pin references make sense and hardware interrupts are explicitly
-commanded for the purpose of the program.  Should there be need to
-extend the program, perhaps to make it part of a larger control system
-with many features (consider just how many different electronic
-devices have some sort of timer-based functionality built in), the
-simplicity will degrade.  It will no longer be safe to have
-long-running vector interrupt handlers (recall that further interrupts
-are disabled while a handler runs), and the maintenance of a structure
-like the Fladuino event queue will prove necessary.  We can thus
-conclude that the C program is simpler for this particular restricted
-domain, but that we may run into trouble when we attempt to combine
-multiple programs, where Fladuino would allow us to simply merge the
-dataflow graphs and automatically complain if they conflict in their
-usage of devices.
+reserved for the purpose of implementing the alarm clock logic.
+Should there be need to extend the program, perhaps to make it part of
+a larger control system with many features (consider just how many
+different electronic devices that have some sort of timer-based
+functionality built in), the simplicity will degrade.  It will no
+longer be safe to have long-running vector interrupt handlers (recall
+that further interrupts are disabled while a handler runs), and the
+maintenance of a structure like the Fladuino event queue will prove
+necessary.  We can thus conclude that the C program is simpler for
+this particular restricted domain, but that we may run into trouble
+when we attempt to combine multiple programs, where Fladuino would
+allow us to simply merge the dataflow graphs and automatically
+complain if they conflict in their usage of devices.
 
 Yet here is no doubt that the modification of state is one of the more
 clumsy aspects of Fladuino.  This deficiency has been inherited from
@@ -2582,6 +2454,183 @@ sensor networks.  In fact, the problem is deeper yet: Fladuino does
 not support fully dynamic state at all!  This deficiency (and
 suggested solutions) will be discussed further in
 \Fref{chap:futurework}.
+
+
+\section{Building on the abstractions}
+\label{chap:example code}
+
+Here we will evaluate on the abstractions, defined in \fref{sec:user-extens-abstr},
+to implement interfaces for a pushbutton, a potentiometer and bindings for some
+of the hardware-devices on the before mentioned Pololu 3pi robot, which we also
+introduce as a \textit{Platform} (\fref[plain]{sec:platforms}). This shows how
+the \textit{Device} and \textit{Event} abstractions are used, and can be seen as
+a form of documentation of our work. For brevity, module imports has been
+omitted in all the examples.
+
+\section{A PushButton device}
+\label{sec:pushbuttondef}
+
+The \texttt{Device} type class creates the possibility of defining abstractions
+as the \texttt{PushButton} or \texttt{Diode} devices. In following it is shown
+how easy a definition of the simple digital pushbutton can be implemented. 
+
+First the type constructor \texttt{PushButton} is defined with the data
+constructor \texttt{PushButton Integer} where the \texttt{Integer} type defines
+which pin the physical device is connected to.
+
+\begin{verbatim}
+data PushButton = PushButton Integer
+                    deriving (Eq, Show)
+\end{verbatim}
+
+Then a \texttt{Device} instance declaration on \texttt{PushButton} is defined
+which reserves the specified digital pin, requiring interrupt functionality on
+the pin and sets the pin mode as input. 
+
+\begin{verbatim}
+instance Device PushButton where
+    usages (PushButton pin) = [DPinUsage pin ["interrupt"] DigitalInput]
+\end{verbatim}
+
+
+Since logical change interrupts occurs twice on a pushbutton (when
+pushed and then when released) it seems appropriate to define a
+\texttt{PushButtonPressEvent} and a \texttt{PushButtonReleaseEvent},
+and thus the two type constructors is defined
+
+\begin{verbatim}
+data PushButtonPressEvent = PushButtonPressEvent PushButton
+                              deriving (Eq, Show)
+data PushButtonReleaseEvent = PushButtonReleaseEvent PushButton
+                                deriving (Eq, Show)
+\end{verbatim}
+
+\noindent
+Next a \texttt{Event} instance declaration on the two \texttt{PushButton} events
+is needed. The \texttt{Event} type class needs definitions for the operations
+\texttt{setupEvent} and \texttt{interruptPins} which are both self
+explanatory. To distinguish these two events from each other, the value on the
+pin associated with the physical pushbutton is read and if the value is
+\texttt{HIGH} it is treated as a press event and if it is \texttt{LOW} it is
+treated as release event.
+
+\begin{verbatim}
+instance Event PushButtonPressEvent () where
+    setupEvent e@(PushButtonPressEvent (d@(PushButton pin))) = 
+     do addDevice d
+        pv <- statevar d "press_predicate" 
+        let v = H.Var (mkName pv)
+        addCImport pv [$ty|() -> Bool|] [$cexp|$id:pv|]
+        addCFundef [$cedecl|int $id:pv () {
+                              return (digitalRead($int:pin) == HIGH);
+                            }|]
+        return $ mkEvent e Nothing (Just v)
+    interruptPins (PushButtonPressEvent (PushButton pin)) = [DPin pin]
+
+instance Event PushButtonReleaseEvent () where
+    setupEvent e@(PushButtonReleaseEvent (d@(PushButton pin))) = 
+     do addDevice d 
+        pv <- statevar d "rel_predicate" 
+        let v = H.Var (mkName pv)
+        addCImport pv [$ty|() -> Bool|] [$cexp|$id:pv|]
+        addCFundef [$cedecl|int $id:pv () {
+                              return (digitalRead($int:pin) == LOW);
+                            }|]
+        return $ mkEvent e Nothing (Just v)
+    interruptPins (PushButtonReleaseEvent (PushButton pin)) = [DPin pin]
+\end{verbatim}
+
+With this definition, we can define programs such as
+
+\begin{nonfloatingfigure}
+\begin{verbatim}
+onEvent (PushButtonPressEvent $ PushButton 3) >>> (toggle $ diode 13 True)
+\end{verbatim}
+\caption{Subscribing to the declared event, to toggle a light emitting
+diode.}
+\label{fig:onEvent usage}
+\end{nonfloatingfigure}
+
+This program will toggle the state of a diode connected to digital pin
+13 (a default device on almost all Arduino boards) whenever the
+pushbutton attached to digital pin 3 is pressed.
+
+
+\subsection{Defining AnalogInputDevice abstraction}
+\label{sec:analoginputdevice}
+
+The \texttt{AnalogInputDevice} is a good example of a device abstraction that
+makes it easier to write common functions for interacting with analog input
+devices as mentioned in \Fref{sec:defining-new-devices}. An
+\texttt{AnalogInputDevice} must supply a \texttt{genRedCode} function that takes
+the device-value itself as parameter, as the device type class also do, and then
+a string defining the variable name that the analog value is saved in. An
+example of how this is done for the potentiometer device is given in
+\fref{sec:potentiometer device}.
+
+The \texttt{AnalogInputDevice} class is shown in \Fref{fig:analoginputdevice}.
+
+\begin{figure}
+  \centering
+
+  \begin{verbatim}
+class (Device a) => AnalogInputDevice a where
+    genReadCode :: a -> String -> [Stm]
+  \end{verbatim}
+
+  \caption{Type class definition for AnalogInputDevices.}
+  \label{fig:analoginputdevice}
+\end{figure}
+
+\subsubsection{valueOf operator}
+
+Having the \texttt{AnalogInputDevice} abstraction makes it easy to define
+uniform operators for all devices that has some analog output properties to be
+read. From this the \texttt{valueOf} operator is the most obvious as it reads a
+value from the given analog device. 
+
+The \texttt{valueOf} function is shown in \Fref{sec:valueOf}.
+
+
+\subsubsection{Defining a potentiometer}
+\label{sec:potentiometer device}
+
+A potentiometer interface can be defined in Fladuino quite easily as it doesn't
+make any sense to define any events upon this as its value needs to be pulled
+once in a while to know if it has changed and/or to act upon that.
+
+The \texttt{Device} instance declaration of \texttt{Potentiometer} defines that
+it uses an analog pin but with no functionality requirements.
+
+\begin{verbatim}
+data Potentiometer = Potentiometer Integer
+                     deriving (Eq, Show)
+
+instance Device Potentiometer where
+    usages (Potentiometer pin) = [APinUsage pin []]
+
+instance AnalogInputDevice Potentiometer where
+    genReadCode (Potentiometer pin) resultvar = 
+        [[$cstm|$id:resultvar = analogRead($int:pin);|]]
+\end{verbatim}
+
+And the \texttt{AnalogInputDevice} instance declaration gives the posibility of
+writing the following example program using the \texttt{valueOf} operator which
+reads the analog value of the potentiometer.
+
+\begin{verbatim}
+idle >>> (valueOf $ Potentiometer 0) 
+     >>> smap [$exp|(/4)|] 
+     >>> (setValue $ AnalogOutputPin 10 0)
+\end{verbatim}
+
+The reason why the pulled value is divided by 4 is that the ATmega
+chip by default returns values in the range 0 to 1023 when doing
+analog reads but can only write values in the range 0 to 255 unless
+explicitley changed. The scale 0 to 1023 when reading analog values is
+proportional to the relationship between GND and AREF, which is
+nomally 0v and 5v respectively, though AREF can be explicitly changed.
+
 
 \subsection{Pololu 3pi bindings}
 \label{sec:3pi bindings}
@@ -2772,11 +2821,11 @@ our program, by many. Especially if you take into account that we have
 just hidden the low-level details of, for example the
 \verb|sensors|-array and magic constants like the size of this same
 array behind an abstraction layer, that also could be provided for C.
-But the C version also as its deficiencies. As mentioned earlier,
+But the C version also has its deficiencies. As mentioned earlier,
 Fladuino automatically inserts Device-specific initialisation code,
 when the Device is used. And it is therefore easier for the
 driver-writer to remove these initialisation tasks from the
-programmer. 
+programmer.
 
 \begin{figure}
   \centering
@@ -2814,7 +2863,7 @@ main = defaultMain
 \end{verbatim}
 
 This is only a conceptual example, as hardware restrictions on the
-number timers renders this impossible. All the hardware timers is used
+number timers renders this impossible. All the hardware timers are used
 for operating the 3pi robot, so we wont have a timer for the alarm
 clock. Some pin-reconfiguration would also be necessary for it to
 work.
@@ -3010,7 +3059,24 @@ C-code that it produces. Instead it provides hard real-time guarantees
 by only allowing constant memory use, as done in Flask and Fladuino.
 
 \section{Frob}
-Frob is a Haskell EDSL for robot programming. \ldots
+
+Frob\cite{frob99} is a Haskell EDSL for robot programming based on the
+notion of changing \textit{behaviors}, where a behaviour describes
+responses to input (such as changing to a different behaviour).  We
+can consider a behaviour to be a dataflow graph (in the Fladuino
+sense), and a Frob program to be a graph of dataflow graphs, and thus
+we end up with a dynamic system that is highly useful for the
+programming of robots.
+
+Frob has a major weakness, however, namely that it is fully
+implemented as an ordinary Haskell library.  This means that the full
+power of Haskell is available to a Frob program, but also that an
+entire Haskell runtime is necessary to run the programs.  Even the
+smallest such runtimes that have yet been devised are far too large to
+fit on the small devices that we target with Fladuino.  Future
+improvements in Haskell compiler technology, in particular
+whole-program-compilation, may change this in the future, so that even
+complex programs can be compiled to fit on tiny machines.
 
 \section{Yampa}
 Yampa is a generic Arrow-based framework for reactive programming in
@@ -3698,6 +3764,54 @@ str = 'BFFF001153455420434f4e54524f4c204d5558203000'.decode("hex")
 f = open('/dev/ttyUSB0', 'w')
 f.write(str)
 f.close()
+\end{verbatim}
+
+\section{valueOf function}
+\label{sec:valueOf}
+
+\begin{verbatim}
+valueOf :: forall a d. (Reify a, AnalogInputDevice d) => d -> S a -> S Integer
+valueOf d a = S $ do
+    sa   <- unS a
+    addStream "valueOf"
+              tau_b
+              (DeviceRead sa $ uniqueId d)
+              genHs
+              genC $ \this -> do
+    addDevice d
+    connect sa this tau (varIn this "")
+  where
+    tau :: H.Type
+    tau = reify (undefined :: a)
+    tau_b :: H.Type
+    tau_b = reify (undefined :: Integer)
+
+    genHs :: SCode m -> FladuinoM ()
+    genHs this =
+        addCImport c_v_in [$ty|$ty:tau -> ()|] [$cexp|$id:c_v_in|]
+        where
+          v_in    = varIn this ""
+          c_v_in = show v_in
+
+    genC :: SCode m -> FladuinoM ()
+    genC this = do
+        tauf <- toF tau
+        tauf_out <- toF tau_b
+        (params, ce_params) <- ToC.flattenParams tauf
+        ce_out <-  hcall v_out $ ToC.CLowered tauf_out [$cexp|v|]
+        let stms = genReadCode d "v"
+        addCFundef $ [$cedecl|
+void $id:c_v_in($params:params)
+{
+  unsigned int v;
+  $stms:stms;
+  $exp:ce_out;
+}
+|]
+        where
+          v_in   = varIn this ""
+          c_v_in = show v_in
+          v_out = s_vout this
 \end{verbatim}
 
 \end{document}
