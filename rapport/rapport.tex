@@ -3006,7 +3006,24 @@ C-code that it produces. Instead it provides hard real-time guarantees
 by only allowing constant memory use, as done in Flask and Fladuino.
 
 \section{Frob}
-Frob is a Haskell EDSL for robot programming. \ldots
+
+Frob\cite{frob99} is a Haskell EDSL for robot programming based on the
+notion of changing \textit{behaviors}, where a behaviour describes
+responses to input (such as changing to a different behaviour).  We
+can consider a behaviour to be a dataflow graph (in the Fladuino
+sense), and a Frob program to be a graph of dataflow graphs, and thus
+we end up with a dynamic system that is highly useful for the
+programming of robots.
+
+Frob has a major weakness, however, namely that it is fully
+implemented as an ordinary Haskell library.  This means that the full
+power of Haskell is available to a Frob program, but also that an
+entire Haskell runtime is necessary to run the programs.  Even the
+smallest such runtimes that have yet been devised are far too large to
+fit on the small devices that we target with Fladuino.  Future
+improvements in Haskell compiler technology, in particular
+whole-program-compilation, may change this in the future, so that even
+complex programs can be compiled to fit on tiny machines.
 
 \section{Yampa}
 Yampa is a generic Arrow-based framework for reactive programming in
