@@ -1871,6 +1871,42 @@ When an handler function returns it is guaranteed that the main program executes
 at least one instruction before the next handler function is called
 \cite[Section 4.7 page 14]{atmel8p}.
 
+\section{Implementation of platforms}
+\label{sec:defining platforms}
+
+The general concept of platforms is discussed in \Fref{sec:platforms} and
+consists of the following
+
+\begin{description}
+\item[Pins] This is a list of pin declarations. A pin
+  declaration consists of the type of the pin (digital or analog-input) paired
+  with the pin number and a list of the capabilities supported by the pin.
+
+\item[Pin map] A mapping from \textit{arduino pins} to
+  \textit{logical pins} (see \Fref{sec:pins}).  For example, the Arduino
+  Duemilanove maps analog pin 0 to logical pin 14.
+
+\item[Capabilities] A list of platform specific capabilities
+  expressing support for notions not otherwise expressable.  All
+  platforms should include their name such that a Fladuino program can
+  state only to be compatible with this platform. Thus all platforms
+  that is compatible with each other could include this in the list of
+  capabilities. Other capabilities could be the Pololu 3pi robot's
+  motors, buzzer or LCD.
+
+\item[Base setup] Any platform specific configuration that should be
+  added, like initialisation code for the Arduino BT platform's
+  bluetooth device or inclusion of specific header file on the Pololu
+  3pi platform.
+
+\item[Timer id] This defines the timer id that Fladuino uses to drive
+  the clock. Some Arduino compliant hardware reserves different timers
+  for various tasks, like the Pololu 3pi uses time 0 and timer 1 to
+  drive the motors.
+
+  The \texttt{defaultPlatform} defaults this to 1.
+\end{description}
+
 
 \section{User-extensible abstractions with typeclasses}
 \label{sec:user-extens-abstr}
@@ -1938,42 +1974,6 @@ the same type, and each type of device has their own datatype.
 
 The implementation of a device-driver for a simple push-button is discussed in
 \Fref{sec:pushbuttondef}.
-
-\subsection{Defining new platforms}
-\label{sec:defining platforms}
-
-The general concept of platforms is discussed in \Fref{sec:platforms} and
-consists of the following
-
-\begin{description}
-\item[Pins] This is a list of pin declarations. A pin
-  declaration consists of the type of the pin (digital or analog-input) paired
-  with the pin number and a list of the capabilities supported by the pin.
-
-\item[Pin map] A mapping from \textit{arduino pins} to
-  \textit{logical pins} (see \Fref{sec:pins}).  For example, the Arduino
-  Duemilanove maps analog pin 0 to logical pin 14.
-
-\item[Capabilities] A list of platform specific capabilities
-  expressing support for notions not otherwise expressable.  All
-  platforms should include their name such that a Fladuino program can
-  state only to be compatible with this platform. Thus all platforms
-  that is compatible with each other could include this in the list of
-  capabilities. Other capabilities could be the Pololu 3pi robot's
-  motors, buzzer or LCD.
-
-\item[Base setup] Any platform specific configuration that should be
-  added, like initialisation code for the Arduino BT platform's
-  bluetooth device or inclusion of specific header file on the Pololu
-  3pi platform.
-
-\item[Timer id] This defines the timer id that Fladuino uses to drive
-  the clock. Some Arduino compliant hardware reserves different timers
-  for various tasks, like the Pololu 3pi uses time 0 and timer 1 to
-  drive the motors.
-
-  The \texttt{defaultPlatform} defaults this to 1.
-\end{description}
 
 \subsection{Defining new events}
 \label{sec:defining events}
@@ -2071,64 +2071,6 @@ generation.  This finalizing phase does the job of installing the
 specified interrupt handlers for each event, to signal that particular
 event if the predicate is true, with the result of running the
 value-function.
-
-
-\chapter{building on the abstractions}
-
-
-
-\section{Defining new platforms}
-
-When adding support for a new platform, e.g. the Pololu 3pi, one has the option
-to either define it from scratch by extending the \texttt{emptyPlatform} ore by
-extending one of the predefined platforms. 
-
-The default platform is the \texttt{arduinoDuemilanove} which extends the
-\texttt{emptyPlatform} and is defined as
-
-\begin{verbatim}
-arduinoDuemilanove = emptyPlatform 
-      { p_pins = [ PinDecl (DPin n) $ pc n | n <- [0..13] ] ++
-                 [ PinDecl (APin n) ["analog", "interrupt"] | n <- [0..6] ]
-      , p_pinmap = (\x -> case x of
-                            DPin pin -> pin
-                            APin pin -> pin+14)
-      , p_capabilities = ["Duemilanove"] }
-   where
-     -- PWM on pin 9 and 10 are disallowed because they interfere with TIMER1
-     pc pin | pin `elem` [3, 5, 6, 11] = ["PWM", "interrupt"] 
-     pc _ = ["interrupt"]
-\end{verbatim}
-
-Since the \texttt{arduinoDiecimila} platform is fully compatible and has
-exactley the same pin configuration as the \texttt{arduinoDuemilanove} platform,
-it can be defined by just extending it
-
-\begin{verbatim}
-arduinoDiecimila = arduinoDuemilanove { p_capabilities = ["Diecimila"] }
-\end{verbatim}
-
-\subsection{The Pololu 3pi platform}
-\label{sec:pololu-3pi-platform}
-
-The \texttt{pololu3pi} platform uses the same Atmega processor as the Arduino
-platform and is thus pin compatible with the \texttt{arduinoDuemilanove}
-platform and others. This means that it has the same possibilities of e.g.
-interrupts, however it should be noted that most of the pins are reserved
-\cite{3pi_pin_mapping} for platform specific devices such as motors and thus
-behaviour is undefined for pins where this doesn't make sense. This means that
-the \texttt{pololu3pi} platform can be defined by extending the
-\texttt{arduinoDuemilanove} and adding the extra capabilities and base setup
-
-\begin{verbatim}
-pololu3pi = arduinoDuemilanove 
-   { p_capabilities = ["3pi", 
-                       "3pi battery reader", 
-                       "3pi reflectance sensors",
-                       "3pi motors"]
-   , p_base_setup = addCInclude "3pi/3pi.h"
-   }
-\end{verbatim}
 
 \chapter{Evaluation}
 \label{chap:evaluation}
@@ -2628,6 +2570,59 @@ analog reads but can only write values in the range 0 to 255 unless
 explicitley changed. The scale 0 to 1023 when reading analog values is
 proportional to the relationship between GND and AREF, which is
 nomally 0v and 5v respectively, though AREF can be explicitly changed.
+
+\subsection{Defining new platforms}
+
+When adding support for a new platform (e.g., the Pololu 3pi) the abstractions
+allows for the option to either define it from scratch by extending the
+\texttt{emptyPlatform} ore by extending one of the predefined platforms.
+
+The default platform is the \texttt{arduinoDuemilanove} which extends the
+\texttt{emptyPlatform} and is defined as
+
+\begin{verbatim}
+arduinoDuemilanove = emptyPlatform 
+      { p_pins = [ PinDecl (DPin n) $ pc n | n <- [0..13] ] ++
+                 [ PinDecl (APin n) ["analog", "interrupt"] | n <- [0..6] ]
+      , p_pinmap = (\x -> case x of
+                            DPin pin -> pin
+                            APin pin -> pin+14)
+      , p_capabilities = ["Duemilanove"] }
+   where
+     -- PWM on pin 9 and 10 are disallowed because they interfere with TIMER1
+     pc pin | pin `elem` [3, 5, 6, 11] = ["PWM", "interrupt"] 
+     pc _ = ["interrupt"]
+\end{verbatim}
+
+Since the \texttt{arduinoDiecimila} platform is fully compatible and has
+exactley the same pin configuration as the \texttt{arduinoDuemilanove} platform,
+it can easily be defined by just extending it
+
+\begin{verbatim}
+arduinoDiecimila = arduinoDuemilanove { p_capabilities = ["Diecimila"] }
+\end{verbatim}
+
+\subsubsection{The Pololu 3pi platform}
+\label{sec:pololu-3pi-platform}
+
+The \texttt{pololu3pi} platform uses the same Atmega processor as the Arduino
+platform and is thus pin compatible with the \texttt{arduinoDuemilanove}
+platform and others. This means that it has the same possibilities of e.g.
+interrupts, however it should be noted that most of the pins are reserved
+\cite{3pi_pin_mapping} for platform specific devices such as motors and thus
+behaviour is undefined for pins where a use does not make sense. This means that
+the \texttt{pololu3pi} platform can be defined by extending the
+\texttt{arduinoDuemilanove} and adding the extra capabilities and base setup
+
+\begin{verbatim}
+pololu3pi = arduinoDuemilanove 
+   { p_capabilities = ["3pi", 
+                       "3pi battery reader", 
+                       "3pi reflectance sensors",
+                       "3pi motors"]
+   , p_base_setup = addCInclude "3pi/3pi.h"
+   }
+\end{verbatim}
 
 
 \subsection{Pololu 3pi bindings}
