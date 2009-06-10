@@ -1307,8 +1307,8 @@ following reasons, we believe we made the right choice:
 Abstractions aside, each pin is not only defined by its number, but
 also by a set of \textit{capabilities}, much like the ones that cover
 the entire platform.  For example, a given pin may support such things
-as \texttt{pin-change interrupts} (triggering an asynchronous signal
-when the input value on the pin changes) or \texttt{pulse-width
+as logical change \texttt{interrupts} (triggering an asynchronous signal
+when the input value on the pin changes) or \texttt{pulse width
   modulation} (analog output).  Many hardware devices only work when
 attached to pins with special capabilities --- for example, a
 push-button must be attached to a pin supporting interrupts --- and
@@ -1322,7 +1322,7 @@ connected to an Arduino board, e.g. buttons, electromotors and
 potentiometers.  A device-driver consists of a list of
 \textit{usages}, each describing a discrete reservation of some
 hardware resource, a function for initializing the device and possibly
-a set of functions for interacting with device.  A device can be
+a set of functions for interacting with the device.  A device can be
 parametric --- in fact, most are --- in for example the I/O pins that
 it is attached to.  As a concrete example, the device describing a
 plain digital output pin is parametric in the form of the single
@@ -1349,14 +1349,14 @@ reserve exclusive access to the hardware resource that they refer to:
   \item[Digital input]
   \item[Analog output,] in which case a starting value must be
     specified in the range $[0,255]$.  Note that this ``analog'' value
-    is, of course, implemented via PWM (see \ref{sec:pwm}), and the
+    is, of course, implemented via PWM (see \Fref{sec:pwm}), and the
     capability ``PWM'' should thus be required of the pin.
   \end{description}
 \item[Analog input pin usage] denotes exclusive access to a specified
   analog input pin.  The usage also specifies a list of capabilities
   that must be provided by the indicated pin.
 \item[Capability requirement usage] is a dependency on the presence of
-  a given \textit{platform capability} (see \ref{sec:platforms}).  In
+  a given \textit{platform capability} (see \Fref{sec:platforms}).  In
   contrast to the pin usages, this dependency is not exclusive.
 \end{description}
 
