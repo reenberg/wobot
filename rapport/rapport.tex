@@ -2377,17 +2377,16 @@ main =
     genStreams $ map unS alarm
 \end{verbatim}
 
-In \texttt{streamsForAlarm} we shall have need of the ability to query
-whether a given bit is set in the binary representation of some
-integer.  The Red prelude does not define a function for this, so we
-define a function, in C, to do it for us.  Note that the Red-type of
-the function has to be provided explicitly: we do not check that this
-type is congruent with the actual C code (and it might not always be
-possible, such as if the function is not defined via
-\texttt{addCFundef}, but linked in by the C compiler).  Providing an
-incorrect type is one way to construct a Fladuino program that does
-not signal an error at compile- or generation-time, but will result in
-an invalid C program.
+In \texttt{streamsForAlarm} we will need the ability to query whether
+a given bit is set in the binary representation of some integer.  The
+Red prelude does not define a function for this, so we define a
+function, in C, to do it for us.  Note that the Red-type of the
+function has to be provided explicitly: we do not check that this type
+is congruent with the actual C code (and it might not always be
+possible, such as if the function is linked in by the C compiler and
+never visible to Fladuino).  Providing an incorrect type is one way to
+construct a Fladuino program that does not signal an error at compile-
+or generation-time, but will result in an invalid C program.
 
 To maintain (and modify) the internal state of the alarm clock, we
 define a function \texttt{modNum}:
@@ -2409,7 +2408,7 @@ modNum = sintegrate zero int
 
 The function \texttt{sintegrate} is fully described in
 \Fref{sec:streamoperators}, but in short it provides a facility for
-maintaining state and mutating the state based on new new input.  The
+maintaining state and mutating the state based on new input.  The
 state is a simple integer that we modify by any value arriving as
 input to \texttt{modNum}, though bounded by the interval zero to the
 largest integer expressable with $n$ bits (\texttt{modNum} is actually
@@ -2514,21 +2513,21 @@ void loop() {
 }
 \end{verbatim}
 
-Yet its simplicity comes at a cost: there is no static checking that
+Yet the simplicity comes at a cost: there is no static checking that
 the pin references make sense and hardware interrupts are explicitly
-commanded for the purpose of the program.  Should there be need to
-extend the program, perhaps to make it part of a larger control system
-with many features (consider just how many different electronic
-devices have some sort of timer-based functionality built in), the
-simplicity will degrade.  It will no longer be safe to have
-long-running vector interrupt handlers (recall that further interrupts
-are disabled while a handler runs), and the maintenance of a structure
-like the Fladuino event queue will prove necessary.  We can thus
-conclude that the C program is simpler for this particular restricted
-domain, but that we may run into trouble when we attempt to combine
-multiple programs, where Fladuino would allow us to simply merge the
-dataflow graphs and automatically complain if they conflict in their
-usage of devices.
+reserved for the purpose of implementing the alarm clock logic.
+Should there be need to extend the program, perhaps to make it part of
+a larger control system with many features (consider just how many
+different electronic devices that have some sort of timer-based
+functionality built in), the simplicity will degrade.  It will no
+longer be safe to have long-running vector interrupt handlers (recall
+that further interrupts are disabled while a handler runs), and the
+maintenance of a structure like the Fladuino event queue will prove
+necessary.  We can thus conclude that the C program is simpler for
+this particular restricted domain, but that we may run into trouble
+when we attempt to combine multiple programs, where Fladuino would
+allow us to simply merge the dataflow graphs and automatically
+complain if they conflict in their usage of devices.
 
 Yet here is no doubt that the modification of state is one of the more
 clumsy aspects of Fladuino.  This deficiency has been inherited from
@@ -2814,11 +2813,11 @@ our program, by many. Especially if you take into account that we have
 just hidden the low-level details of, for example the
 \verb|sensors|-array and magic constants like the size of this same
 array behind an abstraction layer, that also could be provided for C.
-But the C version also as its deficiencies. As mentioned earlier,
+But the C version also has its deficiencies. As mentioned earlier,
 Fladuino automatically inserts Device-specific initialisation code,
 when the Device is used. And it is therefore easier for the
 driver-writer to remove these initialisation tasks from the
-programmer. 
+programmer.
 
 \begin{figure}
   \centering
@@ -2856,7 +2855,7 @@ main = defaultMain
 \end{verbatim}
 
 This is only a conceptual example, as hardware restrictions on the
-number timers renders this impossible. All the hardware timers is used
+number timers renders this impossible. All the hardware timers are used
 for operating the 3pi robot, so we wont have a timer for the alarm
 clock. Some pin-reconfiguration would also be necessary for it to
 work.
