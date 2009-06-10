@@ -2075,91 +2075,6 @@ value-function.
 
 \chapter{building on the abstractions}
 
-\section{Defining a pushbutton}
-\label{sec:pushbuttondef}
-The following is a definition of the Fladuino interface for a simple digital
-pushbutton. First the type constructor \texttt{PushButton} is defined with the
-data constructor \texttt{PushButton Integer} where the \texttt{Integer} type
-defined which pin the physical device is connected to.
-
-\begin{verbatim}
-data PushButton = PushButton Integer
-                    deriving (Eq, Show)
-\end{verbatim}
-
-\noindent
-Then a \texttt{Device} instance declaration on \texttt{PushButton} is done which
-registers the specified digital pin as being \texttt{DigitalInput} and requiring
-interrupt functionality. This assures that the specific pin has interrupt
-functionality and that no other devices using this pin requires
-\texttt{DigitalOutput} otherwise an error will occur.
-
-\begin{verbatim}
-instance Device PushButton where
-    usages (PushButton pin) = [DPinUsage pin ["interrupt"] DigitalInput]
-\end{verbatim}
-
-Since logical change interrupts occurs twice on a pushbutton (when
-pushed and then when released) it seems appropriate to define a
-\texttt{PushButtonPressEvent} and a \texttt{PushButtonReleaseEvent},
-and thus the two type constructors is defined
-
-\begin{verbatim}
-data PushButtonPressEvent = PushButtonPressEvent PushButton
-                              deriving (Eq, Show)
-data PushButtonReleaseEvent = PushButtonReleaseEvent PushButton
-                                deriving (Eq, Show)
-\end{verbatim}
-
-\noindent
-Next a \texttt{Event} instance declaration on the two \texttt{PushButton} events
-is needed. The \texttt{Event} type class needs definitions for the operations
-\texttt{setupEvent} and \texttt{interruptPins} which are both self
-explanatory. To distinguish these two events from each other, the value on the
-pin associated with the physical pushbutton is read and if the value is
-\texttt{HIGH} it is treated as a press event and if it is \texttt{LOW} it is
-treated as release event.
-
-\begin{verbatim}
-instance Event PushButtonPressEvent () where
-    setupEvent e@(PushButtonPressEvent (d@(PushButton pin))) = 
-     do addDevice d
-        pv <- statevar d "press_predicate" 
-        let v = H.Var (mkName pv)
-        addCImport pv [$ty|() -> Bool|] [$cexp|$id:pv|]
-        addCFundef [$cedecl|int $id:pv () {
-                              return (digitalRead($int:pin) == HIGH);
-                            }|]
-        return $ mkEvent e Nothing (Just v)
-    interruptPins (PushButtonPressEvent (PushButton pin)) = [DPin pin]
-
-instance Event PushButtonReleaseEvent () where
-    setupEvent e@(PushButtonReleaseEvent (d@(PushButton pin))) = 
-     do addDevice d 
-        pv <- statevar d "rel_predicate" 
-        let v = H.Var (mkName pv)
-        addCImport pv [$ty|() -> Bool|] [$cexp|$id:pv|]
-        addCFundef [$cedecl|int $id:pv () {
-                              return (digitalRead($int:pin) == LOW);
-                            }|]
-        return $ mkEvent e Nothing (Just v)
-    interruptPins (PushButtonReleaseEvent (PushButton pin)) = [DPin pin]
-\end{verbatim}
-
-With this definition, we can define programs such as
-
-\begin{nonfloatingfigure}
-\begin{verbatim}
-onEvent (PushButtonPressEvent $ PushButton 3) >>> (toggle $ diode 13 True)
-\end{verbatim}
-\caption{Subscribing to the declared event, to toggle a light emitting
-diode.}
-\label{fig:onEvent usage}
-\end{nonfloatingfigure}
-
-This program will toggle the state of a diode connected to digital pin
-13 (a default device on almost all Arduino boards) whenever the
-pushbutton attached to digital pin 3 is pressed.
 
 
 \section{Defining new platforms}
@@ -2549,6 +2464,95 @@ introduce as a \textit{Platform} (\fref[plain]{sec:platforms}). This shows how
 the \textit{Device} and \textit{Event} abstractions are used, and can be seen as
 a form of documentation of our work. For brevity, module imports has been
 omitted in all the examples.
+
+\section{A PushButton device}
+\label{sec:pushbuttondef}
+
+The \texttt{Device} type class creates the possibility of defining abstractions
+as the \texttt{PushButton} or \texttt{Diode} devices. In following it is shown
+how easy a definition of the simple digital pushbutton can be implemented. 
+
+First the type constructor \texttt{PushButton} is defined with the data
+constructor \texttt{PushButton Integer} where the \texttt{Integer} type defines
+which pin the physical device is connected to.
+
+\begin{verbatim}
+data PushButton = PushButton Integer
+                    deriving (Eq, Show)
+\end{verbatim}
+
+Then a \texttt{Device} instance declaration on \texttt{PushButton} is defined
+which reserves the specified digital pin, requiring interrupt functionality on
+the pin and sets the pin mode as input. 
+
+\begin{verbatim}
+instance Device PushButton where
+    usages (PushButton pin) = [DPinUsage pin ["interrupt"] DigitalInput]
+\end{verbatim}
+
+
+Since logical change interrupts occurs twice on a pushbutton (when
+pushed and then when released) it seems appropriate to define a
+\texttt{PushButtonPressEvent} and a \texttt{PushButtonReleaseEvent},
+and thus the two type constructors is defined
+
+\begin{verbatim}
+data PushButtonPressEvent = PushButtonPressEvent PushButton
+                              deriving (Eq, Show)
+data PushButtonReleaseEvent = PushButtonReleaseEvent PushButton
+                                deriving (Eq, Show)
+\end{verbatim}
+
+\noindent
+Next a \texttt{Event} instance declaration on the two \texttt{PushButton} events
+is needed. The \texttt{Event} type class needs definitions for the operations
+\texttt{setupEvent} and \texttt{interruptPins} which are both self
+explanatory. To distinguish these two events from each other, the value on the
+pin associated with the physical pushbutton is read and if the value is
+\texttt{HIGH} it is treated as a press event and if it is \texttt{LOW} it is
+treated as release event.
+
+\begin{verbatim}
+instance Event PushButtonPressEvent () where
+    setupEvent e@(PushButtonPressEvent (d@(PushButton pin))) = 
+     do addDevice d
+        pv <- statevar d "press_predicate" 
+        let v = H.Var (mkName pv)
+        addCImport pv [$ty|() -> Bool|] [$cexp|$id:pv|]
+        addCFundef [$cedecl|int $id:pv () {
+                              return (digitalRead($int:pin) == HIGH);
+                            }|]
+        return $ mkEvent e Nothing (Just v)
+    interruptPins (PushButtonPressEvent (PushButton pin)) = [DPin pin]
+
+instance Event PushButtonReleaseEvent () where
+    setupEvent e@(PushButtonReleaseEvent (d@(PushButton pin))) = 
+     do addDevice d 
+        pv <- statevar d "rel_predicate" 
+        let v = H.Var (mkName pv)
+        addCImport pv [$ty|() -> Bool|] [$cexp|$id:pv|]
+        addCFundef [$cedecl|int $id:pv () {
+                              return (digitalRead($int:pin) == LOW);
+                            }|]
+        return $ mkEvent e Nothing (Just v)
+    interruptPins (PushButtonReleaseEvent (PushButton pin)) = [DPin pin]
+\end{verbatim}
+
+With this definition, we can define programs such as
+
+\begin{nonfloatingfigure}
+\begin{verbatim}
+onEvent (PushButtonPressEvent $ PushButton 3) >>> (toggle $ diode 13 True)
+\end{verbatim}
+\caption{Subscribing to the declared event, to toggle a light emitting
+diode.}
+\label{fig:onEvent usage}
+\end{nonfloatingfigure}
+
+This program will toggle the state of a diode connected to digital pin
+13 (a default device on almost all Arduino boards) whenever the
+pushbutton attached to digital pin 3 is pressed.
+
 
 \subsection{Defining AnalogInputDevice abstraction}
 \label{sec:analoginputdevice}
