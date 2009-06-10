@@ -798,7 +798,7 @@ And we set the scope of our project as follows:
   undefined behaviour.  We shall, however, endeavour to design
   Fladuino so as to reduce the likelihood of these errors.
 \item As we see this research project rather that an engineering
-  project, we wont devote time to documentation-writing.
+  project, we wont devote time to writing documentation for Fladuino.
 \end{itemize}
 
 A notable narrowing is that we won't provide primitives for
@@ -3004,15 +3004,27 @@ Atom, so this isn't where Atom makes its difference over the low-level
 C-code that it produces. Instead it provides hard real-time guarantees
 by only allowing constant memory use, as done in Flask and Fladuino.
 
-\section{Frob and Yampa}
+\section{Frob}
+Frob is a Haskell EDSL for robot programming. \ldots
 
-Discussion about related robot programming tools (Frob, Yampa, Atom,
-Lustre, etc.).
+\section{Yampa}
+Yampa is a generic Arrow-based framework for reactive programming in
+Haskell. It is authored by the same group as Frob and thus improves on
+Frob concepts. In \cite{arrowsrobotsfrp02} the authors states one of
+the improvements was that ``The programming discipline induced by
+arrows prevents certain kinds of time- and space-leaks that are common
+in generic FRP programs, thus making Yampa more suitable for systems
+having real-time constraints.'', the article also gives an overview of
+the evolution of Haskell-embedded reactive programming DSLs.
 
+As mentioned in \Fref[plain]{chap:Flask}, Flask was also meant for
+being an Arrow-based framework, but as we explained, this was
+impossible. Their common basis are reflected in the syntax and
+semantics of the two languages. Yampa is generic in the sense that it
+can be used in any reactive system, whether programming a graphical
+computer-game \cite{Courtney2003b} or controlling a robot
+\cite{arrowsrobotsfrp02}.
 
-
-\section{Partiel evaluation / specialisation} 
-\fixme{reference to arne glenstrup}
 
 \chapter{Conclusions}
 \textit{Opsummering på hvad vi har opnået}
