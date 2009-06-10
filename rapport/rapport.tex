@@ -58,7 +58,7 @@
 
 \newcommand{\EDSL}{EDSL (Embedded Domain-Specific Language) \renewcommand{\EDSL}{ EDSL }}
 
-\title{Controlling embedded devices with functional reactive programming}
+\title{Fladuino: Controlling embedded devices with\\ functional reactive programming}
 
 \author{Martin Dybdal (dybber@dybber.dk), \\
 Troels Henriksen (athas@sigkill.dk) and \\
@@ -115,7 +115,6 @@ supervised by Ken Friis Larsen, assistant professor at DIKU.
 \clearpage
 
 \tableofcontents*
-
 
 \fixme{check all quoted text for use of the same quotes!!!!}
 \fixme{Check all cites. Should there be a space between the word and cite or
@@ -204,17 +203,18 @@ that our result, Fladuino, is sufficient for a wide range of control
 systems.
 
 Our domain, control systems, is quite wide and we define it as
-\textit{programmable systems that senses and regulates some task by the use of
-  sensors and actuators}, which includes almost any computer system.  Selecting
-the Arduino platform restrains our scope to the tasks it can handle. The Arduino
-is generic and handles a broad range of tasks, when connected with the right
-peripherals. This extendability makes us argue that concentrating on the Arduino
-isn't a particularly strict limitation. This has the obvious impact, that our
+\textit{programmable systems that senses and regulates some task by
+  the use of sensors and actuators}, which includes almost any
+computer system.  Selecting the Arduino platform restrains our scope
+to the tasks it can handle. The Arduino is generic and handles a broad
+range of tasks, when connected with the right peripherals. This
+extendability makes us argue that concentrating on the Arduino isn't a
+particularly strict limitation. This has the obvious impact, that our
 framework should be general enough to support almost any connectable
-external Arduino device. We do this by providing a way of writing drivers or small
-frameworks for arbitrary devices.  Furthermore, due to the blandness of
-Arduino's technology itself, it would most likely not prove difficult to port
-our work to another architecture.
+external Arduino device. We do this by providing a way of writing
+drivers or small frameworks for arbitrary devices.  Furthermore, due
+to the blandness of Arduino's technology itself, it would most likely
+not prove difficult to port our work to another architecture.
 
 In \fref{sec:pushbuttondef}, we show by example how this framework is
 used. \Fref{fig:fladuino-simple} shows a Fladuino program that toggles
@@ -263,7 +263,7 @@ responses. Instead, the programmer specifies how his reactions
 (input-values) and the language itself discovers which output-values
 are to be recalculated when detecting a change in an input-value.
 
-Flask and Fladuino are thus reactive programming languages.
+Thus, Flask and Fladuino are reactive programming languages.
 
 
 \section{Hardware platform}
@@ -797,6 +797,8 @@ And we set the scope of our project as follows:
   exceeds these constraints will result in information loss or
   undefined behaviour.  We shall, however, endeavour to design
   Fladuino so as to reduce the likelihood of these errors.
+\item As we see this research project rather that an engineering
+  project, we wont devote time to documentation-writing.
 \end{itemize}
 
 A notable narrowing is that we won't provide primitives for
@@ -812,8 +814,7 @@ terms, and the constraints under which the design was formed.
 As in Flask, Fladuino is implemented as a set of Haskell modules that
 provides facilities for expressing the structure and behaviour of a
 \textit{dataflow graph}, connecting \textit{dataflow operators}
-through value-carrying directed graph edges (\textit{wires}).
-\fixme{The following should be described in the Flask chapter} The
+through value-carrying directed graph edges (\textit{wires}).  The
 programmer writes a Haskell program, called the \textit{generator
   program}, or just the \textit{program}.  We shall refer to the
 compilation of the program as \textit{compile-time}, and execution of
@@ -942,20 +943,21 @@ As in Flask, the dataflow graph is divided into \textit{atomic
 Evaluating such a subgraph consists of supplying a value on the input
 wire, retrieving any values that may show up on output wires, then
 setting up to evaluate any of the successor atomic subgraphs with
-these values (see \fref{sec:dataflowtranslation} for the implementation
-details).  The notion of an atomic subgraph serves the purpose of
-dividing the dataflow graph into parts that can be evaluated
-atomically without blocking.  Translating a dataflow graph into object
-code is referred to as \textit{stream generation}.  Translating an
-atomic subgraph is relatively straightforward, and the subject of
-\Fref{sec:dataflowtranslation}, while it is far more interesting to
-contemplate the question of what to do with the asynchronous events
-that are the heart of reactive programming.  Indeed, we have to
-analyse the constraints of our target platform(s) in order to reach an
-adequate solution.  Since events are fundamentally connected to the
-concept of a hardware interrupt (though we do not reject the ability
-for sinks\fixme{sinks ikke forklaret tidligere} to manually signal
-events), we cannot at any time predict, or control, their arrival.
+these values (see \fref{sec:dataflowtranslation} for the
+implementation details).  The notion of an atomic subgraph serves the
+purpose of dividing the dataflow graph into parts that can be
+evaluated atomically without blocking.  Translating a dataflow graph
+into object code is referred to as \textit{stream generation}.
+Translating an atomic subgraph is relatively straightforward, and the
+subject of \Fref{sec:dataflowtranslation}, while it is far more
+interesting to contemplate the question of what to do with the
+asynchronous events that are the heart of reactive programming.
+Indeed, we have to analyse the constraints of our target platform(s)
+in order to reach an adequate solution.  Since events are
+fundamentally connected to the concept of a hardware interrupt (though
+we do not reject the ability to manually signal synthetic events --
+software interrupts, if you will), we cannot at any time predict, or
+control, their arrival.
 
 The simplest strategy would be to, upon arrival of an event via an
 asynchronous hardware-level interrupt, immediately evaluate all atomic
@@ -2397,7 +2399,7 @@ Arduino-based control systems:
 \item[Insufficient handling of runtime errors:] There is no robust
   system in case for any reasonable kind of run-time error handling
   for the generated programs.  While exhausting memory, or swamping
-  the processor with more work that it is able to handle, are
+  the processor with more work than it is able to handle, are
   situations that it is hard to solve gracefully, \textit{some}
   detection of these problems is likely to be important for debugging.
   Even ultra-simplistic error reporting, like lighting a given diode,
@@ -2440,6 +2442,19 @@ Additionally, we could reuse most of the stream operators with little
 work, the conversion of their implementation from NesC to C being
 trivial in most cases.
 
+Certain aspects of Flask's design are reflected in Fladuino where they
+are less desirable, however.  Flask is aimed at the programming of
+sensor networks, which mostly involves the harvesting data from
+sensors, filtering or processing it, and passing it on along the
+network.  Flask thus has very crude support for internal state, in
+particular a complete lack of support for dynamically allocated state,
+which has the implication that the size of state data has to be fixed
+at compile-time.  While this may not be a significant problem for the
+programming of sensor networks, it can be a significant obstacle to
+the programming of general reactive systems.  This, more than anything
+else, is perhaps the chief deficiency that came about due to our
+choice to adapt Flask, rather than writing a system from scratch.
+
 \section{Experimental comparison}
 
 We cannot hope to make a general comparison of utility between
@@ -2462,12 +2477,15 @@ timer is zero, an alarm will be sounded through a piezoelectric
 speaker.  The buttons will be connected to pins 2 and 3, while the
 speaker will be connected to pin 13.
 
+
 \begin{verbatim}
 secondsPerUnit = 15*60 -- One quarter of an hour.
 increaseButton = PushButton 2
 decreaseButton = PushButton 3
-increase       = onPress increaseButton >>> sconst [$exp|$int:secondsPerUnit|]
-decrease       = onPress decreaseButton >>> sconst [$exp|-1 * $int:secondsPerUnit|]
+increase       = onPress increaseButton 
+                 >>> sconst [$exp|$int:secondsPerUnit|]
+decrease       = onPress decreaseButton 
+                 >>> sconst [$exp|-1 * $int:secondsPerUnit|]
 clockInts      = clock 1000 >>> sconst [$exp|-1|]
 alarm          = AnalogOutputPin 13 0
 \end{verbatim}
@@ -2490,13 +2508,15 @@ dataflow graph, and thus implicitly represent its entire structure.
 The function is used in the \texttt{main} function like thus:
 
 \begin{verbatim}
-alarm :: [S ()]
-alarm = streamsForAlarm 4 4
+alarmClock :: [S ()]
+alarmClock = streamsForAlarm 4 4
 
 main :: IO ()
 main =
     defaultMain $ do
-    addCImport "isBitSet" [$ty|(Integer, Integer) -> Bool|] [$cexp|isBitSet|]
+    addCImport "isBitSet" 
+               [$ty|(Integer, Integer) -> Bool|] 
+               [$cexp|isBitSet|]
     addCFundef [$cedecl|int isBitSet(int x, int bit) {
                                   return (x & _BV(bit));
                                 }|]
@@ -2521,15 +2541,16 @@ define a function \texttt{modNum}:
 \begin{verbatim}
 modNum :: S Integer -> S Integer
 modNum = sintegrate zero int
-    where
-      zero :: N Integer
-      zero = liftN [$exp|0|]
+  where
+    zero :: N Integer
+    zero = liftN [$exp|0|]
 
-      int  :: N ((Integer, Integer) -> (Integer, Integer))
-      int  = liftN [$exp|\(n, x) -> let v = bounded(0, x + n, $int:maxNum)
-                                    in (v, v)|]
+    int  :: N ((Integer, Integer) -> (Integer, Integer))
+    int  = liftN [$exp|\(n, x) -> 
+                          let v = bounded(0, x + n, $int:maxNum)
+                            in (v, v)|]
       
-      maxNum = (2^n-1)*secondsPerUnit
+    maxNum = (2^n-1)*secondsPerUnit
 \end{verbatim}
 
 The function \texttt{sintegrate} is fully described in
@@ -2556,8 +2577,10 @@ modification of the state:
 
 \begin{verbatim}
 streamsForAlarm n sp = [interaction >>> maybeBeep | interaction <- interactions]
-                       ++ [ interaction >>> smap [$exp|(/ $int:secondsPerUnit)|] >>> response n | 
-                            response <- [maybeTurnOn, maybeTurnOff],
+                       ++ [ interaction 
+                            >>> smap [$exp|(/ $int:secondsPerUnit)|] 
+                            >>> response n
+                          | response <- [maybeTurnOn, maybeTurnOff],
                             n <- [0..n],
                             interaction <- interactions ]
     where
@@ -2582,35 +2605,32 @@ streamsForAlarm n sp = [interaction >>> maybeBeep | interaction <- interactions]
                             >>> turnOff (diode (sp+i) False)
 \end{verbatim}
 
+\newpage
+\noindent
 The C program is somewhat shorter, perhaps simpler:
 
 \begin{verbatim}
 #define incButtonPin 2
 #define decButtonPin 3
 #define alarmPin 13
-
 #define secondsPerUnit (15*60)
-
 #define stateBits 4
 #define startDiode 4
-
 
 volatile unsigned int timer = 0;
 
 void changeTimer(unsigned int delta) {
-  if (delta > timer) {
+  if (delta > timer)
     timer = 0;
-  } else {
+  else
     timer = min(1<<stateBits, timer + secondsPerUnit);
-  }
+  
   for (unsigned int d = startDiode; d < startDiode+stateBits; ++d) {
     digitalWrite(d, timer & (1 << (d-startDiode)) ? HIGH : LOW);
   }
-  if (timer > 0) {
-    analogWrite(alarmPin, 0);
-  } else {
-    analogWrite(alarmPin, 128);
-  }
+
+  if (timer > 0) analogWrite(alarmPin, 0);
+  else analogWrite(alarmPin, 128);
 }
 
 void increaseButton() {
@@ -2625,8 +2645,7 @@ void timerHit() {
   changeTimer(-1);
 }
 
-void setup()
-{
+void setup() {
   for (unsigned int d = startDiode; d < startDiode+stateBits; ++d) {
     pinMode(d, OUTPUT);
     digitalWrite(d, LOW);
@@ -2637,8 +2656,7 @@ void setup()
   SetupTimer2(1000.0, timer_hit);
 }
 
-void loop()
-{
+void loop() {
 }
 \end{verbatim}
 
@@ -2783,7 +2801,7 @@ int main() {
 If we want to make the uncommon combination of a line following robot
 and a alarm clock, we might want to combine the above programs, into a
 single program with both functions. In Fladuino this is easily done by
-a simple junction of the set of dataflow graphs, as shown in the
+a simple co of the set of dataflow graphs, as shown in the
 following line of code.
 
 \begin{verbatim}
@@ -2850,9 +2868,75 @@ summarise some of these.
   as the LCD, are not properly represented as Fladuino devices.  The
   cause of these deficiencies is that the 3pi robot is somewhat
   further from Arduino compatibility than we were lead to believe.
+\item The C-quasiquoter should be extended or replaced to support C++
+  as well.  Many of the Arduino libraries are written in C++, and
+  writing C wrappers gets tiresome quickly.  The base Language
+  Reference\footnote{\url{http://arduino.cc/en/Reference/Extended},
+    last checked 6th June 2009} is fully supported by the
+  C-quasiquotation module and most of it is also supported as devices,
+  however all official Arduino libraries and most Contributed
+  Libraries are written in C++, which isn't supported as an object
+  language, and without C linkage.
+
+  The most used library that suffers from this is the \texttt{Serial}
+  library used to communicate with any connected device. This is one
+  of the easiest ways of debugging an embedded device.
+
+  To solve this any necessary libraries must be wrapped with C linkage
+  definitions and for easy usability Fladuino devices ought to be
+  defined.
 \end{itemize}
 
 \section{Handy new tools}
+
+\begin{itemize}
+\item It would be useful if Fladuino could print out its understanding
+  of the device setup with respect to pins during compilation.  This
+  would allow the programmer to confirm that Fladuino's understanding
+  of the hardware matches reality, or even to write the program
+  without preparing the hardware in advance, and just set up the
+  devices as directed by Fladuino.  This latter functionality could be
+  further extended by not requiring the use of specific pins when
+  writing a program, and rather just specify the different devices
+  that the program is interested in using without mentioning specific
+  I/O pins.  Fladuino would then run a constraint-solver and either
+  report an error, if the desired combination is completely
+  impossible, and otherwise present a list of instructions on which
+  pins should be connected to which devices in order to run the
+  program correctly.
+\item Generalising and extending the platform abstraction, the runtime
+  system, and parts of our code generation to support platforms other
+  than Arduino.  Many microcontrollers are very similar to Arduino, in
+  that they offer little more than a selection of I/O pins, and it
+  should be relatively simple to modify Fladuino to support these as
+  well.
+\end{itemize}
+
+\subsection{Fladuino event queue}
+\label{sec:fladuino-event-queue}
+$\ldots$
+Making the event queue prioritised or allowing to hook the timer 1 interrupt
+making sure a function is always run when an interrupt happens. Of cause the
+user needs to be aware not to add computational heavy functions here. But
+e.g. something that writes a new value to the Pololu 3pi robot's buzzer.
+$\ldots$
+
+\subsection{Pololu 3pi support}
+
+The Pololu 3pi robot is just barely supported as the Fladuino framework is
+now. The Pololu Corporation has luckily made all their libraries C-compliant
+though they are written in C++. However only the motors and battery reader are
+fully implemented and the reflectance sensor's are partially implemented.
+
+Some of the functionality is in its current state not fully compliant with the
+Fladuino framework. E.g. timer 0 and 2 is reserved when using the
+motors\footnote{This is a core part of using the 3pi robot. Else a Arduino board
+  could have been used.} which leaves timer 1 for Fladuino. This breaks all
+functionality with devices and libraries that uses any of the timers, like the
+Pololu library \texttt{OrangutanBuzzer} that uses timer 1 for playing melody's
+meanwhile allowing the processor to do other stuff. Only solution to this
+problem is to write new libraries that utilises the Fladuino event queue ore
+something else, see \fref{sec:fladuino-event-queue}.
 
 \section{Major structural changes}
 
@@ -2879,7 +2963,7 @@ program.  Lifting inter-machine communication to first class status in
 Fladuino could help prevent several error classes:
 
 \begin{description}
-\item[Format errors], such as the classic endian issues, would be
+\item[Format errors,] such as the classic endian issues, would be
   eliminated as Fladuino would take care of all data conversion.
 \item[Type mismatches] would also be impossible, as Fladuino would
   have a high-level overview of the communication between machines,
@@ -2892,52 +2976,6 @@ Fladuino could help prevent several error classes:
 Additionally, support for ad-hoc networking (through radio
 transmitters, for example) could be built-in and controlled by rules
 specified in the Fladuino program.
-
-\subsection{C++ Quasiquoter}
-
-This could be quite handy $\ldots$
-
-\subsection{Arduino libraries}
-
-The base Language
-Reference\footnote{\url{http://arduino.cc/en/Reference/Extended}, last checked
-  6th June 2009} is fully supported by the C-quasiquotation module and most of
-it is also supported as devices, however all official Arduino libraries and most
-Contributed Libraries are written in C++, which isn't supported as an object
-language, and without C linkage. 
-
-The most used library that suffers from this is the \texttt{Serial} library used
-to communicate with any connected device. This is one of the easiest ways of
-debugging an embedded device.
-
-To solve this any necessary libraries must be wrapped with C linkage definitions
-and for easy usability Fladuino devices ought to be defined.
-
-\subsection{Pololu 3pi support}
-
-The Pololu 3pi robot is just barely supported as the Fladuino framework is
-now. The Pololu Corporation has luckily made all their libraries C-compliant
-though they are written in C++. However only the motors and battery reader are
-fully implemented and the reflectance sensor's are partially implemented.
-
-Some of the functionality is in its current state not fully compliant with the
-Fladuino framework. E.g. timer 0 and 2 is reserved when using the
-motors\footnote{This is a core part of using the 3pi robot. Else a Arduino board
-  could have been used.} which leaves timer 1 for Fladuino. This breaks all
-functionality with devices and libraries that uses any of the timers, like the
-Pololu library \texttt{OrangutanBuzzer} that uses timer 1 for playing melody's
-meanwhile allowing the processor to do other stuff. Only solution to this
-problem is to write new libraries that utilises the Fladuino event queue ore
-something else, see \fref{sec:fladuino-event-queue}.
-
-\subsection{Fladuino event queue}
-\label{sec:fladuino-event-queue}
-$\ldots$
-Making the event queue prioritised or allowing to hook the timer 1 interrupt
-making sure a function is always run when an interrupt happens. Of cause the
-user needs to be aware not to add computational heavy functions here. But
-e.g. something that writes a new value to the Pololu 3pi robot's buzzer.
-$\ldots$
 
 \chapter{Related Work}
 In this section we will look at other frameworks for reactive
@@ -3168,7 +3206,7 @@ the ones of interrest:
   restarts.
 
 \item[\texttt{CTC}] mode has a predefined top value and optionally
-  specified counter value (initially default set to 0). When the
+v  specified counter value (initially default set to 0). When the
   counter reaches the defined top value it is cleared to 0, the
   interrupt is triggered and incrementation of the counter
   restarts. This gives better resolution of the counter and thus more
