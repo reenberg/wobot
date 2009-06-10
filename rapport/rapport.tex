@@ -917,7 +917,7 @@ parts can be divided into the following:
   selection of the exact Arduino variant targeted by the program.
 
   Finally, since Arduino is a fundamentally extensible platform, we provide
-  facilities for implementing drivers (see \fref{sec:user-extens-abstr} ) for
+  facilities for implementing drivers (see \fref{sec:user-extens-abstr}) for
   entirely new devices, such that use of these is also automatically
   sanity-checked.
 \end{itemize}
@@ -938,7 +938,7 @@ As in Flask, the dataflow graph is divided into \textit{atomic
 Evaluating such a subgraph consists of supplying a value on the input
 wire, retrieving any values that may show up on output wires, then
 setting up to evaluate any of the successor atomic subgraphs with
-these values (see \ref{sec:dataflowtranslation} for the implementation
+these values (see \fref{sec:dataflowtranslation} for the implementation
 details).  The notion of an atomic subgraph serves the purpose of
 dividing the dataflow graph into parts that can be evaluated
 atomically without blocking.  Translating a dataflow graph into object
@@ -960,7 +960,7 @@ approach is unacceptable for several reasons:
 
 \begin{itemize}
 \item If we are already in the progress of computing an atomic
-  subgraph $s_1$ already, we will have to store information about the
+  subgraph $s_1$, we will have to store information about the
   computation while we evaluate all graphs $s_n$ listening to the
   newly arrived event.  The size of this information can be
   significant, especially if we receive yet another event while
@@ -1000,7 +1000,7 @@ evaluation of all listeners of that event.  It is important that the
 event-check, as well as the computation of the value of the event, is
 done in the interrupt handler itself, as the value may depend on the
 hardware state (such as the voltage on an input pin) as of that
-moment, and it cannot be guaranteed that this state will not have
+moment and it cannot be guaranteed that this state has not
 changed by the time the main loop retrieves the element from the event
 queue.  This means that we cannot provide any strict guarantees about
 the resource usage of interrupt handlers, but this is a hardware issue
@@ -1183,7 +1183,7 @@ node would have resulted in.
 
 Simulating the Queue behaviour is significantly more complicated and
 requires a somewhat clumsy use of events (see
-\ref{sec:events_design}).  Values received at the input-node are sent
+\fref{sec:events_design}).  Values received at the input-node are sent
 on to a \textit{counter node}, where we check whether we are still
 waiting for the sensor to reply to a previously sent request.  If so,
 we increment an internal counter and send nothing further.  When the
@@ -1191,7 +1191,7 @@ reply is received, by being sent to the output node, we will send a
 value to the counter node, telling it to send another request to the
 sensor if the counter is nonzero.  The problem in this scheme is the
 wire from the output node to the accumulator node --- this graph edge
-would form a cycle, something that is expressly forbidden.  On figure
+would form a cycle, something that is expressly forbidden.  On
 \fref{fig:queue-with-ignore}, we solve this issue by an \textit{event node}
 that listens to a discrete event broadcast by the output node (the
 Fladuino event system is described in detail in
@@ -1252,7 +1252,9 @@ example, the platform definition for the Pololu 3pi robot contains a
 platform supports the quirks of the 3pi robot that cannot be expressed
 through a list of pins.  Any device intended to make use of these
 quirks would explicitly require the presence of this capability.
-
+\fixme{dette afsnit er lidt for implementations agtigt. Bør være mere hvorfor
+  agtigt. Anyhow ellers skal der forklare mere her og slet ikke nede i
+  implementations afsnittet.}
 \subsubsection{The Fladuino pin model}
 \label{sec:pins}
 There is no concrete distinction between analog and digital pins in
@@ -2661,11 +2663,10 @@ the robot and we turn right. The implementation of this is shown in
 
 \begin{figure}
 \begin{verbatim}
-velocity :: N (Integer -> (Integer, Integer))
-velocity = liftN [$decls|f linepos = 
-                    if linepos < 1000 then (0, $int:speed)
-                    else if linepos > 3000 then ($int:speed, $int:speed)
-                    else ($int:speed, 0)|]
+velocity :: N (Integer -> (Float, Float))
+velocity = liftN [$decls|
+                   f linepos = ($flo:speed, 
+                                (intToFloat (2000 - linepos)) / 2000.0)|]
 \end{verbatim}  
   \caption{\texttt{velocity}-function}
   \label{fig:velocity-function}
@@ -3509,10 +3510,10 @@ f (2, _) = 3
 
 \item In Haskell, 42 can both be interpreted as an $Integer$, a
   $Double$, or any other member of the $Num$-type class. In Red this
-  isn't the case and thus \texttt{negate} and \texttt{(-)} --- which
-  are defined by \verb|negate x = 0 - x| --- only works for
+  isn't the case and thus \texttt{negate} and \texttt{(-)}, which
+  are defined by \verb|negate x = 0 - x|, only works for
   integers.(Related to the lack of type-classes). Instead, you can
-  define a negation function for \textit{Doubles}, by: .
+  define a negation function for \textit{Doubles}, by: \verb|neg x = 0.0 - x|.
 \end{itemize}
 
 \chapter{Code snippets}
