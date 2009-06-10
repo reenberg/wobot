@@ -2961,14 +2961,19 @@ summarise some of these.
   be relatively simple to modify Fladuino to support these as well.
 \end{itemize}
 
-\subsection{Fladuino event queue}
+\subsection{Event queue with priorities}
 \label{sec:fladuino-event-queue}
-$\ldots$
-Making the event queue prioritised or allowing to hook the timer 1 interrupt
-making sure a function is always run when an interrupt happens. Of cause the
-user needs to be aware not to add computational heavy functions here. But
-e.g. something that writes a new value to the Pololu 3pi robot's buzzer.
-$\ldots$
+
+All events are currently equal in the Fladuino event queue, and are
+processed in a strict first-in first-out manner.  Some programs may
+benefit from being able to prioritise specific events above others,
+perhaps even to the extent of making soft real-time guarantees.
+Specifically, many programs may prefer that events stemming from
+sensors are given priority over those that are the result of user
+action.  As we mention in \Fref{sec:event_queue} the event queue will,
+when full, silently drop new events.  In this case, it may also
+sometimes be desirable to drop lower-priority events for those with a
+higher assigned priority.
 
 \subsection{Pololu 3pi support}
 
