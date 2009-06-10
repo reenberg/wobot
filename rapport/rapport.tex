@@ -288,11 +288,11 @@ We selected the Arduino platform
 \item because of its low cost. An Arduino Duemilanove is priced at
   approximately 200 \nolinebreak DKK at the time of writing.
 \item because of its extensibility. You can buy plenty of different
-  Arduino-specific extensions (``shields''). There exists shields for
+  Arduino-specific extensions, known as ``shields''. There exists shields for
   bluetooth, ethernet or even small touch, to name a few. And it is also
   our perception that it is possible to connect it with other
   electronic devices which aren't built for the Arduino.
-\item and finally because of its relatively high-level C-interface,
+\item and finally because of its relatively high-level C interface,
   sparing us from much low-level programming and bit trickery.
 \end{itemize}
 
@@ -371,28 +371,27 @@ We expect that readers of this report to be able to read and
 understand Haskell, and has functional programming experience, as
 e.g. acquired from the book ``Real World Haskell''
 (\cite{realworldhaskell}).  Additionally, we expect the reader to have
-casual familiarity with the concepts of Quasiquotation
+casual familiarity with the concepts of quasiquotation
 \cite{quasiquote07}, phantom types, and to know the difference between
 meta-languages versus object-languages.
 
-
-A small background knowledge in electronics, is probably required to
-understand our example code.
+A small background knowledge in electronics, is required to understand
+our example code.
 
 \section{Structure outline}
 In the following chapter (\Fref[plain]{chap:Flask}) we shall describe
 Flask itself, its design, and how you use it to write sensor-network
 programs.
 
-In \Fref{chap:design} we will look at what functionality is
+In \Fref[plain]{chap:design} we will look at what functionality is
 needed when programming control systems that isn't already in Flask
 and how we have embodied this in Fladuino (i.e. our core design
 decisions).
 
-In \Fref{chap:implementation} we will talk about the technically
+In \Fref[plain]{chap:implementation} we will talk about the technically
 modification we have made to transform Flask to Fladuino.
 
-In \Fref{chap:evaluation} we will present an evaluation of the
+In \Fref[plain]{chap:evaluation} we will present an evaluation of the
 complete Fladuino system, judging its benefits over traditional
 methods of programming control programs, as well as covering any
 identified shortcomings. We present a subset of drivers for the Pololu
@@ -430,7 +429,7 @@ Later we will examine how this is written (or \textit{wired}) in
 Flask. We see that this is a single connected graph\footnote{This is
   actually two different \textit{atomic subgraphs} because of the
   special \textit{posting wire} required to use the sensor, but for
-  simplicity we wont discuss this now. Refer to \cite{flask06} or our
+  simplicity we won't discuss this now. Refer to \cite{flask06} or our
   \fref{sec:posting wires} about posting wires.}, but many Flask
 programs will consist of several \textit{atomic subgraphs}. We say
 that they are atomic in the sense that they have to run to completion
@@ -526,8 +525,7 @@ things are the same as for not compiling Haskell directly to the
 sensor nodes in the first place: the existing Haskell runtimes are too
 large to fit on the limited memory of a sensor node. Therefore we
 disallow features that e.g.  requires a garbage collector. Flask
-disallows the following Haskell 98-features (with probably some more,
-that we have overlooked) from Red:
+disallows the following Haskell 98-features from Red:
 \begin{itemize}
 \item Recursive functions
 \item Recursive datatypes
@@ -643,7 +641,7 @@ sconst :: forall a b eta. (Reify b, LiftN eta a)
 (>>>) :: forall a. Reify a => S a -> (S a -> S a)
 \end{verbatim}
   Connects a stream with a stream operator.  E.g. {\ttfamily clock 10 \verb|>>>|
-    sconst (liftN [\$exp|42|])} is a stream of 42 values, that is passed on
+    sconst (liftN [\$exp|42|])} is an infinite stream of 42 values, that is passed on
   every 10th millisecond. This is simply implemented as a Haskell function
   application.
 
@@ -682,7 +680,7 @@ sintegrate :: forall a b c eta . (Reify a, Reify b, Reify c,
        =>  N c -> eta -> S a -> S b
 \end{verbatim}
   \texttt{sintegrate} is the primary state-retaining stream operator.
-  It function maps a tuple $(x, s)$, where $x$ is a newly arrived
+  It maps a tuple $(x, s)$, where $x$ is a newly arrived
   value and $s$ is the state, to the tuple $(y, s')$, where $y$ is the
   output value and $s'$ is the new state.  The $N c$ argument in the
   type signature is the initial state.
@@ -801,8 +799,8 @@ And we set the scope of our project as follows:
   exceeds these constraints will result in information loss or
   undefined behaviour.  We shall, however, endeavour to design
   Fladuino so as to reduce the likelihood of these errors.
-\item As we see this research project rather that an engineering
-  project, we wont devote time to writing documentation for Fladuino.
+\item As we see this as a research project rather that an engineering
+  project, we won't devote time to writing documentation for Fladuino.
 \item A notable last narrowing of our scope is that we won't provide
   primitives for programming real time systems.
 \end{itemize}
@@ -931,7 +929,7 @@ parts can be divided into the following:
 \end{itemize}
 
 Except for the last module, this structure has been adopted from
-Flask.  Additionally, Flask defines additional facilities (such as
+Flask.  Furthermore, Flask defines additional facilities (such as
 \textit{Flows} for communicating between sensor nodes) that build
 heavily upon the TinyOS-platform for sensor networks, a platform that
 is not available to us.  We have thus not adapted all of these
@@ -2656,7 +2654,7 @@ infrared light downwards and measuring the amount of light
 reflected. They are primarily used for line following programs, where
 the goal of the robot is to follow a black line on a white floor.
 
-The C-interface to the 3pi provides several functions for reading the
+The C interface to the 3pi provides several functions for reading the
 values of the sensors. We only provide access to one of these
 functions, as we don't need precise measurements (we are only doing
 this for illustration purposes) and thus the simplest possible
@@ -2665,7 +2663,7 @@ value between $0$ and $4000$ indicating the position on the line
 followed. This is described in detail in the Pololu 3pi User's
 Guide\cite{3pi_users_guide}.
 
-The \verb|read_line| wont detect the line without some
+The \verb|read_line| won't detect the line without some
 calibration. The 3pi user guide provides the steps needed for this
 calibration and the C-implementation of is shown in \Fref{fig:sensor
   calibration}. The robot needs to be placed on the line before
@@ -2702,7 +2700,7 @@ void calibrate_3pi_sensors () {
 
 The rest of the declaration of the \verb|ReflectanceSensors| device is
 quite like the potentiometer example (see
-\Fref[plain]{sec:potentiometer device}), and we wont discuss it
+\Fref[plain]{sec:potentiometer device}), and we won't discuss it
 further.
 
 \subsubsection{Motors}
@@ -2859,7 +2857,7 @@ main = defaultMain
 
 This is only a conceptual example, as hardware restrictions on the
 number timers renders this impossible. All the hardware timers are used
-for operating the 3pi robot, so we wont have a timer for the alarm
+for operating the 3pi robot, so we won't have a timer for the alarm
 clock. Some pin-reconfiguration would also be necessary for it to
 work.
 
@@ -2979,7 +2977,7 @@ The dataflow basis of Fladuino makes it easy to imagine how these
 systems could be programmed graphically by drag-and-drop
 principles. This would allow users with even less programming
 experience to program to the Arduino-platform, as it could be expected
-to be easier than both Fladuino and Arduino's C-interface. Some coding
+to be easier than both Fladuino and Arduino's C interface. Some coding
 would probably still be need, since almost all Fladuino programs also
 consist of some quasiquoted Red or C code and Fladuino only suggest a
 way of representing the overall dataflow graphically. 
