@@ -1882,7 +1882,7 @@ In \fref{sec:devices} we define a device-driver as:
 \begin{itemize}
 \item a list of hardware-dependencies, e.g. which hardware pins or
   timers it confiscates,
-\item a setup-function for doing initializing tasks on start-up
+\item a setup-function for doing initialising tasks on start-up
   (e.g. including C-header files), and
 \item a set of functions for interacting with the device.
 \end{itemize}
@@ -1906,7 +1906,7 @@ a device by its membership of this type class, and specific devices
 can be identified directly by their datatype. Our monadic state is
 extended with a list of these devices, both to enable conflict testing
 of hardware-dependencies and postpone the device-setup to a general
-device initialization-phase of the code generation. The \verb|Device|
+device initialisation-phase of the code generation. The \verb|Device|
 type class is shown in \Fref{fig:device typeclass}.
 
 \begin{figure}
@@ -1931,22 +1931,56 @@ way of comparing devices. It is impossible to make use of the
 the same type, and each type of device has their own datatype.
 
 
-In section \ref{sec:pushbuttondef}, the implementation of a
-device-driver for a simple push-button is discussed.
+The implementation of a device-driver for a simple push-button is discussed in
+\Fref{sec:pushbuttondef}.
 
+\subsection{Defining new platforms}
+\label{sec:defining platforms}
+
+The general concept of platforms is discussed in \Fref{sec:platforms} and
+consists of the following
+
+\begin{description}
+\item[Pins] This is a list of pin declarations. A pin
+  declaration consists of the type of the pin (digital or analog-input) paired
+  with the pin number and a list of the capabilities supported by the pin.
+
+\item[Pin map] A mapping from \textit{arduino pins} to
+  \textit{logical pins} (see \Fref{sec:pins}).  For example, the Arduino
+  Duemilanove maps analog pin 0 to logical pin 14.
+
+\item[Capabilities] A list of platform specific capabilities
+  expressing support for notions not otherwise expressable.  All
+  platforms should include their name such that a Fladuino program can
+  state only to be compatible with this platform. Thus all platforms
+  that is compatible with each other could include this in the list of
+  capabilities. Other capabilities could be the Pololu 3pi robot's
+  motors, buzzer or LCD.
+
+\item[Base setup] Any platform specific configuration that should be
+  added, like initialisation code for the Arduino BT platform's
+  bluetooth device or inclusion of specific header file on the Pololu
+  3pi platform.
+
+\item[Timer id] This defines the timer id that Fladuino uses to drive
+  the clock. Some Arduino compliant hardware reserves different timers
+  for various tasks, like the Pololu 3pi uses time 0 and timer 1 to
+  drive the motors.
+
+  The \texttt{defaultPlatform} defaults this to 1.
+\end{description}
 
 \subsection{Defining new events}
 \label{sec:defining events}
 Our general concept of \textit{events} is defined in
-\ref{sec:events_design}. As explained there, events are closely
-connected with the hardware concept of pin change interrupts
-(\ref{sec:external-interrupts}) to enable automatic installation of event
-interrupt handlers. We also identified that it should be possible for
-the user to specify \textit{predicate} and \textit{value functions}. 
-These values, together with the payload type and a event-name, which
-only is used for code-generation purposes, constitutes our
-\textit{event representation}. This is simply implemented as a Haskell
-datatype \verb|ERep|, which is shown in \Fref{fig:Erep}. 
+\Fref{sec:events_design}. As explained there, events are closely connected with
+the hardware concept of interrupts (see \Fref{sec:external-interrupts}) to
+enable automatic installation of event interrupt handlers. We also identified
+that it should be possible for the user to specify \textit{predicate} and
+\textit{value functions}.  These values, together with the payload type and a
+event-name, which only is used for code-generation purposes, constitutes our
+\textit{event representation}. This is simply implemented as a Haskell datatype
+\verb|ERep|, which is shown in \Fref{fig:Erep}.
 
 \begin{figure}
   \centering
@@ -1965,17 +1999,17 @@ data ERep = ERep
 \end{figure}
 
 For convenience, we don't require definitions of the
-\textit{predicate} and \textit{value functions}, as we've identified
-commonly used default behaviors for both. When \verb|e_value| is
+\textit{predicate} and \textit{value functions}, as we have identified
+commonly used default behaviours for both. When \verb|e_value| is
 \verb|Nothing|, we return \textit{unit} as payload, and the default
 predicate function, is the function that always returns $true$.
 
-As seen from \fref[plain]{fig:Erep}, its impossible to distinguish the
+As seen from \Fref{fig:Erep}, its impossible to distinguish the
 different event-types by the Haskell-type of the \textit{event
   representation}. We could do this by adding a \textit{phantom type}
 directly to this datatype, but instead of doing it at the
 datatype-level, we've done it in a type class (shown in
-\fref{fig:Event type class})) that also somewhat conceals \verb|ERep| from
+\Fref{fig:Event type class})) that also somewhat conceals \verb|ERep| from
 the programmer. This type class serves the purpose of moving work from
 the event-user, to the event-implementer. Instead of making the user
 construct an \verb|ERep| whenever he uses an Event, we do this
@@ -2022,7 +2056,7 @@ onEvent :: forall e t. (Reify t, Event e t) => e -> S t
 \noindent
 It is this single function that connects events with the dataflow
 graph. An example of its use is shown in the next chapter,
-specifically \fref{fig:onEvent usage} illustrates it simplicity.
+specifically \Fref{fig:onEvent usage} illustrates it simplicity.
 
 Implementation wise, it essentially runs the
 \verb|setupEvent|-function, to create the event representation, which
@@ -2033,11 +2067,6 @@ specified interrupt handlers for each event, to signal that specific
 event if the predicate is true, with the result of running the
 value-function.
 
-
-
-
-\textit{Beskrivelse af vores fedeste eksempelprogrammer: 3pi,
-  binærtæller etc. og hvorfor det er smart.}
 
 \chapter{Building on the abstractions}
 \label{chap:example code}
@@ -2109,7 +2138,6 @@ instance Event PushButtonPressEvent () where
         return $ mkEvent e Nothing (Just v)
     interruptPins (PushButtonPressEvent (PushButton pin)) = [DPin pin]
 
-
 instance Event PushButtonReleaseEvent () where
     setupEvent e@(PushButtonReleaseEvent (d@(PushButton pin))) = 
      do addDevice d 
@@ -2125,7 +2153,6 @@ instance Event PushButtonReleaseEvent () where
 
 With this definition, we can define programs such as
 
-
 \begin{nonfloatingfigure}
 \begin{verbatim}
 onEvent (PushButtonPressEvent $ PushButton 3) >>> (toggle $ diode 13 True)
@@ -2139,7 +2166,7 @@ This program will toggle the state of a diode connected to digital pin
 13 (a default device on almost all Arduino boards) whenever the
 pushbutton attached to digital pin 3 is pressed.
 
-\section{A potentiometer device}
+\section{Defining a potentiometer}
 \label{sec:potentiometer device}
 
 A potentiometer interface can be defined in Fladuino quite easily as it doesn't
@@ -2157,13 +2184,16 @@ instance Device Potentiometer where
     usages (Potentiometer pin) = [APinUsage pin []]
 
 instance AnalogInputDevice Potentiometer where
-    genReadCode (Potentiometer pin) resultvar = [[$cstm|$id:resultvar = analogRead($int:pin);|]]
+    genReadCode (Potentiometer pin) resultvar = 
+        [[$cstm|$id:resultvar = analogRead($int:pin);|]]
 \end{verbatim}
 
 This allows programs such as
 
 \begin{verbatim}
-idle >>> (valueOf $ Potentiometer 0) >>> smap [$exp|(/4)|] >>> (setValue $ AnalogOutputPin 10 0)
+idle >>> (valueOf $ Potentiometer 0) 
+     >>> smap [$exp|(/4)|] 
+     >>> (setValue $ AnalogOutputPin 10 0)
 \end{verbatim}
 
 The reason why the pulled value is divided by 4 is that the ATmega
@@ -2173,58 +2203,27 @@ explicitley changed. The scale 0 to 1023 when reading analog values is
 proportional to the relationship between GND and AREF, which is
 nomally 0v and 5v respectively, though AREF can be explicitly changed.
 
-\section{Supporting  new platforms}
+\section{Defining new platforms}
 
 When adding support for a new platform, e.g. the Pololu 3pi, one has the option
 to either define it from scratch by extending the \texttt{emptyPlatform} ore by
-extending one of the predefined platforms. A platform consists of the following
-definitions
-
-\begin{description}
-\item[Pins] This is a list of pin definition. A pin definition
-  consists of the type of the pin (digital or analog-input) paired
-  with the pin number and a list of the capabilities supported by the
-  pin.
-
-\item[Pin map] A mapping from \textit{arduino pins} to
-  \textit{logical pins} (see \Fref{sec:pins}).  E.g. the Arduino
-  Duemilanove maps analog pin 0 to logical pin 14.
-
-\item[Capabilities] A list of platform specific capabilities
-  expressing support for notions not otherwise expressable.  All
-  platforms should include their name such that a Fladuino program can
-  state only to be compatible with this platform. Thus all platforms
-  that is compatible with each other could include this in the list of
-  capabilities. Other capabilities could be the Pololu 3pi robot's
-  motors, buzzer or LCD.
-
-\item[Base setup] Any platform specific configuration that should be
-  added, like initialisation code for the Arduino BT platform's
-  bluetooth device or inclusion of specific header file on the Pololu
-  3pi platform.
-
-\item[Timer id] This defines the timer id that Fladuino uses to drive
-  the clock. Some Arduino compliant hardware reserves different timers
-  for various tasks, like the Pololu 3pi uses time 0 and timer 1 to
-  drive the motors.
-
-  The \texttt{defaultPlatform} defaults this to 1.
-\end{description}
+extending one of the predefined platforms. 
 
 The default platform is the \texttt{arduinoDuemilanove} which extends the
 \texttt{emptyPlatform} and is defined as
 
 \begin{verbatim}
-arduinoDuemilanove = emptyPlatform { p_pins = [ PinDecl (DPin n) $ pc n | n <- [0..13] ] ++
-                                              [ PinDecl (APin n) ["analog", "interrupt"] | n <- [0..6] ]
-                                   , p_pinmap = (\x -> case x of
-                                                         DPin pin -> pin
-                                                         APin pin -> pin+14)
-                                   , p_capabilities = ["Duemilanove"] }
-              where
-                -- PWM on pin 9 and 10 are disallowed because they interfere with TIMER1
-                pc pin | pin `elem` [3, 5, 6, 11] = ["PWM", "interrupt"] 
-                pc _ = ["interrupt"]
+arduinoDuemilanove = emptyPlatform 
+      { p_pins = [ PinDecl (DPin n) $ pc n | n <- [0..13] ] ++
+                 [ PinDecl (APin n) ["analog", "interrupt"] | n <- [0..6] ]
+      , p_pinmap = (\x -> case x of
+                            DPin pin -> pin
+                            APin pin -> pin+14)
+      , p_capabilities = ["Duemilanove"] }
+   where
+     -- PWM on pin 9 and 10 are disallowed because they interfere with TIMER1
+     pc pin | pin `elem` [3, 5, 6, 11] = ["PWM", "interrupt"] 
+     pc _ = ["interrupt"]
 \end{verbatim}
 
 Since the \texttt{arduinoDiecimila} platform is fully compatible and has
@@ -2245,12 +2244,13 @@ the \texttt{pololu3pi} platform can be defined by extending the
 \texttt{arduinoDuemilanove} and adding the extra capabilities and base setup
 
 \begin{verbatim}
-pololu3pi = arduinoDuemilanove { p_capabilities = ["3pi", 
-                                                   "3pi battery reader", 
-                                                   "3pi reflectance sensors",
-                                                   "3pi motors"]
-                               , p_base_setup = addCInclude "3pi/3pi.h"
-                               }
+pololu3pi = arduinoDuemilanove 
+   { p_capabilities = ["3pi", 
+                       "3pi battery reader", 
+                       "3pi reflectance sensors",
+                       "3pi motors"]
+   , p_base_setup = addCInclude "3pi/3pi.h"
+   }
 \end{verbatim}
 
 
@@ -2281,20 +2281,20 @@ the robot to follow a black line on white background.
 The C-interface to the 3pi provides several functions for reading the
 values of the sensors. We only provide access to one of these
 functions, as we don't need precise measurements (we are only doing
-this for illustration purposes) and the simplest interface enough for
+this for illustration purposes) and thus the simplest interface is enough for
 us. The C-function \verb|read_line| gives us a value between $0$ and
 $4000$ indicating the position on the line followed. This is described
 in detail in the Pololu 3pi User's Guide\cite{3pi_users_guide}.
 
 For the \verb|read_line| function to work, the robot needs some
 calibration for detecting the line. The user guide provides the steps
-needed for this calibration. The C-implementation of this is shown in
-\fref{fig:sensor calibration}. We have added statements that wait for
+needed for this calibration and the C-implementation of this is shown in
+\Fref{fig:sensor calibration}. We have added statements that wait for
 the user to click on the Pololu's B-button, before and after
 calibration.  This is done in the C-code and not as Fladuino dataflow
 graph, as we have no way of entering setup-code as a dataflow
-graph. We will discuss this further in the our evaluation of
-Fladuino, see \Fref{chap:evaluation}. This waiting is done so the user has a chance of placing the
+graph. We will discuss this further in our evaluation of
+Fladuino (see \Fref{chap:evaluation}). This waiting is done so the user has a chance of placing the
 robot correctly on the black line before calibration.
 
 \begin{figure}
@@ -2321,7 +2321,7 @@ void calibrate_3pi_sensors () {
 \end{figure}
 
 The rest of the declaration of the \verb|ReflectanceSensors| device is
-quite like the potentiometer example (\fref[plain]{sec:potentiometer
+quite like the potentiometer example (see \Fref[plain]{sec:potentiometer
   device}), and we wont discuss it further.
 
 \subsection{Motors}
@@ -2335,11 +2335,11 @@ Our framework provides a simple wrapper of this function which we call
 This interface isn't a very natural way of expressing movement, so we
 also provide another interface,
 \verb|set_motors :: Motors -> S (Float, Float) -> S ()|. This function
-input stream is two values, a rotational velocity and a translational
+input stream is two values, a translational velocity and a rotational 
 velocity. Both values are \textit{Doubles} between $-1.0$ and
 $1.0$. This is simply implemented as a Fladuino function utilising the
 \verb|set_motors_native| function. The implementation is shown in
-\fref{fig:set_motors implementation}.
+\Fref{fig:set_motors implementation}.
 
 \begin{figure}
   \centering
