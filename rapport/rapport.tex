@@ -282,7 +282,7 @@ mentioned.  We will use the term ``an Arduino board'' to refer to the
 physical package of microcontroller and I/O ports.
 
 \noindent
-We've selected the Arduino platform 
+We selected the Arduino platform 
 \begin{itemize}
 \item because of its low cost. An Arduino Duemilanove is priced at
   approximately 200 \nolinebreak DKK at the time of writing.
@@ -366,12 +366,16 @@ enough \textit{performance} to run on the highly resource--constrained
 devices that form our domain.
 
 \section{Reader expectations}
-We expect that readers of this report has a small background knowledge
-of electronics.
+We expect that readers of this report can read Haskell, and functional
+programming experience, as e.g. acquired from the book ``Real World
+Haskell'' (\cite{realworldhaskell}).  Additionally, we expect the
+reader to have casual familiarity with the concepts of Quasiquotation
+\cite{quasiquote07}, phantom types, and to know the difference between
+meta-languages versus object-languages.
 
-Additionally, we expect the reader to have casual familiarity with the
-concepts of Quasiquotation \cite{quasiquote07}, phantom types, and to
-know the difference between meta-languages versus object-languages.
+
+A small background knowledge in electronics, is probably required to
+understand our example code.
 
 \section{Structure outline}
 In the following chapter (\Fref[plain]{chap:Flask}) we shall describe
@@ -1208,18 +1212,19 @@ real posting wires, as software interrupts are to hardware interrupts.
   \label{fig:queue-with-ignore}
 \end{figure}
 
-\section{Representing peripherals} Arduino is a flexible system for
-general embedded development, with no specific application in mind.
-The Arduino platform can therefore be connected to a diverse amount of
-peripheral devices, all with their own specific functionality and
-programming interface.  It is thus natural to support this diversity
-as a core concept of Fladuino; not (solely) as a library of drivers
-for various devices, but rather as a framework and set of tools
-provided to the programmer so that Fladuino can be extended to
-transparently support the devices he has need of.  For demonstration,
-we have written a minimal framework for programming the Pololu 3pi
-robot and \textit{some} of the peripherals connected to it
-(electromotors, reflectance sensors, etc.). This framework is
+\section{Representing peripherals} 
+
+Arduino is a flexible system for general embedded development, with no
+specific application in mind.  The Arduino platform can therefore be
+connected to a diverse amount of peripheral devices, all with their
+own specific functionality and programming interface.  It is thus
+natural to support this diversity as a core concept of Fladuino; not
+(solely) as a library of drivers for various devices, but rather as a
+framework and set of tools provided to the programmer so that Fladuino
+can be extended to transparently support the devices he has need of.
+For demonstration, we have written a minimal framework for programming
+the Pololu 3pi robot and \textit{some} of the peripherals connected to
+it (electromotors, reflectance sensors, etc.). This framework is
 discussed in \Fref[plain]{chap:example code} and evaluated in
 \Fref[plain]{chap:evaluation}
 
@@ -1228,9 +1233,9 @@ more-or-less compatible platforms, though each of them differ slightly
 in their exact capacity.  Apart from variations in such things as
 memory size, they differ in amount and capability of their I/O pins.
 This latter diversity is what we are most concerned with in Fladuino,
-as we would like to statically check (at generation-time) the
-hardware assumptions expressed in the program.  Thus, we also provide
-a facility for describing the exact capabilities of a specific
+as we would like to statically check (at generation-time) the hardware
+assumptions expressed in the program.  Thus, we also provide a
+facility for describing the exact capabilities of a specific
 Arduino-based platform, and provide default descriptions of common
 Arduino-compatible such as the Arduino Duemilanove, Arduino Mega,
 Arduino BT, and Pololu 3pi.
@@ -1244,17 +1249,30 @@ Arduino BT, and Pololu 3pi.
 
 \subsection{Platforms}
 \label{sec:platforms}
-A platform is defined by a list of \textit{logical pins}, and
-free-form \textit{capabilities}, the latter being a set of strings
-describing the identity or unusual qualities of the platform.  For
-example, the platform definition for the Pololu 3pi robot contains a
-``3pi''-capability that exists merely to express the fact that the
-platform supports the quirks of the 3pi robot that cannot be expressed
-through a list of pins.  Any device intended to make use of these
-quirks would explicitly require the presence of this capability.
-\fixme{dette afsnit er lidt for implementations agtigt. Bør være mere hvorfor
-  agtigt. Anyhow ellers skal der forklare mere her og slet ikke nede i
-  implementations afsnittet.}
+
+Arduino is a heterogeneous ecology.  Apart from the various models
+that differ in availability of I/O pins, processor speed and available
+program memory, there are also highly specialised variants such as the
+Arduino BT with a built-in bluetooth module, and the Pololu 3pi, a
+mostly Arduino-compatible robot designed for line-following.  The
+primary difference between these variants is their availability of
+I/O-pins, a difference that we must be reflected in Fladuino if we are
+to sanity-check device use.  Additionally, some platforms (such as the
+previously mentioned Arduino BT) have additional intrinsic qualities,
+like the built-in Bluetooth module, that must be expressed somehow,
+such that attempts to use said Bluetooth device will be erroneous
+unless we are compiling for an Arduino BT.
+
+A platform is defined by a list of \textit{logical pins} (described in
+full in \Fref{sec:pins}), and free-form \textit{capabilities}, the
+latter being a set of strings describing the identity or unusual
+qualities of the platform.  For example, the platform definition for
+the Pololu 3pi robot contains a ``3pi''-capability that exists merely
+to express the fact that the platform supports the quirks of the 3pi
+robot that cannot be expressed through a list of pins.  Any device
+intended to make use of these quirks would explicitly require the
+presence of this capability.
+
 \subsubsection{The Fladuino pin model}
 \label{sec:pins}
 There is no concrete distinction between analog and digital pins in
@@ -2236,12 +2254,14 @@ pololu3pi = arduinoDuemilanove { p_capabilities = ["3pi",
 
 
 \section{Pololu 3pi bindings}
+\label{sec:3pi bindings}
 In this section we will explain our framework for programming the
 Pololu 3pi through Fladuino. We have added definitions to read
 sensors, battery level and controlling the electromotors.
 
 The Pololu 3pi comes with a C++ framework, with
-C-wrappers\footnote{???found where???}\fixme{fix footnote}. Thus, as with the
+C-wrappers\footnote{Found in the ``6.a Downloading and Installing the
+  C/C++ Library'' section of the Pololu website: \url{http://www.pololu.com/docs/0J21/6.a}}. Thus, as with the
 Arduino, most of the low-level work of reading and calibrating sensors
 or controlling motors is already done. We only need high-level
 wrappers for these functions.  For the simplest example, reading the
@@ -2263,18 +2283,18 @@ functions, as we don't need precise measurements (we are only doing
 this for illustration purposes) and the simplest interface enough for
 us. The C-function \verb|read_line| gives us a value between $0$ and
 $4000$ indicating the position on the line followed. This is described
-in detail in the Pololu 3pi User's Guide\fixme{reference}.
+in detail in the Pololu 3pi User's Guide\cite{3pi_users_guide}.
 
 For the \verb|read_line| function to work, the robot needs some
 calibration for detecting the line. The user guide provides the steps
 needed for this calibration. The C-implementation of this is shown in
 \fref{fig:sensor calibration}. We have added statements that wait for
 the user to click on the Pololu's B-button, before and after
-calibration.  This is done in the C-code and not in Fladuino for
-reasons we will discuss in the our evaluation of Fladuino (we found it
-impossible to do through our Fladuino interface). This waiting is done
-so the user has a chance of placing the robot correctly on the black
-line before calibration.
+calibration.  This is done in the C-code and not as Fladuino dataflow
+graph, as we have no way of entering setup-code as a dataflow
+graph. We will discuss this further in the our evaluation of
+Fladuino, see \Fref{chap:evaluation}. This waiting is done so the user has a chance of placing the
+robot correctly on the black line before calibration.
 
 \begin{figure}
   \centering
@@ -2349,6 +2369,16 @@ compute (v, omega) = let motorLvel = v * (if omega <= 0.0 then 1.0 else 1.0 - om
 \item How does the example-programs compare to similar programs
   written directly in C? More or less code? More or less debugging?
 \end{itemize}
+
+We set out to implement a language for the programming of control
+systems running on Arduino-compatible platforms.  An evaluation of our
+results thus consists of considering the \textit{practical}
+obstructions to this use.  Additionally, we will elaborate whether
+basing our work on Flask turned out to be a good idea.  Finally, an
+implicit subgoal was that Fladuino should be a \textit{better} way to
+program Arduino than plain C/C++, and we shall evaluate our completion
+of this goal by an experimental comparison of similar programs written
+in Fladuino and C respectively.
 
 \section{Known obstructions to practical use}
 
@@ -2460,6 +2490,9 @@ dataflow graph, and thus implicitly represent its entire structure.
 The function is used in the \texttt{main} function like thus:
 
 \begin{verbatim}
+alarm :: [S ()]
+alarm = streamsForAlarm 4 4
+
 main :: IO ()
 main =
     defaultMain $ do
@@ -2467,7 +2500,7 @@ main =
     addCFundef [$cedecl|int isBitSet(int x, int bit) {
                                   return (x & _BV(bit));
                                 }|]
-    genStreams $ map unS (streamsForAlarm 4 4)
+    genStreams $ map unS alarm
 \end{verbatim}
 
 In \texttt{streamsForAlarm} we shall have need of the ability to query
@@ -2635,62 +2668,82 @@ suggested solutions) will be discussed further in
 
 
 \subsection{Pololu 3pi: Line following robot}
-In this section we first show Fladuino-code for a line following
-robot. The body of the implementation is shown in the following
-figure (\ref{fig:linefollow}).
+In this section we will evaluate Fladuino based on another example: a
+line following program for the Pololu 3pi.
+
+The Fladuino implementation is shown in the following figure
+(\ref{fig:linefollow}). It relies on our bindings for the 3pi robot
+described in \Fref{sec:3pi bindings}.
 
 \begin{nonfloatingfigure}
   \centering
-
 \begin{verbatim}
-defaultMain $ do
-  genStream $ idle 
-              >>> valueOf ReflectanceSensors
-              >>> smap velocity 
-              >>> set_motors Motors
+speed = 0.5
+linefollow = idle 
+             >>> valueOf ReflectanceSensors
+             >>> smap velocity
+             >>> set_motors Motors
+  where 
+    velocity :: N (Integer -> (Float, Float))
+    velocity = liftN [$exp|\linepos -> 
+                        ($flo:speed, 
+                         intToFloat (2000 - linepos) / 2000.0)|]
 \end{verbatim}
-  
   \caption{Line-follower}
   \label{fig:linefollow}
 \end{nonfloatingfigure}
 
-It expresses a simple line-following strategy. Whenever the CPU is
-ready (\texttt{idle}), read the value of the reflectance sensors
-(\texttt{valueOf ReflectanceSensors}), uses these values to calculate
-the speed of the two motors (\texttt{smap velocity}, the
-\texttt{velocity} function is explained below), and update the
-velocities of the motors with these values (\verb|set_motors Motors|).
+
+
+The program expresses a simple line-following strategy. Whenever the
+CPU is ready (\texttt{idle}), read the value of the reflectance
+sensors (\texttt{valueOf ReflectanceSensors}), use these values to
+calculate the speed of the two motors (\texttt{smap velocity}, the
+\texttt{velocity} function is explained below), and configure the
+motors with these new values (\verb|set_motors Motors|).
 
 The \verb|velocity| function converts the result of the sensor reading
 to rotational and translational velocities. The sensor reading is a
-value between $0$ and $4000$ indicating the position of the line. When
-the line is to the right of the robot, the value is below $1000$ and
-we turn left. If the line is centered on the line, the value is
-somewhere between $1000$ and $3000$ and we continue straight a
-head. Values above $3000$ indicates that the line is to the left of
-the robot and we turn right. The implementation of this is shown in
-\fref{fig:velocity-function}
+value between $0$ and $4000$ indicating the position of the line
+compared to. A value of $0$ indicates that the line is to the right of
+the line and the robot should turn left to get back on the track, a
+value of $4000$ indicates the opposite. If the robot is centered on
+the line, we should expect a value of $2000$.  To steer the motor, we
+scale this value to a floating point value between $-1.0$ and $1.0$,
+which is given as the rotational speed to \verb|set_motors|.
 
-\begin{figure}
-\begin{verbatim}
-velocity :: N (Integer -> (Float, Float))
-velocity = liftN [$decls|
-                   f linepos = ($flo:speed, 
-                                (intToFloat (2000 - linepos)) / 2000.0)|]
-\end{verbatim}  
-  \caption{\texttt{velocity}-function}
-  \label{fig:velocity-function}
-\end{figure}
+As we explained in \Fref{sec:3pi bindings}, calibration code for the
+sensors is automatically inserted into the initialisation of the
+generated Arduino-code when the \verb|ReflectanceSensors|-device is
+used. Also mentioned there, is the fact that we had to do write the
+calibration code in C.  Thus implementing this example revealed an
+improvement point for our system, as we could provide a way for
+entering one or more atomic subgraphs that should be evaluated at
+start-up. 
 
-This line-following algorithm was inspired by an algorithm in the
-Pololu 3pi user manual. A simplified version (without status messages
-written to the LCD display etc.) is shown in \fref{fig:linefollow-in-c}
+The line-following algorithm was inspired by an algorithm in the
+Pololu 3pi user manual. A simplified version (with some debug
+functionality stripped) is shown in \Fref{fig:linefollow-in-c}. The
+used calibration function, described in \Fref{sec:3pi bindings} is
+replicated here. The function \verb|set_motors_rot_trans| is a
+conceptual function of ours, that takes rotational and translational
+velocities like our \verb|set_motors|-function. We have introduced it
+to make the comparison easier.
+
+The C version of the program will probably be considered simpler than
+our program, by many. Especially if you take into account that we have
+just hidden the low-level details of, for example the
+\verb|sensors|-array and magic constants like the size of this same
+array behind an abstraction layer, that also could be provided for C.
+But the C version also as its deficiencies. As mentioned earlier,
+Fladuino automatically inserts Device-specific initialisation code,
+when the Device is used. And it is therefore easier for the
+driver-writer to remove these initialisation tasks from the
+programmer. 
 
 \begin{figure}
   \centering
 \begin{verbatim}
-#include <pololu/3pi.h>
-
 void calibrate_3pi_sensors () {
   int counter;
   while(!button_is_pressed(BUTTON_B));
@@ -2707,6 +2760,8 @@ void calibrate_3pi_sensors () {
   while(!button_is_pressed(BUTTON_B));
 }
 
+float speed = 0.5;
+
 int main() {
   unsigned int sensors[5];
 
@@ -2716,12 +2771,7 @@ int main() {
   while(1) {
       unsigned int position = read_line(sensors,IR_EMITTERS_ON);
 
-      if(position < 1000)
-          set_motors(0,100);
-      else if(position < 3000) 
-          set_motors(100,100);
-      else 
-          set_motors(100,0);
+      set_motors_rot_trans(speed, ((float)(2000 - position)) / 2000.0);
   }
 }
 \end{verbatim}
@@ -2729,7 +2779,22 @@ int main() {
   \label{fig:linefollow-in-c}
 \end{figure}
 
+\section{Combining programs}
+If we want to make the uncommon combination of a line following robot
+and a alarm clock, we might want to combine the above programs, into a
+single program with both functions. In Fladuino this is easily done by
+a simple junction of the set of dataflow graphs, as shown in the
+following line of code.
 
+\begin{verbatim}
+main = defaultMain . genStreams . map unS $ [linefollow] ++ alarm
+\end{verbatim}
+
+This is only a conceptual example, as hardware restrictions on the
+number timers renders this impossible. All the hardware timers is used
+for operating the 3pi robot, so we wont have a timer for the alarm
+clock. Some pin-reconfiguration would also be necessary for it to
+work.
 
 
 \chapter{The Fladuino Future}
