@@ -58,7 +58,7 @@
 
 \newcommand{\EDSL}{EDSL (Embedded Domain-Specific Language) \renewcommand{\EDSL}{ EDSL }}
 
-\title{Controlling embedded devices with functional reactive programming}
+\title{Fladuino: Controlling embedded devices with\\ functional reactive programming}
 
 \author{Martin Dybdal (dybber@dybber.dk), \\
 Troels Henriksen (athas@sigkill.dk) and \\
@@ -115,7 +115,6 @@ supervised by Ken Friis Larsen, assistant professor at DIKU.
 \clearpage
 
 \tableofcontents*
-
 
 \fixme{check all quoted text for use of the same quotes!!!!}
 \fixme{Check all cites. Should there be a space between the word and cite or
@@ -204,17 +203,18 @@ that our result, Fladuino, is sufficient for a wide range of control
 systems.
 
 Our domain, control systems, is quite wide and we define it as
-\textit{programmable systems that senses and regulates some task by the use of
-  sensors and actuators}, which includes almost any computer system.  Selecting
-the Arduino platform restrains our scope to the tasks it can handle. The Arduino
-is generic and handles a broad range of tasks, when connected with the right
-peripherals. This extendability makes us argue that concentrating on the Arduino
-isn't a particularly strict limitation. This has the obvious impact, that our
+\textit{programmable systems that senses and regulates some task by
+  the use of sensors and actuators}, which includes almost any
+computer system.  Selecting the Arduino platform restrains our scope
+to the tasks it can handle. The Arduino is generic and handles a broad
+range of tasks, when connected with the right peripherals. This
+extendability makes us argue that concentrating on the Arduino isn't a
+particularly strict limitation. This has the obvious impact, that our
 framework should be general enough to support almost any connectable
-external Arduino device. We do this by providing a way of writing drivers or small
-frameworks for arbitrary devices.  Furthermore, due to the blandness of
-Arduino's technology itself, it would most likely not prove difficult to port
-our work to another architecture.
+external Arduino device. We do this by providing a way of writing
+drivers or small frameworks for arbitrary devices.  Furthermore, due
+to the blandness of Arduino's technology itself, it would most likely
+not prove difficult to port our work to another architecture.
 
 In \fref{sec:pushbuttondef}, we show by example how this framework is
 used. \Fref{fig:fladuino-simple} shows a Fladuino program that toggles
@@ -263,7 +263,7 @@ responses. Instead, the programmer specifies how his reactions
 (input-values) and the language itself discovers which output-values
 are to be recalculated when detecting a change in an input-value.
 
-Flask and Fladuino are thus reactive programming languages.
+Thus, Flask and Fladuino are reactive programming languages.
 
 
 \section{Hardware platform}
@@ -797,6 +797,8 @@ And we set the scope of our project as follows:
   exceeds these constraints will result in information loss or
   undefined behaviour.  We shall, however, endeavour to design
   Fladuino so as to reduce the likelihood of these errors.
+\item As we see this research project rather that an engineering
+  project, we wont devote time to documentation-writing.
 \end{itemize}
 
 A notable narrowing is that we won't provide primitives for
@@ -812,8 +814,7 @@ terms, and the constraints under which the design was formed.
 As in Flask, Fladuino is implemented as a set of Haskell modules that
 provides facilities for expressing the structure and behaviour of a
 \textit{dataflow graph}, connecting \textit{dataflow operators}
-through value-carrying directed graph edges (\textit{wires}).
-\fixme{The following should be described in the Flask chapter} The
+through value-carrying directed graph edges (\textit{wires}).  The
 programmer writes a Haskell program, called the \textit{generator
   program}, or just the \textit{program}.  We shall refer to the
 compilation of the program as \textit{compile-time}, and execution of
@@ -2397,7 +2398,7 @@ Arduino-based control systems:
 \item[Insufficient handling of runtime errors:] There is no robust
   system in case for any reasonable kind of run-time error handling
   for the generated programs.  While exhausting memory, or swamping
-  the processor with more work that it is able to handle, are
+  the processor with more work than it is able to handle, are
   situations that it is hard to solve gracefully, \textit{some}
   detection of these problems is likely to be important for debugging.
   Even ultra-simplistic error reporting, like lighting a given diode,
@@ -2462,12 +2463,15 @@ timer is zero, an alarm will be sounded through a piezoelectric
 speaker.  The buttons will be connected to pins 2 and 3, while the
 speaker will be connected to pin 13.
 
+
 \begin{verbatim}
 secondsPerUnit = 15*60 -- One quarter of an hour.
 increaseButton = PushButton 2
 decreaseButton = PushButton 3
-increase       = onPress increaseButton >>> sconst [$exp|$int:secondsPerUnit|]
-decrease       = onPress decreaseButton >>> sconst [$exp|-1 * $int:secondsPerUnit|]
+increase       = onPress increaseButton 
+                 >>> sconst [$exp|$int:secondsPerUnit|]
+decrease       = onPress decreaseButton 
+                 >>> sconst [$exp|-1 * $int:secondsPerUnit|]
 clockInts      = clock 1000 >>> sconst [$exp|-1|]
 alarm          = AnalogOutputPin 13 0
 \end{verbatim}
@@ -2490,13 +2494,15 @@ dataflow graph, and thus implicitly represent its entire structure.
 The function is used in the \texttt{main} function like thus:
 
 \begin{verbatim}
-alarm :: [S ()]
-alarm = streamsForAlarm 4 4
+alarmClock :: [S ()]
+alarmClock = streamsForAlarm 4 4
 
 main :: IO ()
 main =
     defaultMain $ do
-    addCImport "isBitSet" [$ty|(Integer, Integer) -> Bool|] [$cexp|isBitSet|]
+    addCImport "isBitSet" 
+               [$ty|(Integer, Integer) -> Bool|] 
+               [$cexp|isBitSet|]
     addCFundef [$cedecl|int isBitSet(int x, int bit) {
                                   return (x & _BV(bit));
                                 }|]
@@ -2521,15 +2527,16 @@ define a function \texttt{modNum}:
 \begin{verbatim}
 modNum :: S Integer -> S Integer
 modNum = sintegrate zero int
-    where
-      zero :: N Integer
-      zero = liftN [$exp|0|]
+  where
+    zero :: N Integer
+    zero = liftN [$exp|0|]
 
-      int  :: N ((Integer, Integer) -> (Integer, Integer))
-      int  = liftN [$exp|\(n, x) -> let v = bounded(0, x + n, $int:maxNum)
-                                    in (v, v)|]
+    int  :: N ((Integer, Integer) -> (Integer, Integer))
+    int  = liftN [$exp|\(n, x) -> 
+                          let v = bounded(0, x + n, $int:maxNum)
+                            in (v, v)|]
       
-      maxNum = (2^n-1)*secondsPerUnit
+    maxNum = (2^n-1)*secondsPerUnit
 \end{verbatim}
 
 The function \texttt{sintegrate} is fully described in
@@ -2556,8 +2563,10 @@ modification of the state:
 
 \begin{verbatim}
 streamsForAlarm n sp = [interaction >>> maybeBeep | interaction <- interactions]
-                       ++ [ interaction >>> smap [$exp|(/ $int:secondsPerUnit)|] >>> response n | 
-                            response <- [maybeTurnOn, maybeTurnOff],
+                       ++ [ interaction 
+                            >>> smap [$exp|(/ $int:secondsPerUnit)|] 
+                            >>> response n
+                          | response <- [maybeTurnOn, maybeTurnOff],
                             n <- [0..n],
                             interaction <- interactions ]
     where
@@ -2582,35 +2591,32 @@ streamsForAlarm n sp = [interaction >>> maybeBeep | interaction <- interactions]
                             >>> turnOff (diode (sp+i) False)
 \end{verbatim}
 
+\newpage
+\noindent
 The C program is somewhat shorter, perhaps simpler:
 
 \begin{verbatim}
 #define incButtonPin 2
 #define decButtonPin 3
 #define alarmPin 13
-
 #define secondsPerUnit (15*60)
-
 #define stateBits 4
 #define startDiode 4
-
 
 volatile unsigned int timer = 0;
 
 void changeTimer(unsigned int delta) {
-  if (delta > timer) {
+  if (delta > timer)
     timer = 0;
-  } else {
+  else
     timer = min(1<<stateBits, timer + secondsPerUnit);
-  }
+  
   for (unsigned int d = startDiode; d < startDiode+stateBits; ++d) {
     digitalWrite(d, timer & (1 << (d-startDiode)) ? HIGH : LOW);
   }
-  if (timer > 0) {
-    analogWrite(alarmPin, 0);
-  } else {
-    analogWrite(alarmPin, 128);
-  }
+
+  if (timer > 0) analogWrite(alarmPin, 0);
+  else analogWrite(alarmPin, 128);
 }
 
 void increaseButton() {
@@ -2625,8 +2631,7 @@ void timerHit() {
   changeTimer(-1);
 }
 
-void setup()
-{
+void setup() {
   for (unsigned int d = startDiode; d < startDiode+stateBits; ++d) {
     pinMode(d, OUTPUT);
     digitalWrite(d, LOW);
@@ -2637,8 +2642,7 @@ void setup()
   SetupTimer2(1000.0, timer_hit);
 }
 
-void loop()
-{
+void loop() {
 }
 \end{verbatim}
 
@@ -2783,7 +2787,7 @@ int main() {
 If we want to make the uncommon combination of a line following robot
 and a alarm clock, we might want to combine the above programs, into a
 single program with both functions. In Fladuino this is easily done by
-a simple junction of the set of dataflow graphs, as shown in the
+a simple co of the set of dataflow graphs, as shown in the
 following line of code.
 
 \begin{verbatim}
@@ -2879,7 +2883,7 @@ program.  Lifting inter-machine communication to first class status in
 Fladuino could help prevent several error classes:
 
 \begin{description}
-\item[Format errors], such as the classic endian issues, would be
+\item[Format errors,] such as the classic endian issues, would be
   eliminated as Fladuino would take care of all data conversion.
 \item[Type mismatches] would also be impossible, as Fladuino would
   have a high-level overview of the communication between machines,
