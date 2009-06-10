@@ -943,20 +943,21 @@ As in Flask, the dataflow graph is divided into \textit{atomic
 Evaluating such a subgraph consists of supplying a value on the input
 wire, retrieving any values that may show up on output wires, then
 setting up to evaluate any of the successor atomic subgraphs with
-these values (see \fref{sec:dataflowtranslation} for the implementation
-details).  The notion of an atomic subgraph serves the purpose of
-dividing the dataflow graph into parts that can be evaluated
-atomically without blocking.  Translating a dataflow graph into object
-code is referred to as \textit{stream generation}.  Translating an
-atomic subgraph is relatively straightforward, and the subject of
-\Fref{sec:dataflowtranslation}, while it is far more interesting to
-contemplate the question of what to do with the asynchronous events
-that are the heart of reactive programming.  Indeed, we have to
-analyse the constraints of our target platform(s) in order to reach an
-adequate solution.  Since events are fundamentally connected to the
-concept of a hardware interrupt (though we do not reject the ability
-for sinks\fixme{sinks ikke forklaret tidligere} to manually signal
-events), we cannot at any time predict, or control, their arrival.
+these values (see \fref{sec:dataflowtranslation} for the
+implementation details).  The notion of an atomic subgraph serves the
+purpose of dividing the dataflow graph into parts that can be
+evaluated atomically without blocking.  Translating a dataflow graph
+into object code is referred to as \textit{stream generation}.
+Translating an atomic subgraph is relatively straightforward, and the
+subject of \Fref{sec:dataflowtranslation}, while it is far more
+interesting to contemplate the question of what to do with the
+asynchronous events that are the heart of reactive programming.
+Indeed, we have to analyse the constraints of our target platform(s)
+in order to reach an adequate solution.  Since events are
+fundamentally connected to the concept of a hardware interrupt (though
+we do not reject the ability to manually signal synthetic events --
+software interrupts, if you will), we cannot at any time predict, or
+control, their arrival.
 
 The simplest strategy would be to, upon arrival of an event via an
 asynchronous hardware-level interrupt, immediately evaluate all atomic
