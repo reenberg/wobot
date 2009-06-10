@@ -2441,6 +2441,19 @@ Additionally, we could reuse most of the stream operators with little
 work, the conversion of their implementation from NesC to C being
 trivial in most cases.
 
+Certain aspects of Flask's design are reflected in Fladuino where they
+are less desirable, however.  Flask is aimed at the programming of
+sensor networks, which mostly involves the harvesting data from
+sensors, filtering or processing it, and passing it on along the
+network.  Flask thus has very crude support for internal state, in
+particular a complete lack of support for dynamically allocated state,
+which has the implication that the size of state data has to be fixed
+at compile-time.  While this may not be a significant problem for the
+programming of sensor networks, it can be a significant obstacle to
+the programming of general reactive systems.  This, more than anything
+else, is perhaps the chief deficiency that came about due to our
+choice to adapt Flask, rather than writing a system from scratch.
+
 \section{Experimental comparison}
 
 We cannot hope to make a general comparison of utility between
@@ -2854,9 +2867,75 @@ summarise some of these.
   as the LCD, are not properly represented as Fladuino devices.  The
   cause of these deficiencies is that the 3pi robot is somewhat
   further from Arduino compatibility than we were lead to believe.
+\item The C-quasiquoter should be extended or replaced to support C++
+  as well.  Many of the Arduino libraries are written in C++, and
+  writing C wrappers gets tiresome quickly.  The base Language
+  Reference\footnote{\url{http://arduino.cc/en/Reference/Extended},
+    last checked 6th June 2009} is fully supported by the
+  C-quasiquotation module and most of it is also supported as devices,
+  however all official Arduino libraries and most Contributed
+  Libraries are written in C++, which isn't supported as an object
+  language, and without C linkage.
+
+  The most used library that suffers from this is the \texttt{Serial}
+  library used to communicate with any connected device. This is one
+  of the easiest ways of debugging an embedded device.
+
+  To solve this any necessary libraries must be wrapped with C linkage
+  definitions and for easy usability Fladuino devices ought to be
+  defined.
 \end{itemize}
 
 \section{Handy new tools}
+
+\begin{itemize}
+\item It would be useful if Fladuino could print out its understanding
+  of the device setup with respect to pins during compilation.  This
+  would allow the programmer to confirm that Fladuino's understanding
+  of the hardware matches reality, or even to write the program
+  without preparing the hardware in advance, and just set up the
+  devices as directed by Fladuino.  This latter functionality could be
+  further extended by not requiring the use of specific pins when
+  writing a program, and rather just specify the different devices
+  that the program is interested in using without mentioning specific
+  I/O pins.  Fladuino would then run a constraint-solver and either
+  report an error, if the desired combination is completely
+  impossible, and otherwise present a list of instructions on which
+  pins should be connected to which devices in order to run the
+  program correctly.
+\item Generalising and extending the platform abstraction, the runtime
+  system, and parts of our code generation to support platforms other
+  than Arduino.  Many microcontrollers are very similar to Arduino, in
+  that they offer little more than a selection of I/O pins, and it
+  should be relatively simple to modify Fladuino to support these as
+  well.
+\end{itemize}
+
+\subsection{Fladuino event queue}
+\label{sec:fladuino-event-queue}
+$\ldots$
+Making the event queue prioritised or allowing to hook the timer 1 interrupt
+making sure a function is always run when an interrupt happens. Of cause the
+user needs to be aware not to add computational heavy functions here. But
+e.g. something that writes a new value to the Pololu 3pi robot's buzzer.
+$\ldots$
+
+\subsection{Pololu 3pi support}
+
+The Pololu 3pi robot is just barely supported as the Fladuino framework is
+now. The Pololu Corporation has luckily made all their libraries C-compliant
+though they are written in C++. However only the motors and battery reader are
+fully implemented and the reflectance sensor's are partially implemented.
+
+Some of the functionality is in its current state not fully compliant with the
+Fladuino framework. E.g. timer 0 and 2 is reserved when using the
+motors\footnote{This is a core part of using the 3pi robot. Else a Arduino board
+  could have been used.} which leaves timer 1 for Fladuino. This breaks all
+functionality with devices and libraries that uses any of the timers, like the
+Pololu library \texttt{OrangutanBuzzer} that uses timer 1 for playing melody's
+meanwhile allowing the processor to do other stuff. Only solution to this
+problem is to write new libraries that utilises the Fladuino event queue ore
+something else, see \fref{sec:fladuino-event-queue}.
 
 \section{Major structural changes}
 
@@ -2896,52 +2975,6 @@ Fladuino could help prevent several error classes:
 Additionally, support for ad-hoc networking (through radio
 transmitters, for example) could be built-in and controlled by rules
 specified in the Fladuino program.
-
-\subsection{C++ Quasiquoter}
-
-This could be quite handy $\ldots$
-
-\subsection{Arduino libraries}
-
-The base Language
-Reference\footnote{\url{http://arduino.cc/en/Reference/Extended}, last checked
-  6th June 2009} is fully supported by the C-quasiquotation module and most of
-it is also supported as devices, however all official Arduino libraries and most
-Contributed Libraries are written in C++, which isn't supported as an object
-language, and without C linkage. 
-
-The most used library that suffers from this is the \texttt{Serial} library used
-to communicate with any connected device. This is one of the easiest ways of
-debugging an embedded device.
-
-To solve this any necessary libraries must be wrapped with C linkage definitions
-and for easy usability Fladuino devices ought to be defined.
-
-\subsection{Pololu 3pi support}
-
-The Pololu 3pi robot is just barely supported as the Fladuino framework is
-now. The Pololu Corporation has luckily made all their libraries C-compliant
-though they are written in C++. However only the motors and battery reader are
-fully implemented and the reflectance sensor's are partially implemented.
-
-Some of the functionality is in its current state not fully compliant with the
-Fladuino framework. E.g. timer 0 and 2 is reserved when using the
-motors\footnote{This is a core part of using the 3pi robot. Else a Arduino board
-  could have been used.} which leaves timer 1 for Fladuino. This breaks all
-functionality with devices and libraries that uses any of the timers, like the
-Pololu library \texttt{OrangutanBuzzer} that uses timer 1 for playing melody's
-meanwhile allowing the processor to do other stuff. Only solution to this
-problem is to write new libraries that utilises the Fladuino event queue ore
-something else, see \fref{sec:fladuino-event-queue}.
-
-\subsection{Fladuino event queue}
-\label{sec:fladuino-event-queue}
-$\ldots$
-Making the event queue prioritised or allowing to hook the timer 1 interrupt
-making sure a function is always run when an interrupt happens. Of cause the
-user needs to be aware not to add computational heavy functions here. But
-e.g. something that writes a new value to the Pololu 3pi robot's buzzer.
-$\ldots$
 
 \chapter{Related Work}
 In this section we will look at other frameworks for reactive
@@ -3177,7 +3210,7 @@ the ones of interrest:
   restarts.
 
 \item[\texttt{CTC}] mode has a predefined top value and optionally
-  specified counter value (initially default set to 0). When the
+v  specified counter value (initially default set to 0). When the
   counter reaches the defined top value it is cleared to 0, the
   interrupt is triggered and incrementation of the counter
   restarts. This gives better resolution of the counter and thus more
