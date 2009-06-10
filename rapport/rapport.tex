@@ -2256,112 +2256,6 @@ pololu3pi = arduinoDuemilanove
 \end{verbatim}
 
 
-\section{Pololu 3pi bindings}
-\label{sec:3pi bindings}
-In this section we will explain our framework for programming the
-Pololu 3pi through Fladuino. We have added definitions to read
-sensors, battery level and controlling the electromotors.
-
-The Pololu 3pi comes with a C++ framework, with
-C-wrappers\footnote{Found in the ``6.a Downloading and Installing the
-  C/C++ Library'' section of the Pololu website: \url{http://www.pololu.com/docs/0J21/6.a}}. Thus, as with the
-Arduino, most of the low-level work of reading and calibrating sensors
-or controlling motors is already done. We only need high-level
-wrappers for these functions.  For the simplest example, reading the
-battery level is done just as reading the potentiometer value in
-\fref{sec:potentiometer device}, instead of calling the
-\verb|analogRead|-function we just call the Pololu 3pi function
-\verb|read_battery_millivolts|. 
-
-\subsection{Reflectance sensors}
-The five reflectance sensors on the 3pi are infrared sensors, that
-allows the robot to read the ``darkness'' of the floor, by emitting
-infrared light downwards and measuring how much was reflected. They
-are primarily used for line following programs, where the goal is for
-the robot to follow a black line on white background.
-
-The C-interface to the 3pi provides several functions for reading the
-values of the sensors. We only provide access to one of these
-functions, as we don't need precise measurements (we are only doing
-this for illustration purposes) and thus the simplest interface is enough for
-us. The C-function \verb|read_line| gives us a value between $0$ and
-$4000$ indicating the position on the line followed. This is described
-in detail in the Pololu 3pi User's Guide\cite{3pi_users_guide}.
-
-For the \verb|read_line| function to work, the robot needs some
-calibration for detecting the line. The user guide provides the steps
-needed for this calibration and the C-implementation of this is shown in
-\Fref{fig:sensor calibration}. We have added statements that wait for
-the user to click on the Pololu's B-button, before and after
-calibration.  This is done in the C-code and not as Fladuino dataflow
-graph, as we have no way of entering setup-code as a dataflow
-graph. We will discuss this further in our evaluation of
-Fladuino (see \Fref{chap:evaluation}). This waiting is done so the user has a chance of placing the
-robot correctly on the black line before calibration.
-
-\begin{figure}
-  \centering
-\begin{verbatim}
-void calibrate_3pi_sensors () {
-  int counter;
-  while(!button_is_pressed(BUTTON_B));
-  for(counter=0; counter<80; counter++) {
-      if(counter < 20 || counter >= 60)
-        set_motors(40,-40);
-      else
-        set_motors(-40,40);
-
-      calibrate_line_sensors(IR_EMITTERS_ON);
-      delay_ms(20);
-  }
-  set_motors(0,0);
-  while(!button_is_pressed(BUTTON_B));
-}
-\end{verbatim}  
-  \caption{Sensor calibration}
-  \label{fig:sensor calibration}
-\end{figure}
-
-The rest of the declaration of the \verb|ReflectanceSensors| device is
-quite like the potentiometer example (see \Fref[plain]{sec:potentiometer
-  device}), and we wont discuss it further.
-
-\subsection{Motors}
-Pololu 3pi motors are controlled by the C-function
-\verb|set_motors|. Its arguments are two integers between -255 and 255
-indicating the speed of each of the two 3pi-electromotors. The motors
-rotates in reverse for negative values.
-
-Our framework provides a simple wrapper of this function which we call
-\verb|set_motors_native :: Motors -> S (Integer, Integer) -> S ()|.
-This interface isn't a very natural way of expressing movement, so we
-also provide another interface,
-\verb|set_motors :: Motors -> S (Float, Float) -> S ()|. This function
-input stream is two values, a translational velocity and a rotational 
-velocity. Both values are \textit{Doubles} between $-1.0$ and
-$1.0$. This is simply implemented as a Fladuino function utilising the
-\verb|set_motors_native| function. The implementation is shown in
-\Fref{fig:set_motors implementation}.
-
-\begin{figure}
-  \centering
-\begin{verbatim}
-set_motors :: Motors -> S (Float, Float) -> S ()
-set_motors Motors from = from >>> f >>> set_motors_native Motors
-    where
-      f :: S (Float, Float) -> S (Integer, Integer)
-      f = smap computeSpeeds
-      computeSpeeds :: N ((Float, Float) -> (Integer, Integer))
-      computeSpeeds = liftN [$decls|
-compute (v, omega) = let motorLvel = v * (if omega <= 0.0 then 1.0 else 1.0 - omega)
-                         motorRvel = v * (if omega >= 0.0 then 1.0 else 1.0 + omega)
-                     in (round (motorLvel * 255.0), round (motorRvel * 255.0))
-                       |]
-\end{verbatim}  
-  \caption{Implementation af \texttt{set\_motors}}
-  \label{fig:set_motors implementation}
-\end{figure}
-
 
 \chapter{Evaluation}
 \label{chap:evaluation}
@@ -2685,6 +2579,111 @@ not support fully dynamic state at all!  This deficiency (and
 suggested solutions) will be discussed further in
 \Fref{chap:futurework}.
 
+\subsection{Pololu 3pi bindings}
+\label{sec:3pi bindings}
+In this section we will explain our framework for programming the
+Pololu 3pi through Fladuino. We have added definitions to read
+sensors, battery level and controlling the electromotors.
+
+The Pololu 3pi comes with a C++ framework, with
+C-wrappers\footnote{Found in the ``6.a Downloading and Installing the
+  C/C++ Library'' section of the Pololu website: \url{http://www.pololu.com/docs/0J21/6.a}}. Thus, as with the
+Arduino, most of the low-level work of reading and calibrating sensors
+or controlling motors is already done. We only need high-level
+wrappers for these functions.  For the simplest example, reading the
+battery level is done just as reading the potentiometer value in
+\fref{sec:potentiometer device}, instead of calling the
+\verb|analogRead|-function we just call the Pololu 3pi function
+\verb|read_battery_millivolts|. 
+
+\subsubsection{Reflectance sensors}
+The five reflectance sensors on the 3pi are infrared sensors, that
+allows the robot to read the ``darkness'' of the floor, by emitting
+infrared light downwards and measuring how much was reflected. They
+are primarily used for line following programs, where the goal is for
+the robot to follow a black line on white background.
+
+The C-interface to the 3pi provides several functions for reading the
+values of the sensors. We only provide access to one of these
+functions, as we don't need precise measurements (we are only doing
+this for illustration purposes) and thus the simplest interface is enough for
+us. The C-function \verb|read_line| gives us a value between $0$ and
+$4000$ indicating the position on the line followed. This is described
+in detail in the Pololu 3pi User's Guide\cite{3pi_users_guide}.
+
+For the \verb|read_line| function to work, the robot needs some
+calibration for detecting the line. The user guide provides the steps
+needed for this calibration and the C-implementation of this is shown in
+\Fref{fig:sensor calibration}. We have added statements that wait for
+the user to click on the Pololu's B-button, before and after
+calibration.  This is done in the C-code and not as Fladuino dataflow
+graph, as we have no way of entering setup-code as a dataflow
+graph. We will discuss this further in our evaluation of
+Fladuino (see \Fref{chap:evaluation}). This waiting is done so the user has a chance of placing the
+robot correctly on the black line before calibration.
+
+\begin{figure}
+  \centering
+\begin{verbatim}
+void calibrate_3pi_sensors () {
+  int counter;
+  while(!button_is_pressed(BUTTON_B));
+  for(counter=0; counter<80; counter++) {
+      if(counter < 20 || counter >= 60)
+        set_motors(40,-40);
+      else
+        set_motors(-40,40);
+
+      calibrate_line_sensors(IR_EMITTERS_ON);
+      delay_ms(20);
+  }
+  set_motors(0,0);
+  while(!button_is_pressed(BUTTON_B));
+}
+\end{verbatim}  
+  \caption{Sensor calibration}
+  \label{fig:sensor calibration}
+\end{figure}
+
+The rest of the declaration of the \verb|ReflectanceSensors| device is
+quite like the potentiometer example (see \Fref[plain]{sec:potentiometer
+  device}), and we wont discuss it further.
+
+\subsubsection{Motors}
+Pololu 3pi motors are controlled by the C-function
+\verb|set_motors|. Its arguments are two integers between -255 and 255
+indicating the speed of each of the two 3pi-electromotors. The motors
+rotates in reverse for negative values.
+
+Our framework provides a simple wrapper of this function which we call
+\verb|set_motors_native :: Motors -> S (Integer, Integer) -> S ()|.
+This interface isn't a very natural way of expressing movement, so we
+also provide another interface,
+\verb|set_motors :: Motors -> S (Float, Float) -> S ()|. This function
+input stream is two values, a translational velocity and a rotational 
+velocity. Both values are \textit{Doubles} between $-1.0$ and
+$1.0$. This is simply implemented as a Fladuino function utilising the
+\verb|set_motors_native| function. The implementation is shown in
+\Fref{fig:set_motors implementation}.
+
+\begin{figure}
+  \centering
+\begin{verbatim}
+set_motors :: Motors -> S (Float, Float) -> S ()
+set_motors Motors from = from >>> f >>> set_motors_native Motors
+    where
+      f :: S (Float, Float) -> S (Integer, Integer)
+      f = smap computeSpeeds
+      computeSpeeds :: N ((Float, Float) -> (Integer, Integer))
+      computeSpeeds = liftN [$decls|
+compute (v, omega) = let motorLvel = v * (if omega <= 0.0 then 1.0 else 1.0 - omega)
+                         motorRvel = v * (if omega >= 0.0 then 1.0 else 1.0 + omega)
+                     in (round (motorLvel * 255.0), round (motorRvel * 255.0))
+                       |]
+\end{verbatim}  
+  \caption{Implementation af \texttt{set\_motors}}
+  \label{fig:set_motors implementation}
+\end{figure}
 
 \subsection{Pololu 3pi: Line following robot}
 In this section we will evaluate Fladuino based on another example: a
@@ -2798,7 +2797,7 @@ int main() {
   \label{fig:linefollow-in-c}
 \end{figure}
 
-\section{Combining programs}
+\subsection{Combining programs}
 If we want to make the uncommon combination of a line following robot
 and a alarm clock, we might want to combine the above programs, into a
 single program with both functions. In Fladuino this is easily done by
@@ -2806,7 +2805,9 @@ a simple co of the set of dataflow graphs, as shown in the
 following line of code.
 
 \begin{verbatim}
-main = defaultMain . genStreams . map unS $ [linefollow] ++ alarm
+main = defaultMain
+       . genStreams
+       . map unS $ [linefollow] ++ alarmClock
 \end{verbatim}
 
 This is only a conceptual example, as hardware restrictions on the
