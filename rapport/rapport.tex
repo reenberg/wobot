@@ -2346,42 +2346,47 @@ compute (v, omega) = let motorLvel = v * (if omega <= 0.0 then 1.0 else 1.0 - om
   written directly in C? More or less code? More or less debugging?
 \end{itemize}
 
+\section{Known obstructions to practical use}
+
 While we consider the core technical and design foundations to be
 strong, a number of nontrivial issues prevent Fladuino from being
 immediately generally useful for general-purpose programming of
 Arduino-based control systems:
 
-\begin{itemize}
-\item The complete absence of documentation makes the proper use of
-  Fladuino difficult, and anything but performing trivial
-  modifications to existing programs is likely to be impossible
-  without studying the source code of Fladuino.  Documenting Fladuino
-  is, however, possible without touching the code itself.
-\item There is no robust system in case for any reasonable kind of
-  run-time error handling for the generated programs.  While
-  exhausting memory, or swamping the processor with more work that it
-  is able to handle, are situations that it is hard to solve
-  gracefully, \textit{some} detection of these problems is likely to
-  be important for debugging.  Even ultra-simplistic error reporting,
-  like lighting a given diode, would be preferable, though many
-  applications may well require not only the ability to notice errors,
-  but also to take steps to correct them (such as throttling input
-  events, or disabling some of its functionality).
-\item Somewhat connected to the previous issue, the very static nature
-  of Fladuino programs can be problematic for some uses.  Though less
-  of an issue in the sensor networks that are Flask's target domain,
-  many applications in the (admittedly broad) domain of arbitrary
-  control programs may benefit from the ability to dynamically rewire
-  dataflow.
-\item There is no distinction between private and public interface.
-  All Haskell modules in Fladuino export their entire contents (as
-  they do in Flask itself), and it is possible to violate some of our
-  guarantees through improper use of internal functions.  As a
-  specific example, type-safety can be violated by explicitly calling
-  the internal function \texttt{connectEvent} (which registers a node
-  as a listener for a specific event), though the C compiler will most
-  likely catch the type error in the generated program.
-\end{itemize}
+\begin{description}
+\item[Lack of documentation:] The complete absence of documentation
+  makes the proper use of Fladuino difficult, and anything but
+  performing trivial modifications to existing programs is likely to
+  be impossible without studying the source code of Fladuino.
+  Documenting Fladuino is, however, possible without touching the code
+  itself.
+\item[Insufficient handling of runtime errors:] There is no robust
+  system in case for any reasonable kind of run-time error handling
+  for the generated programs.  While exhausting memory, or swamping
+  the processor with more work that it is able to handle, are
+  situations that it is hard to solve gracefully, \textit{some}
+  detection of these problems is likely to be important for debugging.
+  Even ultra-simplistic error reporting, like lighting a given diode,
+  would be preferable, though many applications may well require not
+  only the ability to notice errors, but also to take steps to correct
+  them (such as throttling input events, or disabling some of its
+  functionality).
+\item[Static dataflow:] Somewhat connected to the previous issue, the
+  very static nature of Fladuino programs can be problematic for some
+  uses.  Though less of an issue in the sensor networks that are
+  Flask's target domain, many applications in the (admittedly broad)
+  domain of arbitrary control programs may benefit from the ability to
+  dynamically rewire dataflow.
+\item[No enforced implementation hiding] There is no distinction
+  between private and public interface.  All Haskell modules in
+  Fladuino export their entire contents (as they do in Flask itself),
+  and it is possible to violate some of our guarantees through
+  improper use of internal functions.  As a specific example,
+  type-safety can be violated by explicitly calling the internal
+  function \texttt{connectEvent} (which registers a node as a listener
+  for a specific event), though the C compiler will most likely catch
+  the type error in the generated program.
+\end{description}
 
 Fladuino \textit{does}, however, fully implement its target feature
 set in a manner that is practically useful.  If a program can be
