@@ -2465,7 +2465,7 @@ the \textit{Device} and \textit{Event} abstractions are used, and can be seen as
 a form of documentation of our work. For brevity, module imports has been
 omitted in all the examples.
 
-\section{A PushButton device}
+\subsection{A PushButton device}
 \label{sec:pushbuttondef}
 
 The \texttt{Device} type class creates the possibility of defining abstractions
@@ -2490,11 +2490,11 @@ instance Device PushButton where
     usages (PushButton pin) = [DPinUsage pin ["interrupt"] DigitalInput]
 \end{verbatim}
 
+\subsubsection{PushButton events}
 
-Since logical change interrupts occurs twice on a pushbutton (when
-pushed and then when released) it seems appropriate to define a
-\texttt{PushButtonPressEvent} and a \texttt{PushButtonReleaseEvent},
-and thus the two type constructors is defined
+Since logical change interrupts occurs twice on a pushbutton (when pushed and
+then when released) it makes sense to define a \texttt{PushButtonPressEvent} and
+a \texttt{PushButtonReleaseEvent}.
 
 \begin{verbatim}
 data PushButtonPressEvent = PushButtonPressEvent PushButton
@@ -2503,14 +2503,10 @@ data PushButtonReleaseEvent = PushButtonReleaseEvent PushButton
                                 deriving (Eq, Show)
 \end{verbatim}
 
-\noindent
-Next a \texttt{Event} instance declaration on the two \texttt{PushButton} events
-is needed. The \texttt{Event} type class needs definitions for the operations
-\texttt{setupEvent} and \texttt{interruptPins} which are both self
-explanatory. To distinguish these two events from each other, the value on the
-pin associated with the physical pushbutton is read and if the value is
-\texttt{HIGH} it is treated as a press event and if it is \texttt{LOW} it is
-treated as release event.
+To tell the two events apart their \texttt{Event} instance declaration's
+\texttt{setupEvent} reads the value of the \texttt{PushButton} pin. If the value
+is \texttt{HIGH} we defined it as a press event and a release event if the value
+is \texttt{LOW}.
 
 \begin{verbatim}
 instance Event PushButtonPressEvent () where
@@ -2538,7 +2534,11 @@ instance Event PushButtonReleaseEvent () where
     interruptPins (PushButtonReleaseEvent (PushButton pin)) = [DPin pin]
 \end{verbatim}
 
-With this definition, we can define programs such as
+These event definitions are a bid nontrivial at sight, but actually they merely
+check the value of the button and return a boolean value indicating if this
+event is applicable. 
+
+From the above definitions, we can write programs such as
 
 \begin{nonfloatingfigure}
 \begin{verbatim}
@@ -2963,14 +2963,19 @@ summarise some of these.
   be relatively simple to modify Fladuino to support these as well.
 \end{itemize}
 
-\subsection{Fladuino event queue}
+\subsection{Event queue with priorities}
 \label{sec:fladuino-event-queue}
-$\ldots$
-Making the event queue prioritised or allowing to hook the timer 1 interrupt
-making sure a function is always run when an interrupt happens. Of cause the
-user needs to be aware not to add computational heavy functions here. But
-e.g. something that writes a new value to the Pololu 3pi robot's buzzer.
-$\ldots$
+
+All events are currently equal in the Fladuino event queue, and are
+processed in a strict first-in first-out manner.  Some programs may
+benefit from being able to prioritise specific events above others,
+perhaps even to the extent of making soft real-time guarantees.
+Specifically, many programs may prefer that events stemming from
+sensors are given priority over those that are the result of user
+action.  As we mention in \Fref{sec:event_queue} the event queue will,
+when full, silently drop new events.  In this case, it may also
+sometimes be desirable to drop lower-priority events for those with a
+higher assigned priority.
 
 \subsection{Graphical programming}
 The dataflow basis of Fladuino makes it easy to imagine how these
