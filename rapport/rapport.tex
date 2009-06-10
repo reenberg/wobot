@@ -1799,52 +1799,56 @@ not implemented in Fladuino, however.
 
 \subsection{Implementation of the clock operator}
 To handle different \texttt{clock} operators in a Fladuino program, their
-greatest common divisor is calculated (as argued in \fref{sec:runtime-system}) and used to calculate the timeout vale of
-a hardware timer (see \fref{sec:timer-interrupts}). Each time an overflow
-interrupt from the timer occurs a IHF (Interrupt Handler Function) is called
-which takes care of queueing events in the event queue. This is done by having a
-counter for each \texttt{clock} operator and knowing how many times the timer
-must overflow before the defined \texttt{clock} time has elapsed. This handler
-function is statically generated at compile-time. Currently timer 1 and 2 can be
-used as the \texttt{clock}-timer since the Arduino framework reserves timer
-0\footnote{This timer is used for the functions \texttt{millis()},
-  \texttt{delay()} and other timing related function}.
+greatest common divisor is calculated (as argued in \fref{sec:runtime-system})
+and used to calculate the timeout vale of a hardware timer (see
+\fref{sec:timer-interrupts}). Each time an overflow interrupt from the timer
+occurs a handler function is called which takes care of queueing events in the
+event queue. This is done by having a counter for each \texttt{clock} operator
+and knowing how many times the timer must overflow before each the defined
+\texttt{clock} time has elapsed. This handler function is statically generated
+at compile-time. Currently timer 1 and 2 can be used as the \texttt{clock}-timer
+since the Arduino framework reserves timer 0\footnote{This timer is used for the
+  functions \texttt{millis()}, \texttt{delay()} and other timing related
+  function}.
 
 Fladuino events such as the \texttt{PushButtonPressEvent} and
-\texttt{PushButtonReleaseEvent} uses external hardware interrupts (see
+\texttt{PushButtonRe\-le\-a\-se\-Event} uses external hardware interrupts (see
 \fref{sec:external-interrupts}). The default behaviour when such an event occurs
 is that the GIE (Global Interrupt Enable) bit is cleared which disables all
-further interrupt handling until the IHF finish and returns which enables the
-GIE bit again. It is however possible to enable the GIE bit when entering a IHF
-which would allow nested interrupts \cite[Section 4.7 page 14]{atmel8p} but
-potentially also reverse the order of events, e.g. if a press event occurs and
-while processing this a release event occurs. This would result in the release
-event being processed first and then the press event. Therefore this is
-generally not a good idea.
+further interrupt handling until the handler function finish and returns which
+enables the GIE bit again. It is however possible to enable the GIE bit when
+entering a handler function which would allow nested interrupts \cite[Section
+4.7 page 14]{atmel8p} but potentially also reverse the order of events; for
+example, if a release event occurs while processing a press event, that would
+result in the release event being processed first and then the press
+event second. Therefore this is generally not a good idea.
 
-This leads to the possibility of losing interrupts if GIE is cleared, nested
-interrupts isn't used and an interrupt happens. Fortunately the Atmega chip has
-a cheap work around for this that works in most cases: all timer interrupts and
-external interrupts on Arduino digital pin 0 and 1 has internal flag registers
-that indicates if the particular interrupt has occurred. Further occurrences and
-any other interrupts while GIE is cleared will however be lost.
+This leads to the possibility of losing interrupts; that is, if GIE is cleared,
+nested interrupts isn't used and an interrupt happens. Fortunately the Atmega
+chip has a cheap work around for this that works in most cases; all timer
+interrupts and external interrupts on Arduino digital pin 0 and 1 has internal
+flag registers that indicates whether the particular interrupt has
+occurred. Further occurrences of any of the same interrupt or any other
+interrupts while GIE is cleared will however be lost.
 
-In practice this is not a problem as all Fladuino defined IHF's only push events
-onto the event queue and thus should be executed before the same interrupt
-happens again. It should however also be noted that there is a predefined order
-of running IHF's \cite[Section 9 page 57]{atmel8p} (lowest vector no. is run
-first) when multiple has flagged and GIE is set and thus it is not guaranteed
-that interrupt is handled in the order they occurred and that defining more
-\texttt{clock} operators in the Fladuino program results in a slower
-\texttt{clock}-timer IHF. Though the later only becomes a problem if at least
-one of the \texttt{clock} operators is using a low timeout, resulting in the IHF
-being run more frequently. As mentioned in the previous section it is the users
-responsibility not to define any combination of to many \texttt{clock}
-operators, to short \texttt{clock}-timeout or to much work when a \texttt{clock}
-event occurs such that the event queue is filled up.
+In practice this is not a problem as all Fladuino defined handler function's
+only push events onto the event queue and thus should be executed before the
+same interrupt happens again. It should however also be noted that there is a
+predefined order of running handler function's \cite[Section 9 page 57]{atmel8p}
+(lowest vector no. is run first) when multiple has flagged and GIE is set and
+thus it is not guaranteed that interrupt is handled in the order they occurred
+and that defining more \texttt{clock} operators in the Fladuino program results
+in a slower \texttt{clock}-timer handler function. Though the later only becomes
+a problem if at least one of the \texttt{clock} operators is using a low
+timeout, resulting in the handler function being run more frequently. As
+mentioned in the previous section it is the users responsibility not to define
+any combination of to many \texttt{clock} operators, to short
+\texttt{clock}-timeout or to much work when a \texttt{clock} event occurs such
+that the event queue is filled up.
 
-When an IHF returns it is guaranteed that the main program executes at least
-one instruction before the next IHF is called \cite[Section 4.7 page 14]{atmel8p}.
+When an handler function returns it is guaranteed that the main program executes
+at least one instruction before the next handler function is called
+\cite[Section 4.7 page 14]{atmel8p}.
 
 
 \section{User-extensible abstractions with typeclasses}
@@ -1865,8 +1869,8 @@ In \fref{sec:devices} we define a device-driver as:
 \end{itemize}
 
 As explained, most device-drivers are parameterised by some additional
-data, e.g.  which hardware-pin the device is connected to or the
-starting state of the device (e.g. turned off).
+data; for example which hardware-pin the device is connected to or the
+starting state of the device (off or on).
 
 We need a way to represent these devices as values, i.e. a way of
 referring to a specific device and access information about its
@@ -1886,7 +1890,7 @@ of hardware-dependencies and postpone the device-setup to a general
 device initialization-phase of the code generation. The \verb|Device|
 type class is shown in \Fref{fig:device typeclass}.
 
-\begin{nonfloatingfigure}
+\begin{figure}
   \begin{verbatim}
 class (Eq a, Show a) => Device a where
     setupDevice :: MonadFladuino m => a -> m ()
@@ -1895,7 +1899,7 @@ class (Eq a, Show a) => Device a where
 \end{verbatim}
   \caption{Type class definition for devices (default values omitted)}
   \label{fig:device typeclass}
-\end{nonfloatingfigure}
+\end{figure}
 
 Remark that all three values requires the device itself as a
 parameter. The values are general for the class of devices, and thus
