@@ -2863,6 +2863,29 @@ summarise some of these.
 
 \section{Handy new tools}
 
+\begin{itemize}
+\item It would be useful if Fladuino could print out its understanding
+  of the device setup with respect to pins during compilation.  This
+  would allow the programmer to confirm that Fladuino's understanding
+  of the hardware matches reality, or even to write the program
+  without preparing the hardware in advance, and just set up the
+  devices as directed by Fladuino.  This latter functionality could be
+  further extended by not requiring the use of specific pins when
+  writing a program, and rather just specify the different devices
+  that the program is interested in using without mentioning specific
+  I/O pins.  Fladuino would then run a constraint-solver and either
+  report an error, if the desired combination is completely
+  impossible, and otherwise present a list of instructions on which
+  pins should be connected to which devices in order to run the
+  program correctly.
+\item Generalising and extending the platform abstraction, the runtime
+  system, and parts of our code generation to support platforms other
+  than Arduino.  Many microcontrollers are very similar to Arduino, in
+  that they offer little more than a selection of I/O pins, and it
+  should be relatively simple to modify Fladuino to support these as
+  well.
+\end{itemize}
+
 \section{Major structural changes}
 
 Through our device and event abstraction layer, we take steps to
@@ -3151,7 +3174,7 @@ the ones of interrest:
   restarts.
 
 \item[\texttt{CTC}] mode has a predefined top value and optionally
-  specified counter value (initially default set to 0). When the
+v  specified counter value (initially default set to 0). When the
   counter reaches the defined top value it is cleared to 0, the
   interrupt is triggered and incrementation of the counter
   restarts. This gives better resolution of the counter and thus more
