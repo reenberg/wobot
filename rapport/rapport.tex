@@ -121,6 +121,7 @@ supervised by Ken Friis Larsen, assistant professor at DIKU.
   not.}
 \fixme{Check all refs. Should be converted to fref to utilise the
   fancyref package (Where appropriate!!)}
+\fixme{We should update the $\backslash$texttt to uses $\backslash$verb .}
 
 \listoffixmes 
 
@@ -943,20 +944,21 @@ As in Flask, the dataflow graph is divided into \textit{atomic
 Evaluating such a subgraph consists of supplying a value on the input
 wire, retrieving any values that may show up on output wires, then
 setting up to evaluate any of the successor atomic subgraphs with
-these values (see \fref{sec:dataflowtranslation} for the implementation
-details).  The notion of an atomic subgraph serves the purpose of
-dividing the dataflow graph into parts that can be evaluated
-atomically without blocking.  Translating a dataflow graph into object
-code is referred to as \textit{stream generation}.  Translating an
-atomic subgraph is relatively straightforward, and the subject of
-\Fref{sec:dataflowtranslation}, while it is far more interesting to
-contemplate the question of what to do with the asynchronous events
-that are the heart of reactive programming.  Indeed, we have to
-analyse the constraints of our target platform(s) in order to reach an
-adequate solution.  Since events are fundamentally connected to the
-concept of a hardware interrupt (though we do not reject the ability
-for sinks\fixme{sinks ikke forklaret tidligere} to manually signal
-events), we cannot at any time predict, or control, their arrival.
+these values (see \fref{sec:dataflowtranslation} for the
+implementation details).  The notion of an atomic subgraph serves the
+purpose of dividing the dataflow graph into parts that can be
+evaluated atomically without blocking.  Translating a dataflow graph
+into object code is referred to as \textit{stream generation}.
+Translating an atomic subgraph is relatively straightforward, and the
+subject of \Fref{sec:dataflowtranslation}, while it is far more
+interesting to contemplate the question of what to do with the
+asynchronous events that are the heart of reactive programming.
+Indeed, we have to analyse the constraints of our target platform(s)
+in order to reach an adequate solution.  Since events are
+fundamentally connected to the concept of a hardware interrupt (though
+we do not reject the ability to manually signal synthetic events --
+software interrupts, if you will), we cannot at any time predict, or
+control, their arrival.
 
 The simplest strategy would be to, upon arrival of an event via an
 asynchronous hardware-level interrupt, immediately evaluate all atomic
@@ -3046,9 +3048,6 @@ Ideas for this section:
 
 \chapter{Small guide to Arduino}
 
-\fixme{We should update the $\backslash$ texttt to uses the listings
-  inline formatting instead when ever c code is listed.}
-
 Description of Arduino from the official
 website\footnote{\url{http://www.arduino.cc/} downloaded the 28. of April 2009 at 15:16}:
 \begin{quotation}
@@ -3167,12 +3166,10 @@ A description of PWM from the Arduino website follows:
     \includegraphics[scale=0.6]{images/pwm}
 
     \caption{How 0\%, 25\%, 50\%, 75\% and 100\% PWM is measured by an
-      oscilloscope. Each vertical line indicates the duty
-      cycle}
+      oscilloscope. Each vertical line indicates the duty length which Arduino 
+      sets approximately to 490Hz.}
     \label{fig:pwm}
   \end{nonfloatingfigure}
-  
-  \fixme{Better figure text}
 
   Once you get this example running, grab your Arduino and shake it
   back and forth. What you are doing here is essentially mapping time
@@ -3185,9 +3182,6 @@ A description of PWM from the Arduino website follows:
 
 \section{Timer Interrupts}
 \label{sec:timer-interrupts}
-
-\fixme{fix text to support new heading: timer interrupts}
-
 
 The ATmega168/ATmega328 processors has three different hardware
 timers. One of them (timer 0) is used by Arduino software to provide a
@@ -3229,27 +3223,22 @@ v  specified counter value (initially default set to 0). When the
   flexibility than the \texttt{Normal} mode.
 \end{description}
 
-The modes of operation is described in detail in the processors
-datasheet, section 12.7 ``Modes of Operation''.
+The modes of operation is described in detail in \cite[Section 12.7]{atmel8p}.
 
 \subsection{PWM generation}
 
-PWM is generated from these three timers. Pin 5 and 6 are connected to
-timer 0, 9 and 10 to timer 1 and pin 3 and 11 to timer 2. This means
-that the frequency of the PWM signal is controlled by the speed of
-these counters which again is determined by the prescale. When an
-\texttt{analogWrite(pinnumber, value)} is executed, the value is
-compared against a value in a 8-bit counter (one associated to each
-timer). When the counter is less than the specified value it outputs
-\texttt{HIGH} on \textit{pinnumber} and \texttt{LOW} otherwise. This
-generates a square wave with a duty cycle of 50\% since it is
-\texttt{HIGH} on counts $0 \ldots 127$ and \texttt{LOW} on counts $128
-\ldots 255$. Since Arduino uses timer 0 for the various time related
-functions, the prescale on this timer can't be changed unless this
-feature are not to be used. Also because of this the duty cycle of pin
-5 and 6 is not exactly the same as the other 4 pins.
-
-\fixme{Interference problems with the PWM output pins.}  
+PWM is generated from these three timers. Pin 5 and 6 are connected to timer 0,
+9 and 10 to timer 1 and pin 3 and 11 to timer 2. This means that the frequency
+of the PWM signal is controlled by the speed of these counters which again is
+determined by the prescale. When an \texttt{analogWrite(pinnumber, value)} is
+executed, the associated timer is basically configured to output a \texttt{HIGH}
+value as long as the counter is less than the defined \textit{value} and then
+\texttt{LOW} until it overflows and restarts. Figurely speaking, to generate a
+square wave with a duty cycle of 50\% it must output \texttt{HIGH} on counts $0
+\ldots 127$ and \texttt{LOW} on counts $128 \ldots 255$. The actual timer values
+is variable with respect to the duty cycle and duty length (Arduino defines the
+duty length for \texttt{analogWrite} to approximately 490Hz). This also means
+that a particular timer can't be used for anything else if PWM is used.
 
 \section{External Interrupts}
 \label{sec:external-interrupts}
@@ -3332,18 +3321,18 @@ standard USB cable consists of 4 wires
     3 & GND & Black \\ \hline
   \end{tabular}
   \caption{USB Connector Termination Data. Described in the USB 2.0
-    specification\cite{usb20} Table 6-1 ``USB Connector Termination Assignment''}
+    specification \cite[Table 6-1 ``USB Connector Termination Assignment'']{usb20} }
   \label{tab:ArduinoBT:Connector_Termination_Data}
 \end{table}
 
-According to the USB 2.0 specification\cite{usb20} Table 7-7 ``DC Electrical
-Characteristics'' the VCC wire supplies a minimum of 4.75v and a maximum of
+According to the USB 2.0 specification \cite[Table 7-7 ``DC Electrical
+Characteristics'']{usb20} the VCC wire supplies a minimum of 4.75v and a maximum of
 5.25v which is no problem as the Arduino BT board can handle up to 5.5v and as
 low as 1.2v. There is however always a slight possibility of faulty equipment
 which could damage the board.
 
 The wire colours for a standard USB 2.0 cable are defined in the
-specification\cite{usb20} Figure 6-2 ``USB Standard Detachable Cable Assembly''
+specification \cite[Figure 6-2 ``USB Standard Detachable Cable Assembly'']{usb20}
 but it is not all manufactures that comply with this.
 
 To construct the USB power cable all that needs done is to cut off the connector
@@ -3449,7 +3438,7 @@ factory settings (by doing a firmware update) or by changing the individual
 settings back to something that works. 
 
 Before settings on the WT11 chip can be changed, they must be directly sent to
-it. This can be done by using a 3.3v USB to RS-232 serial converter\footnote{E.g. a
+it. This can be done by using a 3.3v USB to RS-232 serial converter\footnote{E.g., a
   breakout board with FTDI's FT232RL chip, which is widely available and can be
   used to update the firmware using the DFU protocol as well.
   \url{http://www.sparkfun.com/commerce/product_info.php?products_id=718}} and
@@ -3503,7 +3492,7 @@ settings. But if the Arduino BT board is the one who needs to do the binding
 with another Bluetooth device then it is necessary to change the settings and
 therefor also shift into command mode. A thorough description of the different
 iWRAP settings and commands can be seen in the iWRAP 2.2.0 User
-Guide\cite{iWRAP220UG}.
+Guide \cite{iWRAP220UG}.
 
 
 \subsubsection{iWRAP modes}
@@ -3585,8 +3574,8 @@ iWRAP commands should not end with ``$\backslash$r'' or
 ``$\backslash$r$\backslash$n'' when used in a multiplexing frame.
 
 The iWRAP 2.2.0 User Guide states that there can be used four simultaneous
-connections in multiplexing mode, though iWRAP 3.0.0 User Guide\cite{iWRAP300UG}
-states in section 6.20.3 on page 120 that 
+connections in multiplexing mode, though iWRAP 3.0.0 User Guide \cite[section
+6.20.3, page 120]{iWRAP300UG} states that
 
 \begin{quote}
   In MUX mode the processor of the module is highly utilised and on the edge of
@@ -3603,7 +3592,7 @@ Section 3 of the iWRAP 2.2.0/3.0.0 User Guide covers the three iWRAP modes in
 depth.
 
 
-\subsubsection{Firmaware update}
+\subsubsection{Firmware update}
 
 Bluegiga Technologies support 2 ways of updating the firmware. A proprietary SPI
 protocol that uses a SPI interface or a open DFU (Device Firmware Update)
@@ -3613,7 +3602,7 @@ protocol\footnote{The DFU protocol description can be retrieved by contacting
 The downside of the SPI interface is that 
 
 \begin{itemize}
-\item it requires a special SPI cable which basically is a parallel to SPI cable
+\item it requires a special SPI cable which basically is a parallel to SPI
   converter.
 
 \item The proprietary BlueSuite software supplied by Bluegiga Technologies used
@@ -3640,12 +3629,18 @@ Downside of DFU interface is that
   processor through Bluetooth and make it do the firmware upgrade.
 \end{itemize}
 
-Bluegiga Technologies recommends to buy or build\cite{oik_chematic} a OIK
-(OnBoard Installation Kit), but the Arduino community has posted an
-alternative schematic\cite{oik_chematic_arduino}.
+Bluegiga Technologies recommends to buy or build a OIK (OnBoard Installation
+Kit) \cite{oik_chematic}, but the Arduino community has posted an alternative
+schematic \cite{oik_chematic_arduino} which we couldn't get to work.
 
-\fixme{this section needs restructuring.}
-\fixme{this section is outdated. Firmware update has been done another way.}
+Instead the DFU protocol was used to successfully update the firmware on one of
+the Arduino BT boards by connecting a breakout board to the RX and TX pins of
+the WT11 chip. The DFU Wizzard application (used to upload the firmware) however
+didn't work properly when trying to download a backup of the WT11 chips current
+firmware which is a prerequisite for uploading new firmware. This can however be
+circumvented by pointing the backup location in the DFU Wizzard application to a
+copy of a arbitrary firmware DFU file. This makes the application think that a
+backup has already been made and thus upload of new firmware is allowed.
 
 \chapter{Problems discovered in Flask }
 We've detected a few problems with the current Flask implementation,
