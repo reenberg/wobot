@@ -255,10 +255,10 @@ partition computer systems into:
 \end{itemize}
 
 To respond accurately, such a system needs to recompute certain values
-at each change in the environment. \textit{Reactive programming
-  languages} facilitates this programming scheme. They frees the
-programmer from the tedious task of manually detecting changes on
-input variables, in order to make the appropriate
+at each fluctuation of values in the environment. \textit{Reactive
+  programming languages} facilitates this programming scheme. They
+frees the programmer from the tedious task of manually detecting
+changes on input variables, in order to make the appropriate
 responses. Instead, the programmer specifies how his reactions
 (output-variables) are related to the values he observes
 (input-values) and the language itself discovers which output-values
@@ -623,10 +623,12 @@ predicate to decide whether it should be passed on to its output
 stream or not.
 
 
-\subsection{Streamoperators}
+\subsection{Stream-operators}
 \label{sec:streamoperators}
 In this section we will describe the stream-operators and signal
-functions that Flask provides.
+functions that Flask provides. This also serves as a small
+documentation of Fladuino, as the same stream-operators are available
+in Fladuino.
 
 \begin{description}
 \item
@@ -1724,7 +1726,7 @@ completely crash the program (e.g., if the procedure return address on
 the topmost stack frame was modified).  While we could modify the
 event queue to perform a check for imminent collision whenever an
 element was about to be added (and if so, ignore the event), we cannot
-do the same whenever we expand the program stack, so we would run the
+do the same whenever we expand the program stack. We would run the
 risk of the stack growing across the event queue and corrupting its
 data, causing great harm when the main loop gets around to processing
 these now invalid elements.  In conclusion, we cannot permit the stack
@@ -1779,8 +1781,8 @@ it up.
 At first glance, it may appear necessary to generate a C data
 structure definition for every kind of event, push these on to the
 event queue, and generate code to recognise and handle them all by
-invoking their listeners.  But as mentioned in
-\Fref{sec:dataflowtranslation}, all nodes are implemented as (one or
+invoking their listeners.  However as mentioned in
+\Fref[plain]{sec:dataflowtranslation}, all nodes are implemented as (one or
 more) functions taking their input value as arguments.  Therefore, we
 can get by with merely two different kinds of entries in the event
 queue: a function call with an argument, and a function call with no
@@ -1796,12 +1798,12 @@ function $\delta(e)$ with the payload stored in dynamically allocated
 memory.  This is the only situation in which we use dynamic memory in
 Fladuino: the alternative would be to maintain a static array
 proportionate to the size of the event queue, with each element being
-the maximum size of any possible event payload.  This will in no cases
-use less memory than the dynamic memory solution (ignoring memory
-allocator overhead); in fact, it will \textit{always} use as much
-memory as the dynamic solution will \textit{ever} use.  Yet, use of
-dynamic memory is no panacea either: \textit{malloc()} has highly
-unpredictable runtime behaviour, and as mentioned in
+the maximum size of any possible event payload.  There are no cases
+where this will use less memory than the dynamic memory solution
+(ignoring memory allocator overhead); in fact, it will \textit{always}
+use as much memory as the dynamic solution will \textit{ever} use.
+Yet, use of dynamic memory is no panacea either: \textit{malloc()} has
+highly unpredictable runtime behaviour, and as mentioned in
 \Fref{sec:dataflowevaluationstrategy}, interrupt handlers should
 terminate swiftly or we risk losing information.  The tradeoff is
 essentially between a lower bound on memory usage in the users
@@ -1842,7 +1844,7 @@ entering a handler function which would allow nested interrupts \cite[Section
 4.7 page 14]{atmel8p} but potentially also reverse the order of events; for
 example, if a release event occurs while processing a press event, that would
 result in the release event being processed first and then the press
-event second. Therefore this is generally not a good idea.
+event second. Thus this is generally not desirable.
 
 This leads to the possibility of losing interrupts; that is, if GIE is cleared,
 nested interrupts isn't used and an interrupt happens. Fortunately the Atmega
@@ -1856,15 +1858,15 @@ In practice this is not a problem as all Fladuino defined handler function's
 only push events onto the event queue and thus should be executed before the
 same interrupt happens again. It should however also be noted that there is a
 predefined order of running handler function's \cite[Section 9 page 57]{atmel8p}
-(lowest vector no. is run first) when multiple has flagged and GIE is set and
+(lowest vector no. is run first) when multiple is flagged and GIE is set and
 thus it is not guaranteed that interrupt is handled in the order they occurred
 and that defining more \texttt{clock} operators in the Fladuino program results
-in a slower \texttt{clock}-timer handler function. Though the later only becomes
+in a slower \texttt{clock}-timer handler function. Though the latter only becomes
 a problem if at least one of the \texttt{clock} operators is using a low
 timeout, resulting in the handler function being run more frequently. As
 mentioned in the previous section it is the users responsibility not to define
-any combination of to many \texttt{clock} operators, to short
-\texttt{clock}-timeout or to much work when a \texttt{clock} event occurs such
+any combination of too many \texttt{clock} operators, too short
+\texttt{clock}-timeout or too much work when a \texttt{clock} event occurs such
 that the event queue is filled up.
 
 When an handler function returns it is guaranteed that the main program executes
@@ -1980,7 +1982,7 @@ the hardware concept of interrupts (see \Fref{sec:external-interrupts}) to
 enable automatic installation of event interrupt handlers. We also identified
 that it should be possible for the user to specify \textit{predicate} and
 \textit{value functions}.  These values, together with the payload type and a
-event-name, which only is used for code-generation purposes, constitutes our
+event-name, which is only used for code-generation purposes, constitutes our
 \textit{event representation}. This is simply implemented as a Haskell datatype
 \verb|ERep|, which is shown in \Fref{fig:Erep}.
 
@@ -2015,7 +2017,7 @@ datatype-level, we've done it in a type class (shown in
 the programmer. This type class serves the purpose of moving work from
 the event-user, to the event-implementer. Instead of making the user
 construct an \verb|ERep| whenever he uses an Event, we do this
-automatically by the function \verb|setupEvent| of the \textit{Event}
+automatically with the function \verb|setupEvent| of the \textit{Event}
 type class, whenever any instance of the type class is used in the
 dataflow graph.
 
@@ -2065,7 +2067,7 @@ Implementation wise, it essentially runs the
 then is stored in the connection of the event in our monadic state.
 It leaves the rest of the work to an event-finalizing phase of code
 generation.  This finalizing phase does the job of installing the
-specified interrupt handlers for each event, to signal that specific
+specified interrupt handlers for each event, to signal that particular
 event if the predicate is true, with the result of running the
 value-function.
 
@@ -2319,6 +2321,7 @@ Arduino-based control systems:
   the type error in the generated program.
 \end{description}
 
+\noindent
 Fladuino \textit{does}, however, fully implement its target feature
 set in a manner that is practically useful.  If a program can be
 expressed within the abstractions that we provide, then using Fladuino
@@ -2597,9 +2600,9 @@ Arduino, most of the low-level work is already done, Specifically we
 can earn their profit when reading and calibrating the sensors, and
 controlling the electromotors. We only need high-level wrappers for
 these functions.  To take the simplest example first, reading the
-battery level is done just as reading the potentiometer value in
-\fref{sec:potentiometer device}, instead of calling the
-\verb|analogRead|-function we just call the Pololu 3pi function
+battery level is done in the same way as reading potentiometer values in
+\fref[plain]{sec:potentiometer device}, instead of calling the
+\verb|analogRead|-function we call the Pololu 3pi function
 \verb|read_battery_millivolts|.
 
 \subsubsection{Reflectance sensors}
@@ -2612,10 +2615,11 @@ the goal of the robot is to follow a black line on a white floor.
 The C-interface to the 3pi provides several functions for reading the
 values of the sensors. We only provide access to one of these
 functions, as we don't need precise measurements (we are only doing
-this for illustration purposes) and thus the simplest interface is enough for
-us. The C-function \verb|read_line| gives us a value between $0$ and
-$4000$ indicating the position on the line followed. This is described
-in detail in the Pololu 3pi User's Guide\cite{3pi_users_guide}.
+this for illustration purposes) and thus the simplest possible
+interface is sufficient for us. The C-function \verb|read_line| gives us a
+value between $0$ and $4000$ indicating the position on the line
+followed. This is described in detail in the Pololu 3pi User's
+Guide\cite{3pi_users_guide}.
 
 The \verb|read_line| wont detect the line without some
 calibration. The 3pi user guide provides the steps needed for this
@@ -2853,19 +2857,19 @@ summarise some of these.
 
 \begin{itemize}
 \item As a purely cosmetic issue, the quasiquotation library that we
-  make so heavy use of has a tendency to obscure compiler error
+  make so heavy use of has a tendency to output obscure compiler error
   messages.  When the compiler prints an erroneous expression
   containing a quasiquotation, said quasiquotation will not be shown
   as it appears in the source file, but rather as a complete parse
-  tree.  As even simple expressions can easily balloon to parse trees
-  that take up hundreds of lines when displayed, this can make it hard
-  to navigate through compiler errors.  The solution to this problem
-  might need compiler integration, namely storing the original source
-  text associated with every quasiquotation in the Haskell parse tree,
-  and use that for displaying errors.
+  tree.  Considering that even simple expressions can easily balloon
+  to parse trees that take up hundreds of lines when displayed, this
+  can make it hard to navigate through compiler errors.  The solution
+  to this problem might need compiler integration, namely storing the
+  original source text associated with every quasiquotation in the
+  Haskell parse tree, and use that for displaying errors.
 \item The Pololu 3pi robot is not yet fully supported.  In particular,
   support for timers is flaky, as the Pololu libraries themselves
-  makes use of them all.  Additionally, some built-in features, such
+  makes use of all the timers.  Additionally, some built-in features, such
   as the LCD, are not properly represented as Fladuino devices.  The
   cause of these deficiencies is that the 3pi robot is somewhat
   further from Arduino compatibility than we were lead to believe.
@@ -2879,7 +2883,7 @@ summarise some of these.
   Libraries are written in C++, which isn't supported as an object
   language, and without C linkage.
 
-  The most used library that suffers from this is the \texttt{Serial}
+  The most utilized library that suffers from this is the \texttt{Serial}
   library used to communicate with any connected device. This is one
   of the easiest ways of debugging an embedded device.
 
@@ -2932,8 +2936,8 @@ Some of the functionality is in its current state not fully compliant with the
 Fladuino framework. E.g. timer 0 and 2 is reserved when using the
 motors\footnote{This is a core part of using the 3pi robot. Else a Arduino board
   could have been used.} which leaves timer 1 for Fladuino. This breaks all
-functionality with devices and libraries that uses any of the timers, like the
-Pololu library \texttt{OrangutanBuzzer} that uses timer 1 for playing melody's
+functionality with devices and libraries that use any of the timers, like the
+Pololu library \texttt{OrangutanBuzzer} that use timer 1 for playing melody's
 meanwhile allowing the processor to do other stuff. Only solution to this
 problem is to write new libraries that utilises the Fladuino event queue ore
 something else, see \fref{sec:fladuino-event-queue}.
