@@ -2436,6 +2436,19 @@ Additionally, we could reuse most of the stream operators with little
 work, the conversion of their implementation from NesC to C being
 trivial in most cases.
 
+Certain aspects of Flask's design are reflected in Fladuino where they
+are less desirable, however.  Flask is aimed at the programming of
+sensor networks, which mostly involves the harvesting data from
+sensors, filtering or processing it, and passing it on along the
+network.  Flask thus has very crude support for internal state, in
+particular a complete lack of support for dynamically allocated state,
+which has the implication that the size of state data has to be fixed
+at compile-time.  While this may not be a significant problem for the
+programming of sensor networks, it can be a significant obstacle to
+the programming of general reactive systems.  This, more than anything
+else, is perhaps the chief deficiency that came about due to our
+choice to adapt Flask, rather than writing a system from scratch.
+
 \section{Experimental comparison}
 
 We cannot hope to make a general comparison of utility between
