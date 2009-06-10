@@ -2303,10 +2303,10 @@ Arduino-based control systems:
   them (such as throttling input events, or disabling some of its
   functionality).
 \item[Static dataflow:] Somewhat connected to the previous issue, the
-  very static nature of Fladuino programs can be problematic for some
-  uses.  Though less of an issue in the sensor networks that are
-  Flask's target domain, many applications in the (admittedly broad)
-  domain of arbitrary control programs may benefit from the ability to
+  static nature of Fladuino programs can be problematic for some uses.
+  Though less of an issue in the sensor networks that are Flask's
+  target domain, many applications in the (admittedly broad) domain of
+  arbitrary control programs may benefit from the ability to
   dynamically rewire dataflow.
 \item[No enforced implementation hiding] There is no distinction
   between private and public interface.  All Haskell modules in
@@ -2341,14 +2341,15 @@ Certain aspects of Flask's design are reflected in Fladuino where they
 are less desirable, however.  Flask is aimed at the programming of
 sensor networks, which mostly involves the harvesting data from
 sensors, filtering or processing it, and passing it on along the
-network.  Flask thus has very crude support for internal state, in
-particular a complete lack of support for dynamically allocated state,
-which has the implication that the size of state data has to be fixed
-at compile-time.  While this may not be a significant problem for the
-programming of sensor networks, it can be a significant obstacle to
-the programming of general reactive systems.  This, more than anything
-else, is perhaps the chief deficiency that came about due to our
-choice to adapt Flask, rather than writing a system from scratch.
+network.  Flask's support for internal state is thus quite crude,
+notably in the form of a complete lack of support for dynamically
+allocated state, which has the implication that the size of state data
+has to be fixed at compile-time.  While this may not be a significant
+problem for the programming of sensor networks, it can be a
+significant obstacle to the programming of general reactive systems.
+This, more than anything else, is perhaps the chief deficiency that
+came about due to our choice to adapt Flask, rather than writing a
+system from scratch.
 
 \section{Experimental comparison}
 
@@ -2908,10 +2909,9 @@ summarise some of these.
   program correctly.
 \item Generalising and extending the platform abstraction, the runtime
   system, and parts of our code generation to support platforms other
-  than Arduino.  Many microcontrollers are very similar to Arduino, in
-  that they offer little more than a selection of I/O pins, and it
-  should be relatively simple to modify Fladuino to support these as
-  well.
+  than Arduino.  Many microcontrollers are similar to Arduino, in that
+  they offer little more than a selection of I/O pins, and it should
+  be relatively simple to modify Fladuino to support these as well.
 \end{itemize}
 
 \subsection{Fladuino event queue}
