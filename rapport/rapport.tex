@@ -2935,23 +2935,6 @@ summarise some of these.
 \end{itemize}
 
 
-\subsection{Pololu 3pi support}
-
-The Pololu 3pi robot is just barely supported in the current state of
-the Fladuino framework. The Pololu Corporation has luckily made all
-their libraries C-compliant though they are written in C++. However
-only the motors and battery reader are fully implemented and the
-reflectance sensor's are partially implemented.
-
-Some of the functionality is in its current state not fully compliant with the
-Fladuino framework. E.g. timer 0 and 2 is reserved when using the
-motors\footnote{This is a core part of using the 3pi robot. Else a Arduino board
-  could have been used.} which leaves timer 1 for Fladuino. This breaks all
-functionality with devices and libraries that use any of the timers, like the
-Pololu library \texttt{OrangutanBuzzer} that use timer 1 for playing melodies
-meanwhile allowing the processor to do other stuff. 
-
-
 \section{Handy new tools}
 
 \begin{itemize}
