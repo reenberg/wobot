@@ -1212,18 +1212,19 @@ real posting wires, as software interrupts are to hardware interrupts.
   \label{fig:queue-with-ignore}
 \end{figure}
 
-\section{Representing peripherals} Arduino is a flexible system for
-general embedded development, with no specific application in mind.
-The Arduino platform can therefore be connected to a diverse amount of
-peripheral devices, all with their own specific functionality and
-programming interface.  It is thus natural to support this diversity
-as a core concept of Fladuino; not (solely) as a library of drivers
-for various devices, but rather as a framework and set of tools
-provided to the programmer so that Fladuino can be extended to
-transparently support the devices he has need of.  For demonstration,
-we have written a minimal framework for programming the Pololu 3pi
-robot and \textit{some} of the peripherals connected to it
-(electromotors, reflectance sensors, etc.). This framework is
+\section{Representing peripherals} 
+
+Arduino is a flexible system for general embedded development, with no
+specific application in mind.  The Arduino platform can therefore be
+connected to a diverse amount of peripheral devices, all with their
+own specific functionality and programming interface.  It is thus
+natural to support this diversity as a core concept of Fladuino; not
+(solely) as a library of drivers for various devices, but rather as a
+framework and set of tools provided to the programmer so that Fladuino
+can be extended to transparently support the devices he has need of.
+For demonstration, we have written a minimal framework for programming
+the Pololu 3pi robot and \textit{some} of the peripherals connected to
+it (electromotors, reflectance sensors, etc.). This framework is
 discussed in \Fref[plain]{chap:example code} and evaluated in
 \Fref[plain]{chap:evaluation}
 
@@ -1232,9 +1233,9 @@ more-or-less compatible platforms, though each of them differ slightly
 in their exact capacity.  Apart from variations in such things as
 memory size, they differ in amount and capability of their I/O pins.
 This latter diversity is what we are most concerned with in Fladuino,
-as we would like to statically check (at generation-time) the
-hardware assumptions expressed in the program.  Thus, we also provide
-a facility for describing the exact capabilities of a specific
+as we would like to statically check (at generation-time) the hardware
+assumptions expressed in the program.  Thus, we also provide a
+facility for describing the exact capabilities of a specific
 Arduino-based platform, and provide default descriptions of common
 Arduino-compatible such as the Arduino Duemilanove, Arduino Mega,
 Arduino BT, and Pololu 3pi.
@@ -1248,17 +1249,30 @@ Arduino BT, and Pololu 3pi.
 
 \subsection{Platforms}
 \label{sec:platforms}
-A platform is defined by a list of \textit{logical pins}, and
-free-form \textit{capabilities}, the latter being a set of strings
-describing the identity or unusual qualities of the platform.  For
-example, the platform definition for the Pololu 3pi robot contains a
-``3pi''-capability that exists merely to express the fact that the
-platform supports the quirks of the 3pi robot that cannot be expressed
-through a list of pins.  Any device intended to make use of these
-quirks would explicitly require the presence of this capability.
-\fixme{dette afsnit er lidt for implementations agtigt. Bør være mere hvorfor
-  agtigt. Anyhow ellers skal der forklare mere her og slet ikke nede i
-  implementations afsnittet.}
+
+Arduino is a heterogeneous ecology.  Apart from the various models
+that differ in availability of I/O pins, processor speed and available
+program memory, there are also highly specialised variants such as the
+Arduino BT with a built-in bluetooth module, and the Pololu 3pi, a
+mostly Arduino-compatible robot designed for line-following.  The
+primary difference between these variants is their availability of
+I/O-pins, a difference that we must be reflected in Fladuino if we are
+to sanity-check device use.  Additionally, some platforms (such as the
+previously mentioned Arduino BT) have additional intrinsic qualities,
+like the built-in Bluetooth module, that must be expressed somehow,
+such that attempts to use said Bluetooth device will be erroneous
+unless we are compiling for an Arduino BT.
+
+A platform is defined by a list of \textit{logical pins} (described in
+full in \Fref{sec:pins}), and free-form \textit{capabilities}, the
+latter being a set of strings describing the identity or unusual
+qualities of the platform.  For example, the platform definition for
+the Pololu 3pi robot contains a ``3pi''-capability that exists merely
+to express the fact that the platform supports the quirks of the 3pi
+robot that cannot be expressed through a list of pins.  Any device
+intended to make use of these quirks would explicitly require the
+presence of this capability.
+
 \subsubsection{The Fladuino pin model}
 \label{sec:pins}
 There is no concrete distinction between analog and digital pins in
@@ -1803,52 +1817,56 @@ not implemented in Fladuino, however.
 
 \subsection{Implementation of the clock operator}
 To handle different \texttt{clock} operators in a Fladuino program, their
-greatest common divisor is calculated (as argued in \fref{sec:runtime-system}) and used to calculate the timeout vale of
-a hardware timer (see \fref{sec:timer-interrupts}). Each time an overflow
-interrupt from the timer occurs a IHF (Interrupt Handler Function) is called
-which takes care of queueing events in the event queue. This is done by having a
-counter for each \texttt{clock} operator and knowing how many times the timer
-must overflow before the defined \texttt{clock} time has elapsed. This handler
-function is statically generated at compile-time. Currently timer 1 and 2 can be
-used as the \texttt{clock}-timer since the Arduino framework reserves timer
-0\footnote{This timer is used for the functions \texttt{millis()},
-  \texttt{delay()} and other timing related function}.
+greatest common divisor is calculated (as argued in \fref{sec:runtime-system})
+and used to calculate the timeout vale of a hardware timer (see
+\fref{sec:timer-interrupts}). Each time an overflow interrupt from the timer
+occurs a handler function is called which takes care of queueing events in the
+event queue. This is done by having a counter for each \texttt{clock} operator
+and knowing how many times the timer must overflow before each the defined
+\texttt{clock} time has elapsed. This handler function is statically generated
+at compile-time. Currently timer 1 and 2 can be used as the \texttt{clock}-timer
+since the Arduino framework reserves timer 0\footnote{This timer is used for the
+  functions \texttt{millis()}, \texttt{delay()} and other timing related
+  function}.
 
 Fladuino events such as the \texttt{PushButtonPressEvent} and
-\texttt{PushButtonReleaseEvent} uses external hardware interrupts (see
+\texttt{PushButtonRe\-le\-a\-se\-Event} uses external hardware interrupts (see
 \fref{sec:external-interrupts}). The default behaviour when such an event occurs
 is that the GIE (Global Interrupt Enable) bit is cleared which disables all
-further interrupt handling until the IHF finish and returns which enables the
-GIE bit again. It is however possible to enable the GIE bit when entering a IHF
-which would allow nested interrupts \cite[Section 4.7 page 14]{atmel8p} but
-potentially also reverse the order of events, e.g. if a press event occurs and
-while processing this a release event occurs. This would result in the release
-event being processed first and then the press event. Therefore this is
-generally not a good idea.
+further interrupt handling until the handler function finish and returns which
+enables the GIE bit again. It is however possible to enable the GIE bit when
+entering a handler function which would allow nested interrupts \cite[Section
+4.7 page 14]{atmel8p} but potentially also reverse the order of events; for
+example, if a release event occurs while processing a press event, that would
+result in the release event being processed first and then the press
+event second. Therefore this is generally not a good idea.
 
-This leads to the possibility of losing interrupts if GIE is cleared, nested
-interrupts isn't used and an interrupt happens. Fortunately the Atmega chip has
-a cheap work around for this that works in most cases: all timer interrupts and
-external interrupts on Arduino digital pin 0 and 1 has internal flag registers
-that indicates if the particular interrupt has occurred. Further occurrences and
-any other interrupts while GIE is cleared will however be lost.
+This leads to the possibility of losing interrupts; that is, if GIE is cleared,
+nested interrupts isn't used and an interrupt happens. Fortunately the Atmega
+chip has a cheap work around for this that works in most cases; all timer
+interrupts and external interrupts on Arduino digital pin 0 and 1 has internal
+flag registers that indicates whether the particular interrupt has
+occurred. Further occurrences of any of the same interrupt or any other
+interrupts while GIE is cleared will however be lost.
 
-In practice this is not a problem as all Fladuino defined IHF's only push events
-onto the event queue and thus should be executed before the same interrupt
-happens again. It should however also be noted that there is a predefined order
-of running IHF's \cite[Section 9 page 57]{atmel8p} (lowest vector no. is run
-first) when multiple has flagged and GIE is set and thus it is not guaranteed
-that interrupt is handled in the order they occurred and that defining more
-\texttt{clock} operators in the Fladuino program results in a slower
-\texttt{clock}-timer IHF. Though the later only becomes a problem if at least
-one of the \texttt{clock} operators is using a low timeout, resulting in the IHF
-being run more frequently. As mentioned in the previous section it is the users
-responsibility not to define any combination of to many \texttt{clock}
-operators, to short \texttt{clock}-timeout or to much work when a \texttt{clock}
-event occurs such that the event queue is filled up.
+In practice this is not a problem as all Fladuino defined handler function's
+only push events onto the event queue and thus should be executed before the
+same interrupt happens again. It should however also be noted that there is a
+predefined order of running handler function's \cite[Section 9 page 57]{atmel8p}
+(lowest vector no. is run first) when multiple has flagged and GIE is set and
+thus it is not guaranteed that interrupt is handled in the order they occurred
+and that defining more \texttt{clock} operators in the Fladuino program results
+in a slower \texttt{clock}-timer handler function. Though the later only becomes
+a problem if at least one of the \texttt{clock} operators is using a low
+timeout, resulting in the handler function being run more frequently. As
+mentioned in the previous section it is the users responsibility not to define
+any combination of to many \texttt{clock} operators, to short
+\texttt{clock}-timeout or to much work when a \texttt{clock} event occurs such
+that the event queue is filled up.
 
-When an IHF returns it is guaranteed that the main program executes at least
-one instruction before the next IHF is called \cite[Section 4.7 page 14]{atmel8p}.
+When an handler function returns it is guaranteed that the main program executes
+at least one instruction before the next handler function is called
+\cite[Section 4.7 page 14]{atmel8p}.
 
 
 \section{User-extensible abstractions with typeclasses}
@@ -1869,8 +1887,8 @@ In \fref{sec:devices} we define a device-driver as:
 \end{itemize}
 
 As explained, most device-drivers are parameterised by some additional
-data, e.g.  which hardware-pin the device is connected to or the
-starting state of the device (e.g. turned off).
+data; for example which hardware-pin the device is connected to or the
+starting state of the device (off or on).
 
 We need a way to represent these devices as values, i.e. a way of
 referring to a specific device and access information about its
@@ -1890,7 +1908,7 @@ of hardware-dependencies and postpone the device-setup to a general
 device initialization-phase of the code generation. The \verb|Device|
 type class is shown in \Fref{fig:device typeclass}.
 
-\begin{nonfloatingfigure}
+\begin{figure}
   \begin{verbatim}
 class (Eq a, Show a) => Device a where
     setupDevice :: MonadFladuino m => a -> m ()
@@ -1899,7 +1917,7 @@ class (Eq a, Show a) => Device a where
 \end{verbatim}
   \caption{Type class definition for devices (default values omitted)}
   \label{fig:device typeclass}
-\end{nonfloatingfigure}
+\end{figure}
 
 Remark that all three values requires the device-value itself as a
 parameter. The values are general for the class of devices, and thus
@@ -2351,6 +2369,16 @@ compute (v, omega) = let motorLvel = v * (if omega <= 0.0 then 1.0 else 1.0 - om
 \item How does the example-programs compare to similar programs
   written directly in C? More or less code? More or less debugging?
 \end{itemize}
+
+We set out to implement a language for the programming of control
+systems running on Arduino-compatible platforms.  An evaluation of our
+results thus consists of considering the \textit{practical}
+obstructions to this use.  Additionally, we will elaborate whether
+basing our work on Flask turned out to be a good idea.  Finally, an
+implicit subgoal was that Fladuino should be a \textit{better} way to
+program Arduino than plain C/C++, and we shall evaluate our completion
+of this goal by an experimental comparison of similar programs written
+in Fladuino and C respectively.
 
 \section{Known obstructions to practical use}
 
