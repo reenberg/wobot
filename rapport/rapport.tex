@@ -1889,7 +1889,7 @@ to handle all the constraints it must implement the following
   expressing support for notions not otherwise expressable.  All
   platforms should include their name such that a Fladuino program can
   state only to be compatible with this platform. Thus all platforms
-  that is compatible with each other could include this in the list of
+  that are compatible with each other could include this in the list of
   capabilities. Other capabilities could be the Pololu 3pi robot's
   motors, buzzer or LCD.
 
@@ -2404,7 +2404,7 @@ suggested solutions) will be discussed further in
 
 Here we will evaluate on the abstractions, defined in \fref{sec:user-extens-abstr},
 to implement interfaces for a pushbutton, a potentiometer and bindings for some
-of the hardware-devices on the before mentioned Pololu 3pi robot, which we also
+of the hardware-devices on the previously mentioned Pololu 3pi robot, which we also
 introduce as a \textit{Platform} (\fref[plain]{sec:platforms}). This shows how
 the \textit{Device} and \textit{Event} abstractions are used, and can be seen as
 a form of documentation of our work. For brevity, module imports has been
@@ -2434,6 +2434,10 @@ the pin and sets the pin mode as input.
 instance Device PushButton where
     usages (PushButton pin) = [DPinUsage pin ["interrupt"] DigitalInput]
 \end{verbatim}
+
+At generation time, if interrupt functionality is not possible on the defined
+pin or the pin has already been reserved by another device an error will occur
+which prints a error message and stops the generation of code.
 
 \subsubsection{PushButton events}
 
@@ -2538,9 +2542,12 @@ The \texttt{valueOf} function is shown in \Fref{sec:valueOf}.
 \subsubsection{Defining a potentiometer}
 \label{sec:potentiometer device}
 
-A potentiometer interface can be defined in Fladuino quite easily as it doesn't
-make any sense to define any events upon this as its value needs to be pulled
-once in a while to know if it has changed and/or to act upon that.
+A potentiometer interface can quite easily be defined in Fladuino. It doesn't
+make any sense to define any events upon this\footnote{Events currently only
+  works with hardware logical change interrupts. A potentiometer would then need
+  to be turned more than half a turn before it is considered a logical change by
+  the Atmega chip.} so its value must to be pulled once in a while to know if it
+has changed.
 
 The \texttt{Device} instance declaration of \texttt{Potentiometer} defines that
 it uses an analog pin but with no functionality requirements.
