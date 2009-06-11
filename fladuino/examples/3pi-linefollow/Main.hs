@@ -33,8 +33,9 @@ main =
       genStream $ idle 
                   >>> valueOf ReflectanceSensors
                   >>> smap velocity
-                  >>> set_motors Motors
+                  >>> set_motors_rt Motors
           where 
             velocity :: N (Integer -> (Float, Float))
-            velocity = liftN [$decls|f linepos = ($flo:speed, (intToFloat (2000 - linepos)) / 2000.0)|]
+            velocity = liftN [$exp|\linepos -> ($flo:speed, 
+                                                (intToFloat (2000 - linepos)) / 2000.0)|]
 
