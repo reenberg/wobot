@@ -2079,13 +2079,12 @@ value-function.
 \chapter{Evaluation}
 \label{chap:evaluation}
 
-\begin{itemize}
-\item Is this for any practical use?
-\item What was easy and hard when writing the example-programs?
-\item How does the example-programs compare to similar programs
-  written directly in C? More or less code? More or less debugging?
-\end{itemize}
-
+% \begin{itemize}
+% \item Is this for any practical use?
+% \item What was easy and hard when writing the example-programs?
+% \item How does the example-programs compare to similar programs
+%   written directly in C? More or less code? More or less debugging?
+% \end{itemize}
 We set out to implement a language for the programming of control
 systems running on Arduino-compatible platforms.  An evaluation of our
 results thus consists of considering the \textit{practical}
@@ -2171,6 +2170,220 @@ This, more than anything else, is perhaps the chief deficiency that
 came about due to our choice to adapt Flask, rather than writing a
 system from scratch.
 
+\section{Building on the abstractions}
+\label{chap:example code}
+
+Here we will evaluate on the abstractions, defined in \fref{sec:user-extens-abstr},
+to implement interfaces for a pushbutton, a potentiometer and bindings for some
+of the hardware-devices on the previously mentioned Pololu 3pi robot, which we also
+introduce as a \textit{Platform} (\fref[plain]{sec:platforms}). This shows how
+the \textit{Device} and \textit{Event} abstractions are used, and can be seen as
+a form of documentation of our work. For brevity, module imports has been
+omitted in all the examples.
+
+\subsection{A PushButton device}
+\label{sec:pushbuttondef}
+
+The \texttt{Device} type class creates the possibility of defining abstractions
+as the \texttt{PushButton} or \texttt{Diode} devices. In following it is shown
+how easy a definition of the simple digital pushbutton can be implemented. 
+
+First the type constructor \texttt{PushButton} is defined with the data
+constructor \texttt{PushButton Integer} where the \texttt{Integer} type defines
+which pin the physical device is connected to.
+
+\begin{verbatim}
+data PushButton = PushButton Integer
+                    deriving (Eq, Show)
+\end{verbatim}
+
+Then a \texttt{Device} instance declaration on \texttt{PushButton} is defined
+which reserves the specified digital pin, requiring interrupt functionality on
+the pin and sets the pin mode as input. 
+
+\begin{verbatim}
+instance Device PushButton where
+    usages (PushButton pin) = [DPinUsage pin ["interrupt"] DigitalInput]
+\end{verbatim}
+
+At generation time, if interrupt functionality is not possible on the defined
+pin or the pin has already been reserved by another device an error will occur
+which prints a error message and stops the generation of code.
+
+\subsubsection{PushButton events}
+
+Since logical change interrupts occurs twice on a pushbutton (when pushed and
+then when released) it makes sense to define a \texttt{PushButtonPressEvent} and
+a \texttt{PushButtonReleaseEvent}.
+
+\begin{verbatim}
+data PushButtonPressEvent = PushButtonPressEvent PushButton
+                              deriving (Eq, Show)
+data PushButtonReleaseEvent = PushButtonReleaseEvent PushButton
+                                deriving (Eq, Show)
+\end{verbatim}
+
+To tell the two events apart their \texttt{Event} instance declaration's
+\texttt{setupEvent} reads the value of the \texttt{PushButton} pin. If the value
+is \texttt{HIGH} we defined it as a press event and a release event if the value
+is \texttt{LOW}.
+
+\begin{verbatim}
+instance Event PushButtonPressEvent () where
+    setupEvent e@(PushButtonPressEvent (d@(PushButton pin))) = 
+     do addDevice d
+        pv <- statevar d "press_predicate" 
+        let v = H.Var (mkName pv)
+        addCImport pv [$ty|() -> Bool|] [$cexp|$id:pv|]
+        addCFundef [$cedecl|int $id:pv () {
+                              return (digitalRead($int:pin) == HIGH);
+                            }|]
+        return $ mkEvent e Nothing (Just v)
+    interruptPins (PushButtonPressEvent (PushButton pin)) = [DPin pin]
+
+instance Event PushButtonReleaseEvent () where
+    setupEvent e@(PushButtonReleaseEvent (d@(PushButton pin))) = 
+     do addDevice d 
+        pv <- statevar d "rel_predicate" 
+        let v = H.Var (mkName pv)
+        addCImport pv [$ty|() -> Bool|] [$cexp|$id:pv|]
+        addCFundef [$cedecl|int $id:pv () {
+                              return (digitalRead($int:pin) == LOW);
+                            }|]
+        return $ mkEvent e Nothing (Just v)
+    interruptPins (PushButtonReleaseEvent (PushButton pin)) = [DPin pin]
+\end{verbatim}
+
+These event definitions are a bid nontrivial at sight, but actually they merely
+check the value of the button and return a boolean value indicating if this
+event is applicable. 
+
+From the above definitions, we can write programs such as
+
+\begin{nonfloatingfigure}
+\begin{verbatim}
+onEvent (PushButtonPressEvent $ PushButton 3) >>> (toggle $ diode 13 True)
+\end{verbatim}
+\caption{Subscribing to the declared event, to toggle a light emitting
+diode.}
+\label{fig:onEvent usage}
+\end{nonfloatingfigure}
+
+This program will toggle the state of a diode connected to digital pin
+13 (a default device on almost all Arduino boards) whenever the
+pushbutton attached to digital pin 3 is pressed.
+
+
+\subsection{Defining AnalogInputDevice abstraction}
+\label{sec:analoginputdevice}
+
+The \texttt{AnalogInputDevice} is a good example of a device abstraction that
+makes it easier to write common functions for interacting with analog input
+devices as mentioned in \Fref{sec:defining-new-devices}. An
+\texttt{AnalogInputDevice} must supply a \texttt{genRedCode} function that takes
+the device-value itself as parameter, as the device type class also do, and then
+a string defining the variable name that the analog value is saved in. An
+example of how this is done for the potentiometer device is given in
+\fref{sec:potentiometer device}.
+
+The \texttt{AnalogInputDevice} class is shown in \Fref{fig:analoginputdevice}.
+
+\begin{figure}
+  \centering
+
+  \begin{verbatim}
+class (Device a) => AnalogInputDevice a where
+    genReadCode :: a -> String -> [Stm]
+  \end{verbatim}
+
+  \caption{Type class definition for AnalogInputDevices.}
+  \label{fig:analoginputdevice}
+\end{figure}
+
+\subsubsection{valueOf operator}
+
+Having the \texttt{AnalogInputDevice} abstraction makes it easy to define
+uniform operators for all devices that has some analog output properties to be
+read. From this the \texttt{valueOf} operator is the most obvious as it reads a
+value from the given analog device. 
+
+The \texttt{valueOf} function is shown in \Fref{sec:valueOf}.
+
+
+\subsubsection{Defining a potentiometer}
+\label{sec:potentiometer device}
+
+A potentiometer interface can quite easily be defined in Fladuino. It doesn't
+make any sense to define any events upon this\footnote{Events currently only
+  works with hardware logical change interrupts. A potentiometer would then need
+  to be turned more than half a turn before it is considered a logical change by
+  the Atmega chip.} so its value must to be pulled once in a while to know if it
+has changed.
+
+The \texttt{Device} instance declaration of \texttt{Potentiometer} defines that
+it uses an analog pin but with no functionality requirements.
+
+\begin{verbatim}
+data Potentiometer = Potentiometer Integer
+                     deriving (Eq, Show)
+
+instance Device Potentiometer where
+    usages (Potentiometer pin) = [APinUsage pin []]
+
+instance AnalogInputDevice Potentiometer where
+    genReadCode (Potentiometer pin) resultvar = 
+        [[$cstm|$id:resultvar = analogRead($int:pin);|]]
+\end{verbatim}
+
+And the \texttt{AnalogInputDevice} instance declaration gives the posibility of
+writing the following example program using the \texttt{valueOf} operator which
+reads the analog value of the potentiometer.
+
+\begin{verbatim}
+idle >>> (valueOf $ Potentiometer 0) 
+     >>> smap [$exp|(/4)|] 
+     >>> (setValue $ AnalogOutputPin 10 0)
+\end{verbatim}
+
+The reason why the pulled value is divided by 4 is that the ATmega
+chip by default returns values in the range 0 to 1023 when doing
+analog reads but can only write values in the range 0 to 255 unless
+explicitly changed. The scale 0 to 1023 when reading analog values is
+proportional to the relationship between GND and AREF, which is
+nomally 0v and 5v respectively, though AREF can be explicitly changed.
+
+\subsection{Defining new platforms}
+
+When adding support for a new platform (e.g., the Pololu 3pi) the abstractions
+allows for the option to either define it from scratch by extending the
+\texttt{emptyPlatform} ore by extending one of the predefined platforms.
+
+The default platform is the \texttt{arduinoDuemilanove} which extends the
+\texttt{emptyPlatform} and is defined as
+
+\begin{verbatim}
+arduinoDuemilanove = emptyPlatform 
+      { p_pins = [ PinDecl (DPin n) $ pc n | n <- [0..13] ] ++
+                 [ PinDecl (APin n) ["analog", "interrupt"] | n <- [0..6] ]
+      , p_pinmap = (\x -> case x of
+                            DPin pin -> pin
+                            APin pin -> pin+14)
+      , p_capabilities = ["Duemilanove"] }
+   where
+     -- PWM on pin 9 and 10 are disallowed because they interfere with TIMER1
+     pc pin | pin `elem` [3, 5, 6, 11] = ["PWM", "interrupt"] 
+     pc _ = ["interrupt"]
+\end{verbatim}
+
+Since the \texttt{arduinoDiecimila} platform is fully compatible and has
+exactly the same pin configuration as the \texttt{arduinoDuemilanove} platform,
+it can easily be defined by just extending it
+
+\begin{verbatim}
+arduinoDiecimila = arduinoDuemilanove { p_capabilities = ["Diecimila"] }
+\end{verbatim}
+
+
 \section{Experimental comparison}
 
 We cannot hope to make a general comparison of utility between
@@ -2192,7 +2405,6 @@ unit to the internal timer, and one to remove a unit.  Whenever the
 timer is zero, an alarm will be sounded through a piezoelectric
 speaker.  The buttons will be connected to pins 2 and 3, while the
 speaker will be connected to pin 13.
-
 
 \begin{verbatim}
 secondsPerUnit = 15*60 -- One quarter of an hour.
@@ -2402,220 +2614,6 @@ sensor networks.  In fact, the problem is deeper yet: Fladuino does
 not support fully dynamic state at all!  This deficiency (and
 suggested solutions) will be discussed further in
 \Fref{chap:futurework}.
-
-
-\section{Building on the abstractions}
-\label{chap:example code}
-
-Here we will evaluate on the abstractions, defined in \fref{sec:user-extens-abstr},
-to implement interfaces for a pushbutton, a potentiometer and bindings for some
-of the hardware-devices on the previously mentioned Pololu 3pi robot, which we also
-introduce as a \textit{Platform} (\fref[plain]{sec:platforms}). This shows how
-the \textit{Device} and \textit{Event} abstractions are used, and can be seen as
-a form of documentation of our work. For brevity, module imports has been
-omitted in all the examples.
-
-\subsection{A PushButton device}
-\label{sec:pushbuttondef}
-
-The \texttt{Device} type class creates the possibility of defining abstractions
-as the \texttt{PushButton} or \texttt{Diode} devices. In following it is shown
-how easy a definition of the simple digital pushbutton can be implemented. 
-
-First the type constructor \texttt{PushButton} is defined with the data
-constructor \texttt{PushButton Integer} where the \texttt{Integer} type defines
-which pin the physical device is connected to.
-
-\begin{verbatim}
-data PushButton = PushButton Integer
-                    deriving (Eq, Show)
-\end{verbatim}
-
-Then a \texttt{Device} instance declaration on \texttt{PushButton} is defined
-which reserves the specified digital pin, requiring interrupt functionality on
-the pin and sets the pin mode as input. 
-
-\begin{verbatim}
-instance Device PushButton where
-    usages (PushButton pin) = [DPinUsage pin ["interrupt"] DigitalInput]
-\end{verbatim}
-
-At generation time, if interrupt functionality is not possible on the defined
-pin or the pin has already been reserved by another device an error will occur
-which prints a error message and stops the generation of code.
-
-\subsubsection{PushButton events}
-
-Since logical change interrupts occurs twice on a pushbutton (when pushed and
-then when released) it makes sense to define a \texttt{PushButtonPressEvent} and
-a \texttt{PushButtonReleaseEvent}.
-
-\begin{verbatim}
-data PushButtonPressEvent = PushButtonPressEvent PushButton
-                              deriving (Eq, Show)
-data PushButtonReleaseEvent = PushButtonReleaseEvent PushButton
-                                deriving (Eq, Show)
-\end{verbatim}
-
-To tell the two events apart their \texttt{Event} instance declaration's
-\texttt{setupEvent} reads the value of the \texttt{PushButton} pin. If the value
-is \texttt{HIGH} we defined it as a press event and a release event if the value
-is \texttt{LOW}.
-
-\begin{verbatim}
-instance Event PushButtonPressEvent () where
-    setupEvent e@(PushButtonPressEvent (d@(PushButton pin))) = 
-     do addDevice d
-        pv <- statevar d "press_predicate" 
-        let v = H.Var (mkName pv)
-        addCImport pv [$ty|() -> Bool|] [$cexp|$id:pv|]
-        addCFundef [$cedecl|int $id:pv () {
-                              return (digitalRead($int:pin) == HIGH);
-                            }|]
-        return $ mkEvent e Nothing (Just v)
-    interruptPins (PushButtonPressEvent (PushButton pin)) = [DPin pin]
-
-instance Event PushButtonReleaseEvent () where
-    setupEvent e@(PushButtonReleaseEvent (d@(PushButton pin))) = 
-     do addDevice d 
-        pv <- statevar d "rel_predicate" 
-        let v = H.Var (mkName pv)
-        addCImport pv [$ty|() -> Bool|] [$cexp|$id:pv|]
-        addCFundef [$cedecl|int $id:pv () {
-                              return (digitalRead($int:pin) == LOW);
-                            }|]
-        return $ mkEvent e Nothing (Just v)
-    interruptPins (PushButtonReleaseEvent (PushButton pin)) = [DPin pin]
-\end{verbatim}
-
-These event definitions are a bid nontrivial at sight, but actually they merely
-check the value of the button and return a boolean value indicating if this
-event is applicable. 
-
-From the above definitions, we can write programs such as
-
-\begin{nonfloatingfigure}
-\begin{verbatim}
-onEvent (PushButtonPressEvent $ PushButton 3) >>> (toggle $ diode 13 True)
-\end{verbatim}
-\caption{Subscribing to the declared event, to toggle a light emitting
-diode.}
-\label{fig:onEvent usage}
-\end{nonfloatingfigure}
-
-This program will toggle the state of a diode connected to digital pin
-13 (a default device on almost all Arduino boards) whenever the
-pushbutton attached to digital pin 3 is pressed.
-
-
-\subsection{Defining AnalogInputDevice abstraction}
-\label{sec:analoginputdevice}
-
-The \texttt{AnalogInputDevice} is a good example of a device abstraction that
-makes it easier to write common functions for interacting with analog input
-devices as mentioned in \Fref{sec:defining-new-devices}. An
-\texttt{AnalogInputDevice} must supply a \texttt{genRedCode} function that takes
-the device-value itself as parameter, as the device type class also do, and then
-a string defining the variable name that the analog value is saved in. An
-example of how this is done for the potentiometer device is given in
-\fref{sec:potentiometer device}.
-
-The \texttt{AnalogInputDevice} class is shown in \Fref{fig:analoginputdevice}.
-
-\begin{figure}
-  \centering
-
-  \begin{verbatim}
-class (Device a) => AnalogInputDevice a where
-    genReadCode :: a -> String -> [Stm]
-  \end{verbatim}
-
-  \caption{Type class definition for AnalogInputDevices.}
-  \label{fig:analoginputdevice}
-\end{figure}
-
-\subsubsection{valueOf operator}
-
-Having the \texttt{AnalogInputDevice} abstraction makes it easy to define
-uniform operators for all devices that has some analog output properties to be
-read. From this the \texttt{valueOf} operator is the most obvious as it reads a
-value from the given analog device. 
-
-The \texttt{valueOf} function is shown in \Fref{sec:valueOf}.
-
-
-\subsubsection{Defining a potentiometer}
-\label{sec:potentiometer device}
-
-A potentiometer interface can quite easily be defined in Fladuino. It doesn't
-make any sense to define any events upon this\footnote{Events currently only
-  works with hardware logical change interrupts. A potentiometer would then need
-  to be turned more than half a turn before it is considered a logical change by
-  the Atmega chip.} so its value must to be pulled once in a while to know if it
-has changed.
-
-The \texttt{Device} instance declaration of \texttt{Potentiometer} defines that
-it uses an analog pin but with no functionality requirements.
-
-\begin{verbatim}
-data Potentiometer = Potentiometer Integer
-                     deriving (Eq, Show)
-
-instance Device Potentiometer where
-    usages (Potentiometer pin) = [APinUsage pin []]
-
-instance AnalogInputDevice Potentiometer where
-    genReadCode (Potentiometer pin) resultvar = 
-        [[$cstm|$id:resultvar = analogRead($int:pin);|]]
-\end{verbatim}
-
-And the \texttt{AnalogInputDevice} instance declaration gives the posibility of
-writing the following example program using the \texttt{valueOf} operator which
-reads the analog value of the potentiometer.
-
-\begin{verbatim}
-idle >>> (valueOf $ Potentiometer 0) 
-     >>> smap [$exp|(/4)|] 
-     >>> (setValue $ AnalogOutputPin 10 0)
-\end{verbatim}
-
-The reason why the pulled value is divided by 4 is that the ATmega
-chip by default returns values in the range 0 to 1023 when doing
-analog reads but can only write values in the range 0 to 255 unless
-explicitley changed. The scale 0 to 1023 when reading analog values is
-proportional to the relationship between GND and AREF, which is
-nomally 0v and 5v respectively, though AREF can be explicitly changed.
-
-\subsection{Defining new platforms}
-
-When adding support for a new platform (e.g., the Pololu 3pi) the abstractions
-allows for the option to either define it from scratch by extending the
-\texttt{emptyPlatform} ore by extending one of the predefined platforms.
-
-The default platform is the \texttt{arduinoDuemilanove} which extends the
-\texttt{emptyPlatform} and is defined as
-
-\begin{verbatim}
-arduinoDuemilanove = emptyPlatform 
-      { p_pins = [ PinDecl (DPin n) $ pc n | n <- [0..13] ] ++
-                 [ PinDecl (APin n) ["analog", "interrupt"] | n <- [0..6] ]
-      , p_pinmap = (\x -> case x of
-                            DPin pin -> pin
-                            APin pin -> pin+14)
-      , p_capabilities = ["Duemilanove"] }
-   where
-     -- PWM on pin 9 and 10 are disallowed because they interfere with TIMER1
-     pc pin | pin `elem` [3, 5, 6, 11] = ["PWM", "interrupt"] 
-     pc _ = ["interrupt"]
-\end{verbatim}
-
-Since the \texttt{arduinoDiecimila} platform is fully compatible and has
-exactley the same pin configuration as the \texttt{arduinoDuemilanove} platform,
-it can easily be defined by just extending it
-
-\begin{verbatim}
-arduinoDiecimila = arduinoDuemilanove { p_capabilities = ["Diecimila"] }
-\end{verbatim}
 
 \subsubsection{The Pololu 3pi platform}
 \label{sec:pololu-3pi-platform}
