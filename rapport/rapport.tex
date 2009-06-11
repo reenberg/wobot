@@ -2214,7 +2214,7 @@ which prints a error message and stops the generation of code.
 
 Since logical change interrupts occurs twice on a pushbutton (when pushed and
 then when released) it makes sense to define a \texttt{PushButtonPressEvent} and
-a \texttt{PushButtonReleaseEvent}.
+a \texttt{Push\-ButtonReleaseEvent}.
 
 \begin{verbatim}
 data PushButtonPressEvent = PushButtonPressEvent PushButton
@@ -2288,7 +2288,7 @@ example of how this is done for the potentiometer device is given in
 
 The \texttt{AnalogInputDevice} class is shown in \Fref{fig:analoginputdevice}.
 
-\begin{figure}
+\begin{nonfloatingfigure}
   \centering
 
   \begin{verbatim}
@@ -2298,7 +2298,7 @@ class (Device a) => AnalogInputDevice a where
 
   \caption{Type class definition for AnalogInputDevices.}
   \label{fig:analoginputdevice}
-\end{figure}
+\end{nonfloatingfigure}
 
 \subsubsection{valueOf operator}
 
