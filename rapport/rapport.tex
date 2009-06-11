@@ -1875,7 +1875,7 @@ at least one instruction before the next handler function is called
 \label{sec:impl-platforms}
 
 The general concept of platforms is discussed in \Fref{sec:platforms} and thus
-to handle all the constraints it must implement the following
+to handle all the constraints it must implement the following:
 
 \begin{description}
 \item[Pins] This is a list of pin declarations. A pin declaration consists of
@@ -1895,7 +1895,7 @@ to handle all the constraints it must implement the following
   motors, buzzer or LCD.
 
 \item[Base setup] Any platform specific configuration that should be
-  added, like initialisation code for the Arduino BT platform's
+  added, like initialisation code for the Arduino BT platforms
   bluetooth device or inclusion of specific header file on the Pololu
   3pi platform.
 
@@ -1940,19 +1940,25 @@ We need a way to represent these devices as values, i.e. a way of
 referring to a specific device and access information about its
 dependencies etc. A simple solution would be to implement all devices
 as values of a general \textit{Device} datatype with the above values
-as fields. But as discussed elsewhere  devices differ and the
+as fields. But as discussed elsewhere devices differ and the
 device-specific additional data required would be clumsy to store in
 such a general datatype.  An even better argument against this idea is
 that it would be impossible to distinguishing devices by their
 types. Instead, we require that the driver-writer creates a separate
 datatype for each device and makes it an instance of our
-\textit{Device} type class. We can thus verify that a value represents
-a device by its membership of this type class, and specific devices
-can be identified directly by their datatype. Our monadic state is
-extended with a list of these devices, both to enable conflict testing
-of hardware-dependencies and postpone the device-setup to a general
-device initialisation-phase of the code generation. The \verb|Device|
-type class is shown in \Fref{fig:device typeclass}.
+\textit{Device} type class (shown in \Fref{fig:device typeclass}). We
+can thus verify that a value represents a device by its membership of
+this type class, and specific devices can be identified directly by
+their datatype. Our monadic state is extended with a list of these
+devices, both to enable conflict testing of hardware-dependencies and
+postpone the device-setup to a general device initialisation-phase of
+the code generation. This list of devices is populated by the
+\verb|addDevice| function, which should be called for each used
+device. To hide this, all functions using the device should add the
+device. For example, when reading the value of a potentiometer with
+\verb|valueOf| (see \Fref{sec:analoginputdevice}), it is
+\verb|valueOf|'s job to add the potentiometer-device to the list of
+used devices.
 
 \begin{figure}
   \begin{verbatim}
@@ -1965,15 +1971,18 @@ class (Eq a, Show a) => Device a where
   \label{fig:device typeclass}
 \end{figure}
 
-Remark that all three values requires the device-value itself as a
-parameter. The values are general for the class of devices, and thus
-needs the specific device-value as input (more than one device of the
-same type can be connected to the Arduino simultaneously).
+Remark that all three values of the type class requires the
+device-value itself as a parameter. The values are general for the
+class of devices, and thus needs the specific device-value as input
+(more than one device of the same type can be connected to the Arduino
+simultaneously).
 
 \texttt{uniqueId} isn't discussed in the design-chapter. This is our
 way of comparing devices. It is impossible to make use of the
 \verb|Eq| type class, since it can only be used to compare values of
-the same type, and each type of device has their own datatype.
+the same type, and at times, we want to compare different types of
+devices with each other, and each device has their own datatype.
+
 
 
 The implementation of a device-driver for a simple push-button is discussed in
