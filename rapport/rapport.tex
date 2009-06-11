@@ -55,8 +55,6 @@
 }
 \makeatother
 
-\overfullrule=5pt
-
 \newcommand{\EDSL}{EDSL (Embedded Domain-Specific Language) \renewcommand{\EDSL}{ EDSL }}
 
 \title{Fladuino: Controlling embedded devices with\\ functional reactive programming}
@@ -2262,7 +2260,8 @@ From the above definitions, we can write programs such as
 
 \begin{nonfloatingfigure}
 \begin{verbatim}
-onEvent (PushButtonPressEvent $ PushButton 3) >>> (toggle $ diode 13 True)
+onEvent (PushButtonPressEvent $ PushButton 3) 
+>>> (toggle $ diode 13 True)
 \end{verbatim}
 \caption{Subscribing to the declared event, to toggle a light emitting
 diode.}
