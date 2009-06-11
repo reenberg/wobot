@@ -1844,7 +1844,7 @@ result in the release event being processed first and then the press
 event second. Thus this is generally not desirable.
 
 This leads to the possibility of losing interrupts; that is, if GIE is cleared,
-nested interrupts isn't used and an interrupt happens. Fortunately the Atmega
+nested interrupts isn't used and an interrupt happens. Fortunately the ATmega
 chip has a cheap work around for this that works in most cases; all timer
 interrupts and external interrupts on Arduino digital pin 0 and 1 has internal
 flag registers that indicates whether the particular interrupt has
@@ -2546,7 +2546,7 @@ A potentiometer interface can quite easily be defined in Fladuino. It doesn't
 make any sense to define any events upon this\footnote{Events currently only
   works with hardware logical change interrupts. A potentiometer would then need
   to be turned more than half a turn before it is considered a logical change by
-  the Atmega chip.} so its value must to be pulled once in a while to know if it
+  the ATmega processor.} so its value must to be pulled once in a while to know if it
 has changed.
 
 The \texttt{Device} instance declaration of \texttt{Potentiometer} defines that
@@ -2615,7 +2615,7 @@ arduinoDiecimila = arduinoDuemilanove { p_capabilities = ["Diecimila"] }
 \subsubsection{The Pololu 3pi platform}
 \label{sec:pololu-3pi-platform}
 
-The \texttt{pololu3pi} platform uses the same Atmega processor as the Arduino
+The \texttt{pololu3pi} platform uses the same ATmega processor as the Arduino
 platform and is thus pin compatible with the \texttt{arduinoDuemilanove}
 platform and others. This means that it has the same possibilities of e.g.
 interrupts, however it should be noted that most of the pins are reserved
@@ -2935,7 +2935,7 @@ summarise some of these.
   Libraries are written in C++, which isn't supported as an object
   language, and without C linkage.
 
-  The most utilized library that suffers from this is the \texttt{Serial}
+  The most utilised library that suffers from this is the \texttt{Serial}
   library used to communicate with any connected device. This is one
   of the easiest ways of debugging an embedded device.
 
@@ -3508,7 +3508,7 @@ hosts. This is addressed in the below sections.
 \end{table}
 
 
-The WT11 chip is connected to the Atmega chip by its RX and TX lines, which
+The WT11 chip is connected to the ATmega processor by its RX and TX lines, which
 means that communication is done through Arduino's serial communication
 capabilities. The WT11 chip communicates at a baud rate of 115200 thus it is
 important to use this speed in the \texttt{Serial.begin} function. Even though
@@ -3521,7 +3521,7 @@ commands and their definitions can be seen in the ``iWRAP User Guide''.
 \subsection{Communication without Bluetooth}
 
 If the WT11 chip is configured in a way such that it refuses connections or in
-some other way that the Atmega chip cannot be programmed, you need to reset to
+some other way that the ATmega processor cannot be programmed, you need to reset to
 factory settings (by doing a firmware update) or by changing the individual
 settings back to something that works. 
 
@@ -3543,29 +3543,29 @@ the serial convert, so it is highly recommended to use the serial converters
 3.3v power supply feature.
 
 The most common issues and solutions is
-
+ 
 \begin{itemize}
 \item If control echo has been enabled it will not be possible to program the
-  Atmega chip as the bootloader will receive messages from the WT11 chip at
+  ATmega processor as the bootloader will receive messages from the WT11 chip at
   bootup and thus fail when waiting for control characters. The solution to this
   is to disable control echo by sending the command \texttt{SET CONTROL ECHO 0}.
 
 \item If the SPP (Serial Port Profile) has been disabled, no host can make a
   serial (rfcomm) connection and thus not make any serial communication (program
-  the Atmega chip). The solution to this is to enable the SSP again by sending
+  the ATmega processor). The solution to this is to enable the SSP again by sending
   the following command \texttt{SET PROFILE SPP on} and then reset the WT11 chip
   by putting high on pin 7 for a short while or sending the command
   \texttt{RESET}.
 
 \item If bluetooth connection is restored, the serial converter is still
-  connected and any attempt to program the Atmega chip fail. Solution to this is
+  connected and any attempt to program the ATmega processor fail. Solution to this is
   that the serial converter must not be connected to the Arduino board while
-  trying to program the Atmega chip. 
+  trying to program the ATmega processor. 
 
   In fact the serial converter interferes with the signals whether it is
-  connected to the WT11 chip or Atmega Chip (digital pins 0 and 1). This results
+  connected to the WT11 chip or ATmega processor (digital pins 0 and 1). This results
   in communication only goes between the serial converter and the chip it is
-  connected to. So whenever communication between the Atmega chip and the WT11
+  connected to. So whenever communication between the ATmega processor and the WT11
   chip is desired, the serial converter must be disconnected.
 \end{itemize}
 
