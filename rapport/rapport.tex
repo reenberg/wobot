@@ -377,7 +377,7 @@ programs.
 
 In \Fref[plain]{chap:design} we will look at what functionality is
 needed when programming control systems that isn't already in Flask
-and how we have embodied this in Fladuino (i.e. our core design
+and how we have embodied this in Fladuino (i.e., our core design
 decisions).
 
 In \Fref[plain]{chap:implementation} we will talk about the technically
@@ -2041,7 +2041,7 @@ In the type class definition, the phantom type $t$ is the type of
 event payload and $e$ is the user-defined event-type (which is useful
 for saving the \textit{Device} attached to the event). Notice, that we
 make use of the GHC extension \textit{FunctionalDependencies} to
-specify that an event has at most one type of payload (i.e. when
+specify that an event has at most one type of payload (i.e., when
 we know the event type, we also know the type of its payload).
 
 When specifying a new event-type, most of the work to do is in the
@@ -2623,7 +2623,7 @@ suggested solutions) will be discussed further in
 
 The \texttt{pololu3pi} platform uses the same ATmega processor as the Arduino
 platform and is thus pin compatible with the \texttt{arduinoDuemilanove}
-platform and others. This means that it has the same possibilities of e.g.
+platform and others. This means that it has the same possibilities of for example
 interrupts, however it should be noted that most of the pins are reserved
 \cite{3pi_pin_mapping} for platform specific devices such as motors and thus
 behaviour is undefined for pins where a use does not make sense. This means that
@@ -3150,7 +3150,7 @@ website\footnote{\url{http://www.arduino.cc/} downloaded the 28. of April 2009 a
   programmed using the Arduino programming language (based on Wiring)
   and the Arduino development environment (based on
   Processing). Arduino projects can be stand-alone or they can
-  communicate with software on running on a computer (e.g. Flash,
+  communicate with software on running on a computer (e.g., Flash,
   Processing, MaxMSP).
 \end{quotation}
 
@@ -3167,7 +3167,7 @@ There are different kinds of Arduino boards. All are based on
 different ATmega processors from Atmel. The older boards used serial
 communication while the newer ones are connected to the computer
 through a USB cable, but still using the same serial communication
-protocol (i.e. serial through USB). The USB cable also serves as a
+protocol (i.e., serial through USB). The USB cable also serves as a
 power supply.
 
 
@@ -3394,7 +3394,7 @@ system with Bluetooth associated packages installed, unless otherwise noted.
 
 As the board doesn't have the USB mount it is not able to draw power from the
 host as most of the other Arduino boards has. This means that the board must be
-powered by an external power supply (E.g. batteries). Powering the board when
+powered by an external power supply (e.g., batteries). Powering the board when
 next to a computer can however still be done through a modified USB cable. As a
 standard USB cable consists of 4 wires
 
@@ -3738,7 +3738,7 @@ to the problems.
 
 \begin{itemize}
 \item Pattern-matching isn't handled correctly. The following program
-  is compiled as if the two first cases where overlapping (i.e. the
+  is compiled as if the two first cases where overlapping (i.e., the
   second case would be ignored)
 \begin{verbatim}
 f (1, (1, x)) = 2
