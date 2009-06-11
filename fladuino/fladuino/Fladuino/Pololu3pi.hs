@@ -64,8 +64,7 @@ instance Device ReflectanceSensors where
            addCInitStm [$cstm|calibrate_3pi_sensors ();|]
         where arrayName = sensorArrayName sens
               arraySize = sensorArraySize sens
-
-    uniqueId _ = "reflectance_sensor_array" -- only one should be needed
+    uniqueId _ = "reflectance_sensor_array"
 
 calibrateSensors :: forall a. (Reify a) => ReflectanceSensors -> S a -> S ()
 calibrateSensors d = modDev "calibrateSensors" d $
@@ -93,8 +92,8 @@ instance Device Motors where
 
 -- This just calls the pololu set_motors function with the integers on
 -- the input as argument
-set_motors_native :: Motors -> S (Integer, Integer) -> S ()
-set_motors_native Motors = modDev "motors" Motors $
+set_motors :: Motors -> S (Integer, Integer) -> S ()
+set_motors Motors = modDev "motors" Motors $
              \Motors c_v_in _ (params, e) -> 
                  let motor0Value = e !! 0
                      motor1Value = e !! 1
@@ -104,9 +103,9 @@ set_motors_native Motors = modDev "motors" Motors $
                              }|]
 
 -- This interprets the two floats on the input as rotational and
--- transitional velocity, respectively.
-set_motors :: Motors -> S (Float, Float) -> S ()
-set_motors Motors from = from >>> f >>> set_motors_native Motors
+-- translational velocity, respectively.
+set_motors_rt :: Motors -> S (Float, Float) -> S ()
+set_motors_rt Motors from = from >>> f >>> set_motors Motors
     where
       f :: S (Float, Float) -> S (Integer, Integer)
       f = smap computeSpeeds
