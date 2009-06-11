@@ -117,15 +117,6 @@ supervised by Ken Friis Larsen, assistant professor at DIKU.
 
 \tableofcontents*
 
-\fixme{check all quoted text for use of the same quotes!!!!}
-\fixme{Check all cites. Should there be a space between the word and cite or
-  not.}
-\fixme{Check all refs. Should be converted to fref to utilise the
-  fancyref package (Where appropriate!!)}
-\fixme{We should update the $\backslash$texttt to uses $\backslash$verb .}
-
-\listoffixmes 
-
 % \chapter*{Disposition}
 % \begin{itemize}
 % \item Abstract
@@ -196,7 +187,7 @@ other nodes in the network. When a Flask program is ``run'', it
 generates a program in another more low-level sensor network
 language. Our framework, Fladuino, follows exactly the same concepts
 as Flask, although it generates C-code written specifically for our
-platform: Arduino, which we will discuss in \fref[plain]{sec:hardware platform}.
+platform: Arduino, which we will discuss in \Fref[plain]{sec:hardware platform}.
 
 In the following chapters we shall argue that taking our outset from
 Flask has been successful. Both in the sense that Flask was easily
@@ -218,7 +209,7 @@ drivers or small frameworks for arbitrary devices.  Furthermore, due
 to the general nature of Arduino's technology itself, it would most likely
 not prove difficult to port our work to another architecture.
 
-In \fref[plain]{sec:pushbuttondef}, we show by example how this framework is
+In \Fref[plain]{sec:pushbuttondef}, we show by example how this framework is
 used. \Fref{fig:fladuino-simple} shows a Fladuino program that toggles
 whether a diode is lit every time a button is pushed.
 
@@ -409,7 +400,7 @@ to connect incoming streams of sensor data to outgoing streams of data
 processing in between. A program thus takes form of a directed acyclic
 graph.
 
-On \fref{fig:ewma-example} we show an example of a dataflow graph
+On \Fref{fig:ewma-example} we show an example of a dataflow graph
 taken from the paper ``Flask: A Language for Data-driven Sensor
 Network Programs''. The graph represents a program for detecting earth
 quakes observing the ratio between two different Exponentially
@@ -431,7 +422,7 @@ Flask. We see that this is a single connected graph\footnote{This is
   actually two different \textit{atomic subgraphs} because of the
   special \textit{posting wire} required to use the sensor, but for
   simplicity we won't discuss this now. Refer to \cite{flask06} or our
-  \fref{sec:posting wires} about posting wires.}, but many Flask
+  \Fref{sec:posting wires} about posting wires.}, but many Flask
 programs will consist of several \textit{atomic subgraphs}. We say
 that they are atomic in the sense that they have to run to completion
 before we can go on to the next action, thus ensuring that any mutable
@@ -713,7 +704,7 @@ merging the streams into a single stream.
 \end{description}
 \newpage
 \section{From dataflow graph to Flask-code}
-The dataflow graph from \fref{fig:ewma-example} can now be written
+The dataflow graph from \Fref{fig:ewma-example} can now be written
 in Flask like below (the code is an almost verbatim copy from
 \cite{flask08}). The result is a stream that only produces values when
 an earthquake is detected.
@@ -759,7 +750,7 @@ In this chapter we shall outline the overall design of Fladuino, as
 well as present some of the technical decisions that have a notable
 impact on how Fladuino is used.  Technical details that have less of
 an impact on the final usage of the system are described in
-\fref{chap:implementation}.
+\Fref{chap:implementation}.
 
 Fladuino is a modification of Flask that can be used to program
 Arduino devices in a functional reactive manner. In this chapter we
@@ -786,7 +777,7 @@ A summary of the most important requirements for our system follows:
   running on the Arduino platform from a description of a dataflow graph. This
   graph must be expressed in the form of a Haskell program.
   \footnote{This requirement stems from the selection of
-    Arduino (see \fref{sec:hardware platform}) as platform.}
+    Arduino (see \Fref{sec:hardware platform}) as platform.}
 \end{itemize}
 
 And we set the scope of our project as follows:
@@ -860,7 +851,7 @@ and tradeoffs in Fladuino.  In particular, the low amount of available
 main memory, and the comparatively large amount of available flash
 memory for program code, suggests that we optimise for low memory
 usage over low code size.  Indeed, as we shall see in
-\fref{sec:dataflowtranslation}, we have opted to directly express much of
+\Fref{sec:dataflowtranslation}, we have opted to directly express much of
 the control flow in the code itself, where a typical program, with
 plenty of available memory, might instead opt a more data-driven
 approach.  This choice was also made in Flask itself, and as
@@ -924,7 +915,7 @@ parts can be divided into the following:
   selection of the exact Arduino variant targeted by the program.
 
   Finally, since Arduino is a fundamentally extensible platform, we provide
-  facilities for implementing drivers (see \fref{sec:user-extens-abstr}) for
+  facilities for implementing drivers (see \Fref{sec:user-extens-abstr}) for
   entirely new devices, in a way that use of these is also automatically
   sanity-checked.
 \end{itemize}
@@ -945,7 +936,7 @@ As in Flask, the dataflow graph is divided into \textit{atomic
 Evaluating such a subgraph consists of supplying a value on the input
 wire, retrieving any values that may show up on output wires, then
 setting up to evaluate any of the successor atomic subgraphs with
-these values (see \fref{sec:dataflowtranslation} for the
+these values (see \Fref{sec:dataflowtranslation} for the
 implementation details).  The notion of an atomic subgraph serves the
 purpose of dividing the dataflow graph into parts that can be
 evaluated atomically without blocking.  Translating a dataflow graph
@@ -1191,7 +1182,7 @@ node would have resulted in.
 
 Simulating the Queue behaviour is significantly more complicated and
 requires a somewhat clumsy use of events (see
-\fref{sec:events_design}).  Values received at the input-node are sent
+\Fref{sec:events_design}).  Values received at the input-node are sent
 on to a \textit{counter node}, where we check whether we are still
 waiting for the sensor to reply to a previously sent request.  If so,
 we increment an internal counter and send nothing further.  When the
@@ -1200,10 +1191,10 @@ value to the counter node, telling it to send another request to the
 sensor if the counter is nonzero.  The problem in this scheme is the
 wire from the output node to the accumulator node --- this graph edge
 would form a cycle, something that is expressly forbidden.  On
-\fref{fig:queue-with-ignore}, we solve this issue by an \textit{event node}
+\Fref{fig:queue-with-ignore}, we solve this issue by an \textit{event node}
 that listens to a discrete event broadcast by the output node (the
 Fladuino event system is described in detail in
-\fref{sec:events_design}).  Using the event system in such a way is
+\Fref{sec:events_design}).  Using the event system in such a way is
 technically feasible, but violates the spirit of the design.  The
 connection from output to event node can be considered to be a
 particularly weak kind of posting wire --- informally, they are to
@@ -1820,9 +1811,9 @@ not implemented in Fladuino, however.
 
 \subsection{Implementation of the clock operator}
 To handle different \texttt{clock} operators in a Fladuino program, their
-greatest common divisor is calculated (as argued in \fref{sec:runtime-system})
+greatest common divisor is calculated (as argued in \Fref{sec:runtime-system})
 and used to calculate the timeout vale of a hardware timer (see
-\fref{sec:timer-interrupts}). Each time an overflow interrupt from the timer
+\Fref{sec:timer-interrupts}). Each time an overflow interrupt from the timer
 occurs a handler function is called which takes care of queueing events in the
 event queue. This is done by having a counter for each \texttt{clock} operator
 and knowing how many times the timer must overflow before each the defined
@@ -1834,7 +1825,7 @@ since the Arduino framework reserves timer 0\footnote{This timer is used for the
 
 Fladuino events such as the \texttt{PushButtonPressEvent} and
 \texttt{PushButtonRe\-le\-a\-se\-Event} uses external hardware interrupts (see
-\fref{sec:external-interrupts}). The default behaviour when such an event occurs
+\Fref{sec:external-interrupts}). The default behaviour when such an event occurs
 is that the GIE (Global Interrupt Enable) bit is cleared which disables all
 further interrupt handling until the handler function finish and returns which
 enables the GIE bit again. It is however possible to enable the GIE bit when
@@ -1922,7 +1913,7 @@ the current implementation.
 \subsection{Defining new devices}
 \label{sec:defining-new-devices}
 
-In \fref{sec:devices} we define a device-driver as:
+In \Fref{sec:devices} we define a device-driver as:
 \begin{itemize}
 \item a list of hardware-dependencies, e.g. which hardware pins or
   timers it confiscates,
@@ -2182,10 +2173,10 @@ system from scratch.
 \section{Building on the abstractions}
 \label{chap:example code}
 
-Here we will evaluate on the abstractions, defined in \fref{sec:user-extens-abstr},
+Here we will evaluate on the abstractions, defined in \Fref{sec:user-extens-abstr},
 to implement interfaces for a pushbutton, a potentiometer and bindings for some
 of the hardware-devices on the previously mentioned Pololu 3pi robot, which we also
-introduce as a \textit{Platform} (\fref[plain]{sec:platforms}). This shows how
+introduce as a \textit{Platform} (\Fref[plain]{sec:platforms}). This shows how
 the \textit{Device} and \textit{Event} abstractions are used, and can be seen as
 a form of documentation of our work. For brevity, module imports has been
 omitted in all the examples.
@@ -2293,7 +2284,7 @@ devices as mentioned in \Fref{sec:defining-new-devices}. An
 the device-value itself as parameter, as the device type class also do, and then
 a string defining the variable name that the analog value is saved in. An
 example of how this is done for the potentiometer device is given in
-\fref{sec:potentiometer device}.
+\Fref{sec:potentiometer device}.
 
 The \texttt{AnalogInputDevice} class is shown in \Fref{fig:analoginputdevice}.
 
@@ -2668,7 +2659,7 @@ can profit from already written C-code for reading and calibrating the
 sensors, and controlling the electromotors. We only need high-level
 Fladuino wrappers of these functions.  To take the simplest example
 first, reading the battery level is accomplished in the same way as
-reading potentiometer values in \fref[plain]{sec:potentiometer
+reading potentiometer values in \Fref[plain]{sec:potentiometer
   device}, instead of calling the \verb|analogRead|-function we call
 the Pololu 3pi function \verb|read_battery_millivolts|.
 
@@ -2687,7 +2678,7 @@ interface is sufficient for us. We thus use the
 \verb|read_line|-function, which not only reads the sensor values, but
 also calculates a value representing where the followed line is
 compared to the robot (this is detailed in
-\fref[plain]{sec:3pi-line-follow}. But \verb|read_line| won't detect
+\Fref[plain]{sec:3pi-line-follow}. But \verb|read_line| won't detect
 the line without some calibration. The 3pi user guide provides the
 steps needed for this calibration and the C-implementation of is shown
 in \Fref{fig:sensor calibration}. The robot needs to be placed on the
@@ -2912,8 +2903,6 @@ design decisions.
 % \end{itemize}
 
 \section{Needs further work}
-\fixme{bedre overskrift}
-
 Some aspects of Fladuino still have undesirable quirks or warts,
 others miss minor features that might be useful.  This section will
 summarise some of these.
@@ -3651,7 +3640,7 @@ When multiplexing mode is enabled\footnote{To enable multiplexing mode send the
   iWRAP command \texttt{SET CONTROL MUX 1}}, it can be disable by the following
 sequence \texttt{BF FF 00 11 53 45 54 20 43 4f 4e 54 52 4f 4c 20 4d 55 58 20 30
   00} which should be send as its ASCII representation without spaces. A python
-script that demonstrates this can be seen in \fref{sec:python-demux-script}.
+script that demonstrates this can be seen in \Fref{sec:python-demux-script}.
 
 The sequence breaks down to the following
 
