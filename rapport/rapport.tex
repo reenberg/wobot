@@ -1267,15 +1267,14 @@ like the built-in Bluetooth module, that must be expressed somehow,
 such that attempts to use said Bluetooth device will be erroneous
 unless we are compiling for an Arduino BT.
 
-A platform is defined by a list of \textit{logical pins} (described in
-full in \Fref{sec:pins}), and free-form \textit{capabilities}, the
-latter being a set of strings describing the identity or unusual
-qualities of the platform.  For instance, the platform definition for
-the Pololu 3pi robot contains a ``3pi''-capability that exists merely
-to express the fact that the platform supports the quirks of the 3pi
-robot that cannot be expressed through a list of pins.  Any device
-intended to make use of these quirks would explicitly require the
-presence of this capability.
+A platform is defined by a list of \textit{logical pins} (described in the next
+Section), and free-form \textit{capabilities}, the latter being a set of strings
+describing the identity or unusual qualities of the platform.  For instance, the
+platform definition for the Pololu 3pi robot contains a ``3pi''-capability that
+exists merely to express the fact that the platform supports the quirks of the
+3pi robot that cannot be expressed through a list of pins.  Any device intended
+to make use of these quirks would explicitly require the presence of this
+capability.
 
 \subsubsection{The Fladuino pin model}
 \label{sec:pins}
@@ -1872,18 +1871,18 @@ When an handler function returns it is guaranteed that the main program executes
 at least one instruction before the next handler function is called
 \cite[Section 4.7 page 14]{atmel8p}.
 
-\section{Implementation of platforms}
-\label{sec:defining platforms}
+\subsection{Implementation of platforms}
+\label{sec:impl-platforms}
 
-The general concept of platforms is discussed in \Fref{sec:platforms} and
-consists of the following
+The general concept of platforms is discussed in \Fref{sec:platforms} and thus
+to handle all the constraints it must implement the following
 
 \begin{description}
-\item[Pins] This is a list of pin declarations. A pin
-  declaration consists of the type of the pin (digital or analog-input) paired
-  with the pin number and a list of the capabilities supported by the pin.
+\item[Pins] This is a list of pin declarations. A pin declaration consists of
+  the type of the pin (digital or analog-input) paired with the pin number and a
+  list of the capabilities supported by the pin.
 
-\item[Pin map] A mapping from \textit{arduino pins} to
+\item[Pin map] A mapping from \textit{Arduino pins} to
   \textit{logical pins} (see \Fref{sec:pins}).  For example, the Arduino
   Duemilanove maps analog pin 0 to logical pin 14.
 
@@ -1891,7 +1890,7 @@ consists of the following
   expressing support for notions not otherwise expressable.  All
   platforms should include their name such that a Fladuino program can
   state only to be compatible with this platform. Thus all platforms
-  that is compatible with each other could include this in the list of
+  that are compatible with each other could include this in the list of
   capabilities. Other capabilities could be the Pololu 3pi robot's
   motors, buzzer or LCD.
 
@@ -1900,14 +1899,18 @@ consists of the following
   bluetooth device or inclusion of specific header file on the Pololu
   3pi platform.
 
+  This is optional.
+
 \item[Timer id] This defines the timer id that Fladuino uses to drive
   the clock. Some Arduino compliant hardware reserves different timers
   for various tasks, like the Pololu 3pi uses time 0 and timer 1 to
   drive the motors.
 
-  The \texttt{defaultPlatform} defaults this to 1.
+  The \texttt{defaultPlatform} sets this to 1.
 \end{description}
 
+This is done by defining a platform as a record with the above mentioned items
+as keys.
 
 \section{User-extensible abstractions with typeclasses}
 \label{sec:user-extens-abstr}
@@ -2406,7 +2409,7 @@ suggested solutions) will be discussed further in
 
 Here we will evaluate on the abstractions, defined in \fref{sec:user-extens-abstr},
 to implement interfaces for a pushbutton, a potentiometer and bindings for some
-of the hardware-devices on the before mentioned Pololu 3pi robot, which we also
+of the hardware-devices on the previously mentioned Pololu 3pi robot, which we also
 introduce as a \textit{Platform} (\fref[plain]{sec:platforms}). This shows how
 the \textit{Device} and \textit{Event} abstractions are used, and can be seen as
 a form of documentation of our work. For brevity, module imports has been
@@ -2436,6 +2439,10 @@ the pin and sets the pin mode as input.
 instance Device PushButton where
     usages (PushButton pin) = [DPinUsage pin ["interrupt"] DigitalInput]
 \end{verbatim}
+
+At generation time, if interrupt functionality is not possible on the defined
+pin or the pin has already been reserved by another device an error will occur
+which prints a error message and stops the generation of code.
 
 \subsubsection{PushButton events}
 
@@ -2540,9 +2547,12 @@ The \texttt{valueOf} function is shown in \Fref{sec:valueOf}.
 \subsubsection{Defining a potentiometer}
 \label{sec:potentiometer device}
 
-A potentiometer interface can be defined in Fladuino quite easily as it doesn't
-make any sense to define any events upon this as its value needs to be pulled
-once in a while to know if it has changed and/or to act upon that.
+A potentiometer interface can quite easily be defined in Fladuino. It doesn't
+make any sense to define any events upon this\footnote{Events currently only
+  works with hardware logical change interrupts. A potentiometer would then need
+  to be turned more than half a turn before it is considered a logical change by
+  the Atmega chip.} so its value must to be pulled once in a while to know if it
+has changed.
 
 The \texttt{Device} instance declaration of \texttt{Potentiometer} defines that
 it uses an analog pin but with no functionality requirements.
