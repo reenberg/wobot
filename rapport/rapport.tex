@@ -18,7 +18,7 @@
 \usepackage{fancyref} % Better reference. 
 
 \usepackage{pdflscape} % Gør landscape-environmentet tilgængeligt
-\usepackage[draft]{fixme}     % Indsæt "fixme" noter i drafts.
+\usepackage{fixme}     % Indsæt "fixme" noter i drafts.
 \usepackage{hyperref}  % Indsæter links (interne og eksterne) i PDF
 
 \usepackage[format=hang]{caption,subfig}
@@ -54,8 +54,6 @@
   \vskip\intextsep
 }
 \makeatother
-
-\overfullrule=5pt
 
 \newcommand{\EDSL}{EDSL (Embedded Domain-Specific Language) \renewcommand{\EDSL}{ EDSL }}
 
@@ -2262,7 +2260,8 @@ From the above definitions, we can write programs such as
 
 \begin{nonfloatingfigure}
 \begin{verbatim}
-onEvent (PushButtonPressEvent $ PushButton 3) >>> (toggle $ diode 13 True)
+onEvent (PushButtonPressEvent $ PushButton 3) 
+>>> (toggle $ diode 13 True)
 \end{verbatim}
 \caption{Subscribing to the declared event, to toggle a light emitting
 diode.}
