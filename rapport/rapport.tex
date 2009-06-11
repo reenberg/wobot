@@ -95,7 +95,7 @@ Jesper Reenberg (jesper.reenberg@gmail.com)
 
   Our contribution includes functionality suitable for the domain of
   control systems where a multitude of different hardware devices
-  (e.g. sensors, motors or displays) should be possible to
+  (e.g., sensors, motors or displays) should be possible to
   program. Specifically we include a framework for specifying
   interfaces to these peripherals and primitives for
   event-handling.
@@ -251,8 +251,8 @@ partition computer systems into:
   example).
 \item Reactive systems that continuously has to respond to
   environmental changes. Often reactive systems has to do with our
-  physical environment, either simulating it (e.g. a computer game) or
-  is required to respond to its changes (e.g. a robot).
+  physical environment, either simulating it (e.g., a computer game) or
+  is required to respond to its changes (e.g., a robot).
 \end{itemize}
 
 To respond accurately, such a system needs to recompute certain values
@@ -370,7 +370,7 @@ devices that form our domain.
 \section{Reader expectations}
 We expect that readers of this report to be able to read and
 understand Haskell, and has functional programming experience, as
-e.g. acquired from the book ``Real World Haskell''
+acquired from the book ``Real World Haskell''
 (\cite{realworldhaskell}).  Additionally, we expect the reader to have
 casual familiarity with the concepts of quasiquotation
 \cite{quasiquote07}, phantom types, and to know the difference between
@@ -405,7 +405,7 @@ programming sensor networks. Flask is based on the idea of
 constructing \textit{dataflow graphs} that express the overall flow of
 data in the program. The basic task in writing a Flask program is thus
 to connect incoming streams of sensor data to outgoing streams of data
-(e.g. to other nodes in the network) with some eventual data
+(e.g., to other nodes in the network) with some eventual data
 processing in between. A program thus takes form of a directed acyclic
 graph.
 
@@ -525,7 +525,7 @@ normally expressible in Haskell. The reason for disallowing these
 things are the same as for not compiling Haskell directly to the
 sensor nodes in the first place: the existing Haskell runtimes are too
 large to fit on the limited memory of a sensor node. Therefore we
-disallow features that e.g.  requires a garbage collector. Flask
+disallow features that for example requires a garbage collector. Flask
 disallows the following Haskell 98-features from Red:
 \begin{itemize}
 \item Recursive functions
@@ -573,7 +573,7 @@ In Flask a stream of type $a$ has the type \texttt{S $a$}. The
 arguably simplest way to generate such a stream is the Flask-function
 \texttt{clock :: Int -> S ()}, which given a time interval in
 milliseconds returns a stream of unit signals, that is sent with the
-given frequency. E.g. \texttt{clock 1000} is signalling every
+given frequency. For example \texttt{clock 1000} is signalling every
 second. This isn't beneficial in itself, but it is useful for activating
 other tasks, like reading a sensor at some frequency.  Node-level
 code of type $a$ has the type \texttt{N $a$} in Haskell.  For example,
@@ -641,7 +641,7 @@ sconst :: forall a b eta. (Reify b, LiftN eta a)
 \begin{verbatim}
 (>>>) :: forall a. Reify a => S a -> (S a -> S a)
 \end{verbatim}
-  Connects a stream with a stream operator.  E.g. {\ttfamily clock 10 \verb|>>>|
+  Connects a stream with a stream operator.  For example {\ttfamily clock 10 \verb|>>>|
     sconst (liftN [\$exp|42|])} is an infinite stream of 42 values, that is passed on
   every 10th millisecond. This is simply implemented as a Haskell function
   application.
@@ -1350,7 +1350,7 @@ devices for such requirements at generation-time.
 \subsection{Devices}
 \label{sec:devices}
 We use the term \textit{device} for any form of peripheral that can be
-connected to an Arduino board, e.g. buttons, electromotors and
+connected to an Arduino board; for example buttons, electromotors and
 potentiometers.  A device-driver consists of a list of
 \textit{usages}, each describing a discrete reservation of some
 hardware resource, a function for initializing the device and possibly
@@ -1924,10 +1924,10 @@ the current implementation.
 
 In \fref{sec:devices} we define a device-driver as:
 \begin{itemize}
-\item a list of hardware-dependencies, e.g. which hardware pins or
+\item a list of hardware-dependencies; for example which hardware pins or
   timers it confiscates,
 \item a setup-function for doing initialising tasks on start-up
-  (e.g. including C-header files), and
+  (e.g., including C-header files), and
 \item a set of functions for interacting with the device (see
   \Fref{sec:analoginputdevice}).
 \end{itemize}
@@ -2185,7 +2185,7 @@ omitted in all the examples.
 \label{sec:pushbuttondef}
 
 The \texttt{Device} type class creates the possibility of defining abstractions
-as the \texttt{PushButton} or \texttt{Diode} devices. In following it is shown
+as the \texttt{Push\-Button} or \texttt{Diode} devices. In following it is shown
 how easy a definition of the simple digital pushbutton can be implemented. 
 
 First the type constructor \texttt{PushButton} is defined with the data
@@ -2356,10 +2356,10 @@ nomally 0v and 5v respectively, though AREF can be explicitly changed.
 
 When adding support for a new platform (e.g., the Pololu 3pi) the abstractions
 allows for the option to either define it from scratch by extending the
-\texttt{emptyPlatform} ore by extending one of the predefined platforms.
+\texttt{empty\-Platform} ore by extending one of the predefined platforms.
 
 The default platform is the \texttt{arduinoDuemilanove} which extends the
-\texttt{emptyPlatform} and is defined as
+\texttt{empty\-Platform} and is defined as
 
 \begin{verbatim}
 arduinoDuemilanove = emptyPlatform 
@@ -2658,7 +2658,7 @@ Fladuino wrappers of these functions.  To take the simplest example
 first, reading the battery level is accomplished in the same way as
 reading potentiometer values in \fref[plain]{sec:potentiometer
   device}, instead of calling the \verb|analogRead|-function we call
-the Pololu 3pi function \verb|read_battery_millivolts|.
+the Pololu 3pi function \\\verb|read_battery_millivolts|.
 
 \subsubsection{Reflectance sensors}
 The five reflectance sensors on the 3pi are infrared sensors, that
@@ -2795,7 +2795,7 @@ linefollow = idle
 
 The program expresses a simple line-following strategy. Whenever the
 CPU is ready (\texttt{idle}), read the value of the reflectance
-sensors (\texttt{valueOf ReflectanceSensors}), use these values to
+sensors (\texttt{valueOf Reflectance\-Sensors}), use these values to
 calculate the speed of the two motors (\texttt{smap velocity}, the
 \texttt{velocity} function is explained below), and configure the
 motors with these new values (\verb|set_motors_rt Motors|).
@@ -3040,7 +3040,7 @@ programming and embedded programming from a functional framework.
 The Haskell EDSL \textit{Atom}\footnote{Available at
   \url{http://hackage.haskell.org/cgi-bin/hackage-scripts/package/atom}}
 has been suggested for programming the
-Arduino-platform\footnote{\url{http://blog.sw17ch.com/wordpress/?p=84}
+Arduino platform\footnote{\url{http://blog.sw17ch.com/wordpress/?p=84}
   and \url{http://blog.sw17ch.com/wordpress/?p=111}}.  It targets
 programming of hard real-time embedded systems, an is conceptually far
 from the Fladuino system. The author shows the following example in
@@ -3092,7 +3092,7 @@ the evolution of Haskell-embedded reactive programming DSLs.
 
 Yampa is generic in the sense that it can be used in any reactive
 system, whether programming a graphical computer-game
-\cite{Courtney2003b} or controlling a robot \cite{arrowsrobotsfrp02}.
+\cite{Courtney2003b} or controlling a robot \\\cite{arrowsrobotsfrp02}.
 
 In its need of a complete Haskell runtime, Yampa has the same weakness
 as Frob. As mentioned in \Fref[plain]{chap:Flask}, Flask was meant for
@@ -3459,8 +3459,8 @@ following command
 rfcomm bind rfcommX xx:xx:xx:xx:xx:xx 1
 \end{verbatim}
 
-where \texttt{rfcommX} is the desired host device that is to be used ex
-\texttt{rfcomm0}, \texttt{xx:xx:xx:xx:xx:xx} is the boards MAC Address and
+where \texttt{rfcommX} is the desired host device that is to be used (e.g.,
+\texttt{rfcomm0}), \texttt{xx:xx:xx:xx:xx:xx} is the boards MAC Address and
 \texttt{1} is the channel to be used. A factory Arduino BT board has only
 enabled \texttt{SSP} (Serial Port Profile) and thus this is located on channel
 1. It is possible to query which Bluetooth profiles the Arduino BT board exposes
