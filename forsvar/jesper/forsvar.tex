@@ -1,4 +1,4 @@
-\documentclass{beamer}
+\documentclass[t]{beamer}
 
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
@@ -9,7 +9,10 @@
 
 \title{...}
 
-\author{Jesper Reenberg}
+\author{Martin Dybdal, \\
+Troels Henriksen og \\
+Jesper Reenberg
+}
 
 \begin{document}
 
@@ -22,7 +25,136 @@
 
 \section{Platforms}
 
+\subsection{Indledning}
+
+\begin{frame}
+  \frametitle{Hvilke}
+  
+  ... problemer løses?
+
+  \begin{itemize}
+  \item Kan kun bruge enheder ("`devices"') der passer til den givne platform
+    \begin{itemize}
+    \item Capabilities
+    \end{itemize}
+  \item Kan kun forbinde enheder med kompatible hardware pins.
+    \begin{itemize}
+    \item Pin funktionalitet: PWM, interrupt, analog, ...
+    \end{itemize}
+  \item Giver "`type"' sikkerhed for brug af enheder på en platform
+  \end{itemize}  
+
+  En platform vælges i make filen og gives som argument til \textit{fladuinogen}
+
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{Opsummering}
+
+  Hvad indeholder en platforms specifikation?
+  \begin{description}
+  \item [Pins] Liste af analog og digitale pins
+  \item [Pinmap] mapping funktion mellem Arduino pins og Logical pins
+  \item [Capabilities] Liste af platformens funktionaliteter 
+  \item [Base setup] Initialisering der skal ske i Arduinos \texttt{setup()}
+    funktion, fx \texttt{addCInitStm} til Arduino BT
+  \item [Timer id] Nummer på \texttt{clock}-timer
+  \end{description}
+\end{frame}
+
+\subsection{Implementering}
+
+\begin{frame}
+  \frametitle{Håndtering}
+  
+  \begin{description}
+  \item[-] Alle funktioner der bruger enheder kalder funktionen
+    \texttt{addDevice}, hvor enheder tilføjes til enhedsliste hvis de
+    ikke allerede er tilføjet.
+    
+  \item[-] Dette kunne være \texttt{toggle}, \texttt{turnOn} og \texttt{turnOff}
+    som tager \texttt{DigitalOutputPin} enheden som argument. \texttt{Diode} enheden er
+    et eksempel på en \texttt{DigitalOutputPin}.
+    
+  \item[-] Ved generation-time kaldes bl.a. funktionerne
+    \begin{itemize}
+    \item finalizeDevices
+    \item finalizeConfig
+    \end{itemize}
+  \end{description}
+\end{frame}
+
+\begin{frame}
+  \frametitle{\texttt{finalizeDevices}}
+
+  \begin{itemize}
+  \item Tager den givne platform som argument
+
+  \item Generer en konfiguration indeholdende 
+      \begin{itemize}
+      \item \alt<2> {Den givne platform}{$\ldots$}
+      \item<only@2> Tom liste af pin konfigurationer 
+      \item<only@2> Setup liste indeholdende platformens base setup.
+      \end{itemize}
+  \item For hver enhed i enhedslisten tilføj pin konfigurationer hvis
+    \begin{itemize}
+    \item \alt<3> {for alle enhedens pin konfigurationer:}{$\ldots$}
+      \begin{itemize}[<only@3>]
+      \item En anden pin konfiguration i listen ikke allerede bruger denne
+        pin.
+
+      \item Den givne pin eksisterer i platformens liste af pins
+
+      \item Den givne pins krav er understøttet af platformen (fx PWM,
+        interrupt, analog).
+
+      \item Eller \texttt{CapabilityRequired} er understøttet af platformen.
+      \end{itemize}
+      
+    \item<only@3> Hvis ikke dette er opfyldt stoppes genereringen med en
+      fejlmeddelelse.
+
+    \item<only@3> Tilføj enhedens setup kode til konfigurationens listen af
+      setup kode
+    \end{itemize}
+  \end{itemize}
+
+\end{frame}
+
+\begin{frame}
+  \frametitle{\texttt{finalizeConfig}}
+  
+  \begin{itemize}
+  \item Bruger den før genererede konfiguration
+
+  \item Udvider konfigurationens setup liste ud fra pin konfigurationer
+
+  \item Digital pins bliver initialiseret som digital \texttt{INPUT},
+    \texttt{OUTPUT} eller analog \texttt{OUTPUT} (PWM)
+  \end{itemize}
+
+\end{frame}
+
+\subsection{Evaluering}
+
+\begin{frame}
+  \frametitle{Brugbarhed}
+  
+  \begin{itemize}
+  \item Giver "`type"' tjek af enheder og platforme
+
+  \item Flere enheder "`ens"'/ligende enheder kan ikke bruge samme pins.
+  \end{itemize}
+
+
+  !!!!!! FUTURE WORK!!!!!!
+
+\end{frame}
+
 \section{Posting Wires}
+
+\subsection{Indledning}
 
 \begin{frame}
   \frametitle{Hvorfor?}
@@ -34,7 +166,7 @@
   \item Løser problemet
   \end{itemize}
 
-  hvilke? Tag problemstilling fra oprindelig flask artikkel.
+!!!!!!!!!!!!!!!!!  hvilke? Tag problemstilling fra oprindelig flask artikkel.
 
 \end{frame}
 
@@ -53,41 +185,53 @@
 
 \end{frame}
 
+\subsection{Implementering}
 
+\begin{frame}
+  \frametitle{\texttt{postThenWait}}
 
+  \begin{itemize}
+  \item Grund byggestenen i posting wires.
+  \item Tager to argumenter
+    \begin{itemize}
+    \item Funktion som har ansvar at starte dataindsamling. Kan gøre ingen ting.
+    \item Event som skal ventes på, før data flow fortsættes.
+    \end{itemize}
+  \end{itemize}
 
-\section{Eksempler}
-\subsection{Arduino \texttt{analogRead}}
+\end{frame}
 
+\begin{frame}[fragile]
+  \frametitle{\texttt{delayUntilEvent}}
 
-\begin{frame}[fragile]{Implementeret}
-
-  \begin{example}
+  Eksempel på abstraktion af \texttt{postThenWait} defineret som
 
 \begin{verbatim}
+  delayUntilEvent = postThenWait [$exp|\_ -> ()|]
+\end{verbatim}
 
-  // ADSC is cleared when the conversion finishes
-  while (bit_is_set(ADCSRA, ADSC));
-
+  \begin{example}
+\begin{verbatim}
+onEvent (PushButtonPressEvent $ PushButton 3) 
+            >>> delayUntilEvent (PushButtonPressEvent $ PushButton 2)
+            >>> toggle (DigitalOutputPin 8 True)
 \end{verbatim}
   \end{example}
 
 \end{frame}
 
-\begin{frame}
-  \frametitle{Stor skala}
 
-  Roskilde eksempel.
-
-\end{frame}
-
-
-
-\section{Brugbarhed}
+\subsection{Evaluering}
 
 \begin{frame}
-  \frametitle{...}
+  \frametitle{Brugbarhed}
   
+  \begin{itemize}
+  \item Elegant hvis der skal laves passiv venten.
+    \begin{itemize}
+    \item Fx: Ubåd sender sonar og skal vente på ekko.
+    \end{itemize}
+  \end{itemize}
 \end{frame}
 
 
