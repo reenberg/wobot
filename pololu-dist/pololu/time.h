@@ -20,6 +20,6 @@ static inline void delay_us(unsigned int microseconds)
 }
 
 // These are alternative aliases:
-static inline void delay(unsigned int milliseconds) { delay_ms(milliseconds); }
-static inline unsigned long millis() { return get_ms(); }
-static inline void delayMicroseconds(unsigned int microseconds) { delay_us(microseconds); }
+//static inline void delay(unsigned int milliseconds) { delay_ms(milliseconds); }
+//static inline unsigned long millis() { return get_ms(); }
+//static inline void delayMicroseconds(unsigned int microseconds) { delay_us(microseconds); }
