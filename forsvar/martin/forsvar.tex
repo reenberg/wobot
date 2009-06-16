@@ -71,9 +71,12 @@
   \includegraphics[width=\textwidth]{flask-ewma}
 
   \pause
-  Statisk ikke dynamisk dataflow.
 
-  Atomiske delgrafer
+  \begin{itemize}
+  \item Statisk ikke dynamisk dataflow.
+  \item Atomiske delgrafer
+  \end{itemize}
+
  
 \end{frame}
 
@@ -109,7 +112,6 @@ ewma gain = sintegrate zero
 
 \end{frame}
 
-
 \begin{frame}[t, fragile]
   \frametitle{Et kig på Flask-typer}
 Eksemplet fra før:
@@ -128,7 +130,7 @@ ewma gain = sintegrate zero
 \normalsize
 \pause
 
-Stream operatoren \verb|sintegrate|:
+Streamoperatoren \verb|sintegrate|:
 \tiny
 \begin{verbatim}
 sintegrate  ::  forall a b c eta . (Reify a, Reify b, Reify c,
@@ -147,13 +149,12 @@ Flytte typer og værdier til ``node-level'':
 \item Medlemmer af \verb|Reify| er Haskell-typer der har en ækvivalent
   type på ``node-level'' (her Red). 
 \pause
-\item \verb|LiftN eta a| angiver at \textit{værdien} eta, har en
+\item \verb|LiftN eta a| angiver at \verb|eta|-\textit{værdier}, har en
   repræsentation \\ på ``node-level'' (dvs. værdier vi kan generere
   C-kode ud fra).
 \end{itemize}
 
 \end{frame}
-
 
 \section{Oversættelsesstrategi}
 \subsection{Flask $\rightarrow$ Sensornetværkskode}
@@ -184,7 +185,7 @@ Flytte typer og værdier til ``node-level'':
 
   \begin{itemize}
   \item Haskell-repræsentationen af en dataflow graf, evaluerer til en
-    repræsentation af knuder (stream-operatorer) og kanter.
+    repræsentation af knuder (streamoperatorer) og kanter.
   \item For hver operator $o$ genereres en $o\_in$ og en $o\_out$
     funktion. (I nogle tilfælde er flere $o\_in$ funktioner
     nødvendige.)
@@ -193,6 +194,29 @@ Flytte typer og værdier til ``node-level'':
   \begin{center}
       \includegraphics[width=0.5\textwidth]{kode}
   \end{center}
+
+\end{frame}
+
+\subsection{Eksempelprogram}
+\begin{frame}[t, fragile]
+  \frametitle{Eksempelprogram} 
+
+  \includegraphics[width=\textwidth]{flask-ewma}
+\pause
+\tiny
+\begin{verbatim}
+detect :: Double -> Double -> Double -> S (Double, Double)
+detect low high threshold = 
+     clock 10
+   >>>
+     adc "Seismometer"
+   >>>
+     ewma high &&& ewma low
+   >>>
+     sfilter [$exp|\(hi, lo) -> hi / lo > $flo:threshold|]
+\end{verbatim}
+
+\normalsize
 
 \end{frame}
 
