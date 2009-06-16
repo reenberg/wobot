@@ -54,37 +54,201 @@
 \frame{\titlepage}
 
 
-\section{Introduction}
-\subsection{Flask}
+\section{Introduktion}
+
+\subsection{Behovet for hændelser}
+
 \begin{frame}
+\frametitle{Behovet for hændelser}
 
+Fundamentet for et reaktivt system er noget at reagere på.
+
+\begin{block}{Essensen af et reaktivt system}
+Hændelse $\rightarrow$ System $\rightarrow$ Respons
+\end{block}
+
+Begrebet ``hændelse'' dækker over en ekstern begivenhed, en ændring i
+miljøet, eller et signal sendt til systemet.
+\\
+Det er pålagt at vi konstruerer en abstraktion der gør det praktisk at
+arbejde med hændelser.
 
 \end{frame}
 
-Reification
+\subsection{Strategi}
+\begin{frame}
+\frametitle{Strategi}
 
-\subsection{What's a monad?}
-\begin{frame}[fragile]
-  \frametitle{What's a monad?}
+Der er to overordnede implementeringsstrategier:
 
-  A triplet:
-  \begin{itemize}
-  \item<1-> A unary type constructor M
-  \item<1-> A lifting function \texttt{unitM\footnote{This function is called \texttt{return} in
-    Haskell.} :: a -> M a} that lifts a simple
-    value into the monad. Creating a \textit{monadic
-      value}. 
-  \item<1-> A composition function \texttt{bindM\footnote{\texttt{>>=} in Haskell.} :: M a -> (a -> M b) -> M b}
-     that applies a monadic function to a monadic value. 
-  \end{itemize}
+\begin{description}
+\item[Asynkrone hændelser,] hvor vi bruger hardwarefaciliteter
+  (interrupts) til at acceptere hændelser, selv hvis vi er midt i en
+  beregning (for eksempel, i at beregne en respons til en tidligere
+  modtaget hændelse).
+\item[Synkrone hændelser,] hvor vi eksplicit checker om der er sket en
+  ændring i systemets input der svarer til en hændelse, f.eks. hver
+  eneste gang systemet ikke har andet at lave.
+\end{description}
+
+Synkrone hændelser kan betyde at vi overser hændelser eller spilder
+ressourcer.  Hardware-interrupts gør brug af elektroniske kredsløb der
+direkte er designet til at løse dette problem.
+
+\end{frame}
+
+\subsection{Asynkrone hændelser}
+\begin{frame}
+\frametitle{Asynkrone hændelser}
+
+\begin{block}{}
+Vi baserer hændelser på hardware interrupts, specifikt \textit{Pin
+  Change Interrupts}.
+\end{block}
+
+Dette betyder at hændelser er totalt knyttet til ændring af
+inputværdier på Arduino'ens I/O-pins.  
+
+Det er ikke muligt at have hændelser tilknyttet mere obskure
+interrupts, f.eks. timer-interrupts, som vi derfor håndterer specielt.
 \pause
-Obeying three laws (discussed later):
-  \begin{enumerate}
-  \item<2-> \lstinline{(unitM v) `bindM` f = f v}
-  \item<2-> \lstinline{v `bindM` unitM = v}
-  \item<2-> 
-  \end{enumerate}
+
+Vi kræver ikke en 1-til-1 mapping mellem interrupts og hændelser, idet
+visse hændelser kan svare til en værdi på blot en af adskillige I/O pins.
+
 \end{frame}
 
+\section{Hændelseskøen}
+\subsection{Asynkrone hændelser versus atomiske delgrafer}
+\begin{frame}
+\frametitle{Asynkrone hændelser versus atomiske delgrafer}
+
+\begin{block}{Problem}
+  Asynkrone hændelser kan ankomme på vilkårlige og uforudsigelige
+  tidspunkter, men vi garanterer også at atomisk delgrafer er
+  atomiske.
+\end{block}
+
+\pause
+
+Løsningen er en hændelseskø:
+
+\begin{itemize}
+\item Når vi modtager en hændelse bliver den lagt på en hændelseskø.
+\item Hver gang vi er blevet færdige med en atomisk delgraf behandler
+  vi det ældste element på hændelseskøen.
+\end{itemize}
+
+En følge er at vi ikke kan garantere en responstid på vores behandling
+af hændelser.  Fladuino giver ingen real-time garantier.
+
+\end{frame}
+
+\subsection{Designovervejelser for hændelseskøen}
+\begin{frame}
+\frametitle{Designovervejelser for hændelseskøen}
+
+\begin{itemize}
+\item Indsættelse skal være (deterministisk) hurtigt, da
+  interrupt-handlers skal terminere så hurtigt som muligt.
+\item Køen må ikke gro ubegrænset, idet vi kan ende med for lidt fri
+  hukommelse til at evaluere de atomiske delgrafer.
+\item Det er nemmere at håndtere manglende plads til en ny hændelse i
+  køen, end at håndtere at vi løber tør for stakplads under
+  evalueringen af en atomisk delgraf.
+\end{itemize}
+
+Vi må have en statisk øvre grænse for køens størrelse.
+
+Vi risikerer at gå glip af hændelser hvis køen er fyldt,  men dette
+vil sjældent ske.
+
+Under normal brug vil opfyldning af køen kun ske i sjældne øjeblikke,
+men kørsel kan fortsætte.  At korrumpere stakken under evalueringen af
+en atomisk delgraf vil sandsynligvis være en katastrofal fejl.
+
+\end{frame}
+
+\subsection{Implementering af hændelseskøen}
+\begin{frame}
+\frametitle{Implementering af hændelseskøen}
+
+\begin{block}{Designparametre}
+\begin{itemize}
+\item Hurtig indsættelse
+\item Statisk (maksimal-)størrelse
+\end{itemize}
+\end{block}
+
+Den valgte løsning er en cirkulær liste implementeret over et C array
+med statisk størrelse.  Element-indsættelse er garanteret til at
+terminere inden for et konstant antal instruktioner (hård realtime).
+
+\end{frame}
+
+\section{Definition af hændelser}
+\subsection{Målsætning}
+\begin{frame}
+\frametitle{Målsætning}
+
+Hændelser har \textit{typer} og \textit{payloads}.
+
+\begin{block}{En hændelsesdefinition}
+\begin{itemize} 
+\item Liste af I/O pins
+\item Prædikatfunktion der kaldes når en interrupt opstår på de
+  angivne pins
+\item Funktion der kaldes til at give hændelsens payload
+\end{itemize}
+\end{block}
+
+Payloads allokeres dynamisk:
+
+\begin{itemize}
+\item Nondeterministisk køretid (men sandsynligvis hurtig nok på
+  Arduino)
+\item Der bruges ikke mere plads end der rent faktisk er af
+  hændelses-payloads i hændelseskøen
+\end{itemize}
+
+\end{frame}
+
+\subsection{Eksempel på definition}
+\begin{frame}[fragile]
+\frametitle{Eksempel på definition}
+
+\tiny
+\begin{verbatim}
+instance Event PushButtonPressEvent () where
+    setupEvent e@(PushButtonPressEvent (d@(PushButton pin))) = 
+      do addDevice d
+         pv <- statevar d "press_predicate" 
+         let v = H.Var (mkName pv)
+         addCImport pv [$ty|() -> Bool|] [$cexp|$id:pv|]
+         addCFundef [$cedecl|int $id:pv () {
+                               return (digitalRead($int:pin) == HIGH);
+                             }|]
+         return $ mkEvent e Nothing (Just v)
+    interruptPins (PushButtonPressEvent (PushButton pin)) = [DPin pin]
+\end{verbatim}
+\normalsize
+
+\pause
+
+Vi vedkender os at programmør-interface måske er lidt uoptimalt.
+
+\end{frame}
+
+\subsection{Eksempel på brug}
+\begin{frame}[fragile]
+\frametitle{Eksempel på brug}
+
+\begin{verbatim}
+onEvent (PushButtonPressEvent $ PushButton 2) 
+        >>> toggle (diode 13)
+\end{verbatim}
+\normalsize
+
+\end{frame}
 
 \end{document}
