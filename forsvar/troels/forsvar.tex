@@ -251,4 +251,28 @@ onEvent (PushButtonPressEvent $ PushButton 2)
 
 \end{frame}
 
+\section{Idle-waiters}
+\subsection{Idle-waiters}
+\begin{frame}
+\frametitle{Idle-waiters}
+
+\begin{block}{Potentielt problem}
+  I mange reaktive systemer har man behov for konstant
+  \textit{polling}.  Bruger af timer-hændelser kan fylde
+  hændelseskøen, hvilket kan medføre tab af videre (interessante!)
+  hændelser.
+\end{block}
+
+\pause
+
+\begin{itemize}
+\item Det er sjældent vigtigt med eksakt timing for denne polling.
+\item \textit{Idle-waiters} er atomiske delgrafer der evalueres
+  (round-robin) når hændelseskøen er tom.
+\item Der er naturligvis ingen garanti på at hændelseskøen nogensinde
+  er tom
+\end{itemize}
+
+\end{frame}
+
 \end{document}
