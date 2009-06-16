@@ -1,0 +1,90 @@
+\documentclass{beamer}
+\usepackage[T1]{fontenc}
+\usepackage{textcomp}
+\usepackage[utf8x]{inputenc}
+\usepackage[danish]{babel}
+\usepackage[garamond]{mathdesign}
+\usepackage{url}
+\usepackage{listings}
+\usepackage{graphicx}
+\usepackage{soul}
+
+\renewcommand{\ttdefault}{pcr} % bedre typewriter font
+\renewcommand{\rmdefault}{ugm} % garamond
+\renewcommand{\sfdefault}{phv} % sans-serif font
+
+\title{Fladuino}
+\subtitle{Funktionel reaktiv programmering på indlejrede enheder}
+
+\author{Martin Dybdal \and Troels Henriksen \and Jesper Reenberg}
+
+\institute{\textrm{Datalogisk Institut, Københavns Universitet}}
+\date{\today}
+
+\mode<presentation>
+{
+  \usetheme{Frankfurt}
+  %\usetheme{Warsaw} 
+  \definecolor{uofsgreen}{rgb}{.125,.5,.25}
+  \definecolor{natvidgreen}{rgb}{.196,.364,.239}
+  \definecolor{kugrey}{rgb}{.4,.4,.4}
+  \usecolortheme[named=uofsgreen]{structure}
+  \usefonttheme[onlylarge]{structuresmallcapsserif}
+  \usefonttheme[onlysmall]{structurebold}
+}
+
+\logo{\includegraphics[height=1.5cm]{../diku.png}}
+
+\usenavigationsymbolstemplate{} % fjern navigation
+
+\lstset{language     = Haskell,
+        extendedchars= true,
+        breaklines   = false,
+        tabsize      = 2,
+        showstringspaces = false,
+        basicstyle   = \small\ttfamily,
+        commentstyle = \em,
+        inputencoding= utf8
+      }
+
+\setcounter{tocdepth}{1}
+
+\begin{document}
+
+\frame{\titlepage}
+
+
+\section{Introduction}
+\subsection{Flask}
+\begin{frame}
+
+
+\end{frame}
+
+Reification
+
+\subsection{What's a monad?}
+\begin{frame}[fragile]
+  \frametitle{What's a monad?}
+
+  A triplet:
+  \begin{itemize}
+  \item<1-> A unary type constructor M
+  \item<1-> A lifting function \texttt{unitM\footnote{This function is called \texttt{return} in
+    Haskell.} :: a -> M a} that lifts a simple
+    value into the monad. Creating a \textit{monadic
+      value}. 
+  \item<1-> A composition function \texttt{bindM\footnote{\texttt{>>=} in Haskell.} :: M a -> (a -> M b) -> M b}
+     that applies a monadic function to a monadic value. 
+  \end{itemize}
+\pause
+Obeying three laws (discussed later):
+  \begin{enumerate}
+  \item<2-> \lstinline{(unitM v) `bindM` f = f v}
+  \item<2-> \lstinline{v `bindM` unitM = v}
+  \item<2-> 
+  \end{enumerate}
+\end{frame}
+
+
+\end{document}
