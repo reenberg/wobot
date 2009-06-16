@@ -1,0 +1,9 @@
+*/*.pdf
+*/auto/*
+*/*.log
+*/*.aux
+*/*.nav
+*/*.out
+*/*.snm
+*/*.toc
+*/*.vrb
