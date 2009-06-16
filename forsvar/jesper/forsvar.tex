@@ -5,9 +5,10 @@
 \usepackage[danish]{babel}
 
 \usetheme{Warsaw}
+\usenavigationsymbolstemplate{}
 
-
-\title{...}
+\title{Fladuino}
+\subtitle{Funktionel reaktiv programmering på indlejrede enheder}
 
 \author{Martin Dybdal, \\
 Troels Henriksen og \\
@@ -35,7 +36,7 @@ Jesper Reenberg
   \begin{itemize}
   \item Kan kun bruge enheder ("`devices"') der passer til den givne platform
     \begin{itemize}
-    \item Capabilities
+    \item Capabilities: BlueTooth, 3pi motors, ...
     \end{itemize}
   \item Kan kun forbinde enheder med kompatible hardware pins.
     \begin{itemize}
@@ -68,21 +69,20 @@ Jesper Reenberg
 \begin{frame}
   \frametitle{Håndtering}
   
-  \begin{description}
-  \item[-] Alle funktioner der bruger enheder kalder funktionen
-    \texttt{addDevice}, hvor enheder tilføjes til enhedsliste hvis de
-    ikke allerede er tilføjet.
+  \begin{itemize}
+  \item Alle funktioner der bruger enheder kalder funktionen \texttt{addDevice},
+    hvor enheden tilføjes til en enhedsliste hvis de ikke allerede er tilføjet.
     
-  \item[-] Dette kunne være \texttt{toggle}, \texttt{turnOn} og \texttt{turnOff}
-    som tager \texttt{DigitalOutputPin} enheden som argument. \texttt{Diode} enheden er
-    et eksempel på en \texttt{DigitalOutputPin}.
+  \item Dette kunne være \texttt{toggle}, \texttt{turnOn} og \texttt{turnOff}
+    som tager \texttt{DigitalOutputPin} enheden som argument. \texttt{Diode}
+    enheden er et eksempel på en \texttt{DigitalOutputPin}.
     
-  \item[-] Ved generation-time kaldes bl.a. funktionerne
+  \item Ved generation-time kaldes bl.a. funktionerne
     \begin{itemize}
     \item finalizeDevices
     \item finalizeConfig
     \end{itemize}
-  \end{description}
+  \end{itemize}
 \end{frame}
 
 \begin{frame}
@@ -163,7 +163,7 @@ Jesper Reenberg
   \item Ideen stammer oprindeligt fra den første Flask artikkel implementeret i
     OCaml
 
-  \item Løser problemet
+  \item Løser problemet med blocking og busy-waiting.
   \end{itemize}
 
 !!!!!!!!!!!!!!!!!  hvilke? Tag problemstilling fra oprindelig flask artikkel.
@@ -194,10 +194,29 @@ Jesper Reenberg
   \item Grund byggestenen i posting wires.
   \item Tager to argumenter
     \begin{itemize}
-    \item Funktion som har ansvar at starte dataindsamling. Kan gøre ingen ting.
-    \item Event som skal ventes på, før data flow fortsættes.
+    \item Funktion som har ansvaret at starte dataindsamling. Kan også gøre
+      ingen ting.
+    \item Event som skal ventes på, før dataflow fortsættes.
     \end{itemize}
   \end{itemize}
+
+  Når dataflow grafen når til \texttt{postThenWait}
+
+  \begin{itemize}
+  \item Indikations flag sættes lig 1
+  \item Dataflow stoppes
+  \end{itemize}
+
+  Når event hænder
+
+  \begin{itemize}
+  \item Hvis indikations flag er lig 1
+    \begin{itemize}
+    \item Sæt indikatios flag lig 0
+    \item Dataflow fortsættes.
+    \end{itemize}
+  \end{itemize}
+
 
 \end{frame}
 
@@ -213,10 +232,14 @@ Jesper Reenberg
   \begin{example}
 \begin{verbatim}
 onEvent (PushButtonPressEvent $ PushButton 3) 
-            >>> delayUntilEvent (PushButtonPressEvent $ PushButton 2)
-            >>> toggle (DigitalOutputPin 8 True)
+            >>> delayUntilEvent (PushButtonPressEvent 
+                                 $ PushButton 2)
+            >>> toggle (diode 8 True)
 \end{verbatim}
   \end{example}
+
+  Intet sker ved tryk på knap(2), før end knap(3) er trykket og derefter
+  knap(2), hvilket toggler dioden.
 
 \end{frame}
 
