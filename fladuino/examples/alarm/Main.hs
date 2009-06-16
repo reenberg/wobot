@@ -25,7 +25,7 @@ decreaseButton = PushButton 3
 increase       = onPress increaseButton >>> sconst [$exp|$int:secondsPerUnit|]
 decrease       = onPress decreaseButton >>> sconst [$exp|-1 * $int:secondsPerUnit|]
 clockInts      = clock 1000 >>> sconst [$exp|-1|]
-alarm          = AnalogOutputPin 9 0
+alarm          = AnalogOutputPin 13 0
 
 main :: IO ()
 main =
@@ -34,15 +34,19 @@ main =
     addCFundef [$cedecl|int isBitSet(int x, int bit) {
                                   return (x & _BV(bit));
                                 }|]
-    genStreams $ map unS (streamsForCounter 4 4)
+    genStreams $ map unS (streamsForAlarm 4 4)
         
           
-streamsForCounter :: Integer -> Integer -> [S ()]
-streamsForCounter n sp = (interaction >>> maybeBeep)
-                         : [ interaction >>> smap [$exp|(/ $int:secondsPerUnit)|] >>> s n |
-                             s <- [maybeTurnOn, maybeTurnOff], n <- [0..n] ]
+streamsForAlarm :: Integer -> Integer -> [S ()]
+streamsForAlarm n sp = [interaction >>> maybeBeep | interaction <- interactions]
+                       ++ [ interaction >>> smap [$exp|(/ $int:secondsPerUnit)|] >>> response n | 
+                            response <- [maybeTurnOn, maybeTurnOff],
+                            n <- [0..n],
+                            interaction <- interactions ]
     where
-      interaction = smerge (smerge increase decrease) clockInts >>> modNum
+      interactions = [increase >>> modNum,
+                      decrease >>> modNum,
+                      clockInts >>> modNum]
       
       modNum :: S Integer -> S Integer
       modNum = sintegrate zero int
@@ -51,22 +55,28 @@ streamsForCounter n sp = (interaction >>> maybeBeep)
             zero = liftN [$exp|0|]
 
             int  :: N ((Integer, Integer) -> (Integer, Integer))
-            int  = liftN [$decls|f (n, x) = (bounded(0, x + n, $int:maxNum), bounded(0, x + n, $int:maxNum))|]
+            int  = liftN [$exp|\(n, x) -> let v = bounded(0, x + n, $int:maxNum)
+                                          in (v, v)|]
             
             maxNum = (2^n-1)*secondsPerUnit
 
 
       maybeBeep :: S Integer -> S ()
-      maybeBeep from = from >>> smap [$exp|(\x -> if x==0 then 128 else 0)|] >>> setValue alarm
+      maybeBeep from = from
+                       >>> smap [$exp|(\x -> if x==0 then 128 else 0)|]
+                       >>> setValue alarm
 
       bitStatus :: Integer -> S Integer -> S Bool
       bitStatus i = smap [$exp|\p -> isBitSet(p, $int:i)|]
 
       maybeTurnOn :: Integer -> S Integer -> S ()
-      maybeTurnOn i from = from >>> bitStatus i >>> sfilter [$exp|id|] 
+      maybeTurnOn i from = from 
+                           >>> bitStatus i 
+                           >>> sfilter [$exp|id|] 
                            >>> turnOn (diode (sp+i) False)
 
       maybeTurnOff :: Integer -> S Integer -> S ()
-      maybeTurnOff i from = from >>> bitStatus i 
-                            >>> sfilter [$exp|(\v -> not v)|] 
+      maybeTurnOff i from = from 
+                            >>> bitStatus i 
+                            >>> sfilter [$exp|(\v -> not v)|]
                             >>> turnOff (diode (sp+i) False)
