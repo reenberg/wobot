@@ -1,0 +1,17 @@
+digraph G
+{
+        node [fontname="Times Roman", shape=rectangle];
+        edge [color=black, fontname="Times Roman"];
+        from [color=white, label=""];
+        in [label="o_in"];
+        out [label="o_out"];
+        succ0 [label="successor 0"];
+        succ1 [label="successor 1"];
+        succn [label="successor n"];
+
+from -> in;
+in -> out [label=" ?"];
+out -> succ0;
+out -> succ1;
+out -> succn;
+}
