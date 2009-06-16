@@ -1,0 +1,45 @@
+- Ide opstammer fra den originale Flask artikkel i OCml.
+- problem med flere kald før resultat
+  - Gennemgang af foreslåede løsninger. "Det huskes at der foreslås følgende
+    løsninger:"
+    Nævn plus/minus
+    Evt gerne med billederne fra rapporten
+    - Akkumuleret gentagelse
+      - Tæl antal forespørgsler
+      - Ved resultat, kald videre antal gange med resultat.
+        - Ved for mange forespørgsler vil der kommer unødigt mange svar med
+          samme resultat. En sensor måler sjældent nøjagtigt samme resultat
+    - Kø
+      - Alle forespørgsler puttes i en kø
+      - Ved resultat, pop køen og kald efter nu værdi.
+        - Køen kan fortsætte med at generere uddata længe efter behovet er
+          ophørt hvilket potentielt kan være beregnings tungt.
+    - Ignorer
+      - Nye forespørgsler smides væk.
+
+    - Generelle negative ting omg akkumulleret og kø
+      - For mange forespørgsler mens der indsamles data kan føre til store
+        mængder uddata som ikke kan håndteres.
+    
+    - Dog kan akkumuleret gentagelse og kø princippet implementeres hvis dette
+      ønskes brugt.
+
+
+- Arduino analogRead eksempel
+  - implementering af analogRead :S formentlig dårligt.
+
+
+- En laser scanner.
+  - Robot med fler lags arkitektur.
+  - Seperart enhed står for aktiv scanning af omgivelser.
+  - Hoved enhed bruger posting wires til at bede om input omkring 
+    - kritisk afstand til væge o.a.
+  - Kunne dog også laves rent event baseret.
+
+- Nuværrende implementeringer.
+  - waitUntillEvent.
+
+- Udvidelser
+  - waitOnce 
+    - Kunne have været brugt til vores linje følge program for a sikre
+      initialisering af IR-dioderne

@@ -1,0 +1,100 @@
+\documentclass{beamer}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[danish]{babel}
+
+\usetheme{Warsaw}
+
+
+\title{...}
+
+\author{Jesper Reenberg}
+
+\begin{document}
+
+
+\frame{\titlepage}
+
+\section[Outline]{}
+\frame{\tableofcontents}
+
+
+\section{Platforms}
+
+\section{Posting Wires}
+
+\begin{frame}
+  \frametitle{Hvorfor?}
+
+  \begin{itemize}
+  \item Ideen stammer oprindeligt fra den første Flask artikkel implementeret i
+    OCaml
+
+  \item Løser problemet
+  \end{itemize}
+
+  hvilke? Tag problemstilling fra oprindelig flask artikkel.
+
+\end{frame}
+
+
+  
+\begin{frame}
+  \frametitle{Opsummering}
+
+  Foreslåede løsninger til problemstillingen:
+
+  \begin{itemize}
+  \item Akkumuleret gentagelse.
+  \item Kø
+  \item Ignorer
+  \end{itemize}
+
+\end{frame}
+
+
+
+
+\section{Eksempler}
+\subsection{Arduino \texttt{analogRead}}
+
+
+\begin{frame}[fragile]{Implementeret}
+
+  \begin{example}
+
+\begin{verbatim}
+
+  // ADSC is cleared when the conversion finishes
+  while (bit_is_set(ADCSRA, ADSC));
+
+\end{verbatim}
+  \end{example}
+
+\end{frame}
+
+\begin{frame}
+  \frametitle{Stor skala}
+
+  Roskilde eksempel.
+
+\end{frame}
+
+
+
+\section{Brugbarhed}
+
+\begin{frame}
+  \frametitle{...}
+  
+\end{frame}
+
+
+\end{document}
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: t
+%%% End: 

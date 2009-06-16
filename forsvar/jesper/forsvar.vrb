@@ -1,0 +1,10 @@
+\frametitle {Implementeret}\par   \begin{example}
+
+\begin{verbatim}
+
+  // ADSC is cleared when the conversion finishes
+  while (bit_is_set(ADCSRA, ADSC));
+
+\end{verbatim}
+  \end{example}
+

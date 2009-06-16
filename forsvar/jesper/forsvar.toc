@@ -1,0 +1,6 @@
+\beamer@endinputifotherversion {3.07pt}
+\select@language {danish}
+\beamer@sectionintoc {2}{Introduktion}{3}{0}{1}
+\beamer@sectionintoc {3}{Eksempler}{5}{0}{2}
+\beamer@subsectionintoc {3}{1}{Arduino \texttt {analogRead}}{5}{0}{2}
+\beamer@sectionintoc {4}{Brugbarhed}{7}{0}{3}
