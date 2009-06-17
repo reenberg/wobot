@@ -144,11 +144,19 @@ Jesper Reenberg
   \begin{itemize}
   \item Giver "`type"' tjek af enheder og platforme
 
-  \item Flere enheder "`ens"'/ligende enheder kan ikke bruge samme pins.
+  \item Flere "`ens"'/ligende enheder kan ikke bruge samme pins.
   \end{itemize}
 
+  Spændene udvidelser
+  
+  \begin{itemize}
+  \item Beskrivelse af netværk/kommunikation imellem platforme
 
-  !!!!!! FUTURE WORK!!!!!!
+  \item Gir fælles "`type"' sikkerhed imellem platforme 
+
+  \item Kombination af forskellige platforme: Arduino, sensor netværk motes, ...
+  \end{itemize}
+
 
 \end{frame}
 
@@ -161,12 +169,16 @@ Jesper Reenberg
 
   \begin{itemize}
   \item Ideen stammer oprindeligt fra den første Flask artikkel implementeret i
-    OCaml
+    OCaml.
 
-  \item Løser problemet med blocking og busy-waiting.
+  \item Løser problemet med blocking og busy-waiting af asynkrone operationer.
+    \begin{itemize}
+    \item Netværkskommunikation, læs og skriv.
+
+    \item Sonar i en ubåd.
+    \end{itemize}
   \end{itemize}
 
-!!!!!!!!!!!!!!!!!  hvilke? Tag problemstilling fra oprindelig flask artikkel.
 
 \end{frame}
 
@@ -179,8 +191,8 @@ Jesper Reenberg
 
   \begin{itemize}
   \item Akkumuleret gentagelse.
-  \item Kø
-  \item Ignorer
+  \item Kø.
+  \item Ignorer.
   \end{itemize}
 
 \end{frame}
@@ -252,7 +264,11 @@ onEvent (PushButtonPressEvent $ PushButton 3)
   \begin{itemize}
   \item Elegant hvis der skal laves passiv venten.
     \begin{itemize}
-    \item Fx: Ubåd sender sonar og skal vente på ekko.
+    \item Ubåd sender sonar og skal vente på ekko.
+
+    \item Laser scanner
+
+    \item \texttt{waitOnce} til init af 3pi linjefølge program
     \end{itemize}
   \end{itemize}
 \end{frame}
