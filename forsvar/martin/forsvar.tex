@@ -221,4 +221,45 @@ detect low high threshold =
 \end{frame}
 
 
+
+\subsection{Specifikation af streamoperator}
+\begin{frame}[t, fragile]
+  \frametitle{Specifikation af streamoperator} 
+
+\tiny
+\begin{verbatim}
+sfilter :: forall a eta . (Reify a, LiftN eta (a -> Bool))
+        => eta
+        -> S a
+        -> S a
+sfilter predicate from = S $ do
+    npred <- unN $ (liftN predicate :: N (a -> Bool))
+    sfrom <- unS from
+    addStream  "sfilt"
+               (s_type sfrom)
+               (SFilter npred sfrom)
+               (gen npred)
+               (const (return ())) $ \this -> do
+    liveVar (n_var npred)
+    connect sfrom this tau_a (varIn this "")
+  where
+    tau_a :: H.Type
+    tau_a = reify (undefined :: a)
+
+    gen :: NCode -> SCode n -> FladuinoM ()
+    gen npred this = 
+         addDecls [$decls|$var:v_in x = if $var:v_pred x then $var:v_out x else ()|]
+      where
+        v_in  = varIn this ""
+        v_out = s_vout this
+        v_pred   = n_var npred
+\end{verbatim}
+
+\normalsize
+
+\end{frame}
+
+
+
+
 \end{document}
