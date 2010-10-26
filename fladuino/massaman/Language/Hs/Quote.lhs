@@ -204,10 +204,8 @@ dataToQa mkCon mkLit appCon antiQ t =
                 mkLit $ integerL n
             FloatConstr n ->
                 mkLit $ rationalL (toRational n)
-            StringConstr [c] ->
+            CharConstr c ->
                 mkLit $ charL c
-            StringConstr s ->
-                mkLit $ stringL s
         where
           constr :: Constr
           constr = toConstr t

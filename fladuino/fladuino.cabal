@@ -12,8 +12,8 @@ Synopsis:	The Flask meta-programming toolkit, crudely modified for arduino.
 Build-type:	Custom
 
 Library
-  Build-Depends:	base>=4, syb, haskell98, array, containers, bytestring,
-                        mtl, template-haskell, filepath, editline, process,
+  Build-Depends:	base>=4.2, syb, haskell98, array, containers, bytestring,
+                        mtl, template-haskell, filepath, process,
                         directory
   Cpp-Options:          
   Hs-source-dirs:	fladuino language massaman syntax
@@ -102,4 +102,4 @@ Library
     Transform.F.ToC
     Transform.Hs.Desugar
     Transform.Hs.Rename
-    Util
+    Fladuino.Util

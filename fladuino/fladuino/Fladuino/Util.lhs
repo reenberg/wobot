@@ -38,7 +38,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Util where
+module Fladuino.Util where
 
 import Control.Monad (liftM, liftM2)
 import Data.List (sortBy)

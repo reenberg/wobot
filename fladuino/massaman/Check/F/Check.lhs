@@ -74,7 +74,7 @@ import Data.Name
 import Language.F
 import Text.PrettyPrint.Mainland
 
-import Util
+import Fladuino.Util
 \end{code}
 %endif
 

@@ -109,7 +109,7 @@ defaultMain m = do
 putDoc :: MonadFladuino m => FilePath -> Doc -> m ()
 putDoc filepath doc = do
     h <- liftIO $ openFile filepath WriteMode
-    liftIO $ hPutStr h $ pretty 80 doc
+    liftIO $ hPutStrLn h $ pretty 80 doc
     liftIO $ hClose h
 
 genStreamForPlatform :: Platform FladuinoM -> S a -> FladuinoM ()

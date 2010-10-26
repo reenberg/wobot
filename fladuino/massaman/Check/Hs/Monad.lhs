@@ -78,7 +78,7 @@ import Language.F.Pretty ()
 import qualified Language.Hs as H
 import Text.PrettyPrint.Mainland
 
-import Util
+import Fladuino.Util
 \end{code}
 %endif
 

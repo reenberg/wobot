@@ -82,7 +82,7 @@ import Match
 import Match.Wadler
 import Text.PrettyPrint.Mainland
 
-import Util
+import Fladuino.Util
 \end{code}
 %endif
 
