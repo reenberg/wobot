@@ -3,6 +3,7 @@
 <head>
   <title>Arduino - PortManipulation </title>
   <link rel='stylesheet' href='arduino.css' type='text/css' />
+  <meta name="verify-v1" content="TtxFIEJAB6zdJ509wLxjnapQzKAMNm9u0Wj4ho6wxIY=" />
 </head>
 <body>
 <div id="page">
@@ -19,17 +20,17 @@
 <!--PageLeftFmt-->
 <div id="pagenav" style="text-align: right">
   <div style="float: left;">
-  <p><a class='wikilink' href='http://www.arduino.cc/en/Main/Buy'>Buy</a>
+  <p><a class='wikilink' href='http://arduino.cc/en/Main/Buy'>Buy</a>
 |
-<a class='wikilink' href='http://www.arduino.cc/en/Main/Software'>Download</a>
+<a class='wikilink' href='http://arduino.cc/en/Main/Software'>Download</a>
 |
 <a class='wikilink' href='Guide_index.html'>Getting Started</a>
 |
-<a class='wikilink' href='http://www.arduino.cc/en/Tutorial/HomePage'>Learning</a>
+<a class='wikilink' href='http://arduino.cc/en/Tutorial/HomePage'>Learning</a>
 |
 <a class='wikilink' href='index.html'>Reference</a>
 |
-<a class='wikilink' href='http://www.arduino.cc/en/Main/Hardware'>Hardware</a>
+<a class='wikilink' href='http://arduino.cc/en/Main/Hardware'>Hardware</a>
 |
 <a class='wikilink' href='FAQ.html'>FAQ</a>
 </p>
@@ -44,7 +45,7 @@
 <div id="pagetext">
 <!--PageText-->
 <div id='wikitext'>
-<p><strong>Reference</strong> &nbsp;  <a class='wikilink' href='index.html'>Language</a> (<a class='wikilink' href='Extended.html'>extended</a>) | <a class='wikilink' href='Libraries.html'>Libraries</a> | <a class='wikilink' href='Comparison.html'>Comparison</a> | <a class='wikilink' href='Board.html'>Board</a>
+<p><strong>Reference</strong> &nbsp;  <a class='wikilink' href='index.html'>Language</a> (<a class='wikilink' href='Extended.html'>extended</a>) | <a class='wikilink' href='Libraries.html'>Libraries</a> | <a class='wikilink' href='Comparison.html'>Comparison</a> | <a class='wikilink' href='Changes.html'>Changes</a>
 </p>
 <p class='vspace'></p><h2>Port Registers</h2>
 <p>Port registers allow for lower-level and faster manipulation of the i/o pins of the microcontroller on an Arduino board.  The chips used on the Arduino board (the <span class='wikiword'>ATmega8</span> and <span class='wikiword'>ATmega168</span>) have three ports:
@@ -56,29 +57,29 @@
 <p class='vspace'></p><p>DDR and PORT registers may be both written to, and read. PIN registers correspond to the state of inputs and may only be read.
 </p>
 <p class='vspace'></p><p><strong>PORTD</strong> maps to Arduino digital pins 0 to 7
-</p><dl><dd><div class='indent'>DDRD – The Port D Data Direction Register
-</div><div class='indent'>PORTD – The Port D Data Register
-</div><div class='indent'>PIND – The Port D Input Pins Register - read only
+</p><dl><dd><div class='indent'>DDRD  - The Port D Data Direction Register - read/write
+</div><div class='indent'>PORTD - The Port D Data Register - read/write
+</div><div class='indent'>PIND  - The Port D Input Pins Register - read only
 </div></dd></dl><p class='vspace'></p><p><strong>PORTB</strong> maps to Arduino digital pins 8 to 13 The two high bits (6 &amp; 7) map to the crystal pins and are not usable
 </p>
-<p class='vspace'></p><dl><dd><div class='indent'>DDRB – The Port B Data Direction Register
-</div><div class='indent'>PORTB – The Port B Data Register
-</div><div class='indent'>PINB – The Port B Input Pins Register - read only
+<p class='vspace'></p><dl><dd><div class='indent'>DDRB - The Port B Data Direction Register - read/write
+</div><div class='indent'>PORTB - The Port B Data Register - read/write
+</div><div class='indent'>PINB - The Port B Input Pins Register - read only
 </div></dd></dl><p class='vspace'></p><p><strong>PORTC</strong> maps to Arduino analog pins 0 to 5. Pins 6 &amp; 7 are only accessible on the Arduino Mini
-</p><dl><dd><div class='indent'>DDRC – The Port C Data Direction Register
-</div><div class='indent'>PORTC – The Port C Data Register
-</div><div class='indent'>PINC – The Port C Input Pins Register 
-</div></dd></dl><p class='vspace'></p><p>Each bit of these registers corresponds to a single pin; e.g. the low bit of DDRB, PORTB, and PINB refers to pin <span class='wikiword'>PB0</span> (digital pin 8).  For a complete mapping of Arduino pin numbers to ports and bits, see the diagram for your chip: <a class='wikilink' href='http://www.arduino.cc/en/Hacking/PinMapping'>ATmega8</a>, <a class='wikilink' href='http://www.arduino.cc/en/Hacking/PinMapping168'>ATmega168</a>.  (Note that some bits of a port may be used for things other than i/o; be careful not to change the values of the register bits corresponding to them.)
+</p><dl><dd><div class='indent'>DDRC - The Port C Data Direction Register - read/write
+</div><div class='indent'>PORTC - The Port C Data Register - read/write
+</div><div class='indent'>PINC - The Port C Input Pins Register - read only 
+</div></dd></dl><p class='vspace'></p><p>Each bit of these registers corresponds to a single pin; e.g. the low bit of DDRB, PORTB, and PINB refers to pin <span class='wikiword'>PB0</span> (digital pin 8).  For a complete mapping of Arduino pin numbers to ports and bits, see the diagram for your chip: <a class='wikilink' href='http://arduino.cc/en/Hacking/PinMapping'>ATmega8</a>, <a class='wikilink' href='http://arduino.cc/en/Hacking/PinMapping168'>ATmega168</a>.  (Note that some bits of a port may be used for things other than i/o; be careful not to change the values of the register bits corresponding to them.)
 </p>
 <p class='vspace'></p><h4>Examples</h4>
-<p>Referring to the pin map above, the <span class='wikiword'>PortD</span> registers control Arduino digital pins 0 – 7.  
+<p>Referring to the pin map above, the <span class='wikiword'>PortD</span> registers control Arduino digital pins 0 ï¿½ 7.  
 </p>
 <p class='vspace'></p><p>You should note, however, that pins 0 &amp; 1 are used for serial communications for programming and debugging the Arduino, so changing these pins should usually be avoided unless needed for serial input or output functions. Be aware that this can interfere with program download or debugging.
 </p>
 <p class='vspace'></p><p>DDRD is the direction register for Port D (Arduino digital pins 0-7). The bits in this register control whether the pins in PORTD are configured as inputs or outputs so, for example:
 </p>
-<p class='vspace'></p><pre>DDRD = B11111110;  // sets Arduino pins 1 – 7 as outputs, pin 0 as input
-DDRD = DDRD | B11111100;  // this is safer – it sets pins 2 to 7 as outputs
+<p class='vspace'></p><pre>DDRD = B11111110;  // sets Arduino pins 1 ï¿½ 7 as outputs, pin 0 as input
+DDRD = DDRD | B11111100;  // this is safer ï¿½ it sets pins 2 to 7 as outputs
 	                  // without changing the value of pins 0 &amp; 1, which are RX &amp; TX 
 </pre>
 <p class='vspace'></p><p><code>//See the bitwise operators reference pages and</code> 
@@ -90,7 +91,7 @@ DDRD = DDRD | B11111100;  // this is safer – it sets pins 2 to 7 as outputs
 </p>
 <p class='vspace'></p><p>You will only see 5 volts on these pins however if the pins have been set as outputs using the DDRD register or with pinMode().
 </p>
-<p class='vspace'></p><p>PINB is the input register variable – it will read all of the digital input pins at the same time.
+<p class='vspace'></p><p>PINB is the input register variable It will read all of the digital input pins at the same time.
 </p>
 <p class='vspace'></p><h4>Why use port manipulation?</h4>
 <p>From <a class='urllink' href='http://www.arduino.cc/playground/Code/BitMath' rel='nofollow'>The Bitmath Tutorial</a>
@@ -102,9 +103,11 @@ DDRD = DDRD | B11111100;  // this is safer – it sets pins 2 to 7 as outputs
 <p class='vspace'></p></li><li>It is a lot easier to cause unintentional malfunctions with direct port access. Notice how the line DDRD = B11111110; above mentions that it must leave pin 0 as an input pin. Pin 0 is the receive line (RX) on the serial port. It would be very easy to accidentally cause your serial port to stop working by changing pin 0 into an output pin! Now that would be very confusing when you suddenly are unable to receive serial data, wouldn't it? 
 </li></ul><p class='vspace'></p><p>So you might be saying to yourself, great, why would I ever want to use this stuff then? Here are some of the positive aspects of direct port access:
 </p>
-<p class='vspace'></p><ul><li>If you are running low on program memory, you can use these tricks to make your code smaller. It requires a lot fewer bytes of compiled code to simultaneously write a bunch of hardware pins simultaneously via the port registers than it would using a for loop to set each pin separately. In some cases, this might make the difference between your program fitting in flash memory or not!
+<p class='vspace'></p><ul><li>You may need to be able to turn pins on and off very quickly, meaning within fractions of a microsecond. If you look at the source code in lib/targets/arduino/wiring.c, you will see that digitalRead() and digitalWrite() are each about a dozen or so lines of code, which get compiled into quite a few machine instructions. Each machine instruction requires one clock cycle at 16MHz, which can add up in time-sensitive applications. Direct port access can do the same job in a lot fewer clock cycles.
 <p class='vspace'></p></li><li>Sometimes you might need to set multiple output pins at exactly the same time. Calling digitalWrite(10,HIGH); followed by digitalWrite(11,HIGH); will cause pin 10 to go HIGH several microseconds before pin 11, which may confuse certain time-sensitive external digital circuits you have hooked up. Alternatively, you could set both pins high at exactly the same moment in time using PORTB |= B1100;
-<p class='vspace'></p></li><li>You may need to be able to turn pins on and off very quickly, meaning within fractions of a microsecond. If you look at the source code in lib/targets/arduino/wiring.c, you will see that digitalRead() and digitalWrite() are each about a dozen or so lines of code, which get compiled into quite a few machine instructions. Each machine instruction requires one clock cycle at 16MHz, which can add up in time-sensitive applications. Direct port access can do the same job in a lot fewer clock cycles. 
+<p class='vspace'></p></li><li>If you are running low on program memory, you can use these tricks to make your code smaller. It requires a lot fewer bytes of compiled code to simultaneously write a bunch of hardware pins simultaneously via the port registers than it would using a for loop to set each pin separately. In some cases, this might make the difference between your program fitting in flash memory or not!
+</li></ul><p class='vspace'></p><h3>See </h3>
+<ul><li><a class='urllink' href='http://arduino.cc/en/Hacking/Atmega168Hardware' rel='nofollow'>Pin Mapping of Atmega 168/328</a>
 </li></ul><p class='vspace'></p><p><a class='wikilink' href='index.html'>Reference Home</a>
 </p>
 <p class='vspace'></p><p><em>Corrections, suggestions, and new documentation should be posted to the <a class='urllink' href='http://www.arduino.cc/cgi-bin/yabb2/YaBB.pl?board=swbugs' rel='nofollow'>Forum</a>.</em>
@@ -117,7 +120,7 @@ DDRD = DDRD | B11111100;  // this is safer – it sets pins 2 to 7 as outputs
 </div>
 <!--PageFooterFmt-->
 <div id="pagefooter">
-  <a href='#'>Edit Page</a> | <a href='#'>Page History</a> | <a href='#' target='_blank'>Printable View</a> | <a href='http://www.arduino.cc/en/Site/AllRecentChanges'>All Recent Site Changes</a>
+  <a href='#'>Edit Page</a> | <a href='#'>Page History</a> | <a href='#' target='_blank'>Printable View</a> | <a href='http://arduino.cc/en/Site/AllRecentChanges'>All Recent Site Changes</a>
 </div>
 <!--/PageFooterFmt-->
 </div>
